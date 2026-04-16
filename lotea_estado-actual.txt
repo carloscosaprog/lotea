@@ -1,0 +1,78 @@
+Proyecto LOTEA - Estado actual del desarrollo
+
+Puntos acabados o en funcionamiento:
+
+Backend:
+- Sistema de autenticación completo con registro y login (email o nombre de usuario)
+- Encriptación de contraseñas con bcrypt
+- Generación y validación de token JWT
+- Endpoint para obtener y actualizar el perfil del usuario autenticado
+- CRUD completo de lotes:
+	- Crear lote con subida de imágenes mediante multer
+	- Obtener todos los lotes
+	- Obtener un lote por ID con sus imágenes
+	- Actualizar lote (incluyendo imágenes)
+	- Eliminar lote (con control de propietario)
+- Relación entre usuarios, lotes, categorías e imágenes
+- Endpoint para obtener los lotes de un usuario
+- Endpoint para obtener los lotes del usuario autenticado (mis lotes)
+
+
+Frontend:
+- Sistema de autenticación funcional con contexto global (login, logout, persistencia)
+- Navegación mediante React Router
+- Página Home con listado de lotes en formato grid responsive
+- Componente LoteCard reutilizable con imagen, precio y cantidad
+- Página de detalle de lote con:
+	- Galería de imágenes (miniaturas + fullscreen)
+	- Navegación entre imágenes
+	- Información completa del lote (precio, cantidad, categoría, descripción)
+	- Visualización del vendedor con acceso a su perfil
+	- Mostrar más lotes del mismo vendedor
+	- Opciones de editar y eliminar si el usuario es propietario
+- Página de creación de lote con subida de imágenes
+- Página de edición de lote
+- Página de perfil de usuario con:
+	- Visualización de datos
+	- Edición del nombre
+	- Cierre de sesión
+	- Acceso a "Mis lotes"
+- Página de lotes del usuario (mis lotes)
+- Navbar funcional con:
+	- Acceso a login/registro si no hay sesión
+	- Botón "Vender" si el usuario está autenticado
+	- Avatar que dirige al perfil
+
+
+Siguientes pasos a seguir:
+
+- Migración del frontend de React a React Native
+	- Adaptar la estructura actual del proyecto a una aplicación móvil
+	- Reutilizar la lógica existente (servicios, API, autenticación)
+	- Rediseñar las pantallas para uso móvil (vertical, gestos, navegación)
+	- Implementar navegación con React Navigation
+- Adaptación de la interfaz a entorno móvil
+	- Rediseñar componentes como LoteCard y LoteDetail para móvil
+	- Mejorar la experiencia de usuario con gestos (swipe, scroll, etc.)
+	- Optimizar el uso de imágenes en dispositivos móviles
+- Mejora de funcionalidades actuales
+	- Añadir búsqueda de lotes
+	- Implementar filtros por categoría, precio y disponibilidad
+	- Mejorar validaciones en formularios
+- Desarrollo de funcionalidades pendientes del proyecto
+	- Sistema de recomendaciones basado en comportamiento del usuario
+	- Implementación básica de compras colaborativas
+	- Sistema de solicitudes de lotes
+	- Sistema de mensajería entre usuarios
+- Mejora del perfil de usuario
+	- Añadir más información del usuario
+	- Mostrar historial de compras
+	- Mostrar estadísticas básicas
+- Optimización del backend
+	- Mejorar validaciones y control de errores
+	- Preparar el backend para producción
+	- Mejorar la gestión de imágenes
+- Preparación final del proyecto
+	- Testing completo de la aplicación
+	- Corrección de errores
+	- Optimización general del rendimiento
