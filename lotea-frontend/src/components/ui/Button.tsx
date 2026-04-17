@@ -88,7 +88,7 @@ export default function Button({
       <View
         pointerEvents="none"
         style={[
-          styles.highlight,
+          styles.glow,
           {
             backgroundColor: palette.accentColor,
           },
@@ -103,23 +103,22 @@ export default function Button({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 54,
-    borderRadius: radii.md,
+    minHeight: 56,
+    borderRadius: radii.lg,
     borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: spacing.lg,
     overflow: "hidden",
   },
-  highlight: {
+  glow: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "52%",
-    opacity: 0.32,
-    borderTopLeftRadius: radii.md,
-    borderTopRightRadius: radii.md,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    top: -82,
+    right: -36,
+    opacity: 0.18,
   },
   text: {
     ...typography.bodyStrong,

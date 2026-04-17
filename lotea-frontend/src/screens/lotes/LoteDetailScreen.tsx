@@ -133,7 +133,7 @@ export default function LoteDetailScreen() {
     return (
       <View style={layoutStyles.center}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.feedbackTitle}>Loading lot detail...</Text>
+        <Text style={styles.feedbackTitle}>Cargando detalle del lote...</Text>
       </View>
     );
   }
@@ -141,8 +141,8 @@ export default function LoteDetailScreen() {
   if (!lote) {
     return (
       <View style={layoutStyles.center}>
-        <Text style={styles.feedbackTitle}>Lot not available</Text>
-        <Text style={styles.feedbackText}>Please try again in a moment.</Text>
+        <Text style={styles.feedbackTitle}>Lote no disponible</Text>
+        <Text style={styles.feedbackText}>Intentalo de nuevo en unos segundos.</Text>
       </View>
     );
   }
@@ -172,9 +172,9 @@ export default function LoteDetailScreen() {
 
       {user && lote.id_vendedor === user.id && (
         <View style={styles.ownerActions}>
-          <Button title="Delete" variant="danger" onPress={handleDelete} style={styles.actionButton} />
+          <Button title="Eliminar" variant="danger" onPress={handleDelete} style={styles.actionButton} />
           <Button
-            title="Edit"
+            title="Editar"
             variant="secondary"
             style={styles.actionButton}
             onPress={() =>
@@ -217,7 +217,7 @@ export default function LoteDetailScreen() {
         <View style={styles.summaryHeader}>
           <View style={styles.summaryCopy}>
             <Text style={styles.title}>{lote.titulo}</Text>
-            <Text style={styles.ratingLine}>????? 5.7, {lote.cantidad} units</Text>
+            <Text style={styles.ratingLine}>Lote destacado · {lote.cantidad} unidades</Text>
           </View>
           <Text style={styles.price}>{lote.precio} EUR</Text>
         </View>
@@ -235,14 +235,14 @@ export default function LoteDetailScreen() {
           <Avatar uri={vendedorAvatar} name={vendedor?.nombre || lote.vendedor} size={48} />
           <View style={styles.sellerCopy}>
             <Text style={styles.sellerName}>{vendedor?.nombre || lote.vendedor}</Text>
-            <Text style={styles.sellerLink}>View seller profile</Text>
+            <Text style={styles.sellerLink}>Ver perfil del vendedor</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
         </TouchableOpacity>
       </Card>
 
       <Card>
-        <Text style={styles.descriptionTitle}>Description</Text>
+        <Text style={styles.descriptionTitle}>Descripcion</Text>
         <Text style={styles.description}>{lote.descripcion}</Text>
       </Card>
 
@@ -255,8 +255,8 @@ export default function LoteDetailScreen() {
       {lotesUsuario.length > 0 && (
         <View style={styles.moreSection}>
           <View style={layoutStyles.pageHeader}>
-            <Text style={layoutStyles.headerEyebrow}>More from this seller</Text>
-            <Text style={styles.sectionTitle}>Related lots</Text>
+            <Text style={layoutStyles.headerEyebrow}>Mas de este vendedor</Text>
+            <Text style={styles.sectionTitle}>Otros lotes relacionados</Text>
           </View>
 
           <FlatList
@@ -270,7 +270,7 @@ export default function LoteDetailScreen() {
         </View>
       )}
 
-      <Button title="Buy Now" variant="accent" />
+      <Button title="Comprar lote" variant="primary" style={styles.buyButton} />
 
       <Modal visible={fullscreen} transparent animationType="fade">
         <View style={styles.modal}>
@@ -422,6 +422,10 @@ const styles = StyleSheet.create({
   },
   moreList: {
     gap: spacing.sm,
+  },
+  buyButton: {
+    minHeight: 58,
+    borderRadius: radii.lg,
   },
   modal: {
     flex: 1,

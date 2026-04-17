@@ -13,6 +13,12 @@ const iconByRoute: Record<string, keyof typeof Ionicons.glyphMap> = {
   Perfil: "person",
 };
 
+const targetByRoute: Record<string, { name: string; params?: object }> = {
+  Home: { name: "Home", params: { screen: "HomeMain" } },
+  Vender: { name: "Vender" },
+  Perfil: { name: "Perfil", params: { screen: "ProfileMain" } },
+};
+
 export default function Navbar({ state, descriptors, navigation }: BottomTabBarProps) {
   return (
     <View style={styles.shell}>
@@ -26,14 +32,15 @@ export default function Navbar({ state, descriptors, navigation }: BottomTabBarP
                 ? options.title
                 : route.name;
           const isFocused = state.index === index;
+          const target = targetByRoute[route.name] ?? { name: route.name };
 
           return (
             <Pressable
               key={route.key}
-              onPress={() => navigation.navigate(route.name)}
+              onPress={() => (navigation as any).navigate(target.name, target.params)}
               style={styles.item}
             >
-              <View style={[styles.iconWrap, isFocused && styles.iconWrapActive]}>
+              <View style={styles.iconWrap}>
                 <Ionicons
                   name={iconByRoute[route.name] || "ellipse"}
                   size={20}
@@ -43,6 +50,7 @@ export default function Navbar({ state, descriptors, navigation }: BottomTabBarP
               <Text style={[styles.label, isFocused && styles.labelActive]}>
                 {label}
               </Text>
+              <View style={[styles.indicator, isFocused && styles.indicatorActive]} />
             </Pressable>
           );
         })}
@@ -63,7 +71,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
     borderRadius: radii.xl,
     backgroundColor: colors.white,
     borderWidth: 1,
@@ -73,7 +82,7 @@ const styles = StyleSheet.create({
   item: {
     flex: 1,
     alignItems: "center",
-    gap: 4,
+    gap: 3,
   },
   iconWrap: {
     width: 38,
@@ -81,9 +90,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
     alignItems: "center",
     justifyContent: "center",
-  },
-  iconWrapActive: {
-    backgroundColor: "#DBEAFE",
   },
   label: {
     ...typography.caption,
@@ -93,4 +99,15 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: "700",
   },
+  indicator: {
+    width: 18,
+    height: 3,
+    borderRadius: radii.full,
+    backgroundColor: "transparent",
+    marginTop: 3,
+  },
+  indicatorActive: {
+    backgroundColor: colors.primary,
+  },
 });
+

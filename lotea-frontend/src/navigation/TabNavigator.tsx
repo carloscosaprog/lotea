@@ -17,9 +17,9 @@ export default function TabNavigator() {
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
-      <Tab.Screen name="Home" component={HomeStack} options={{ title: "Home" }} />
-      <Tab.Screen name="Vender" component={CreateLoteScreen} options={{ title: "Sell" }} />
-      <Tab.Screen name="Perfil" component={ProfileStack} options={{ title: "Profile" }} />
+      <Tab.Screen name="Home" component={HomeStack} options={{ title: "Inicio" }} />
+      <Tab.Screen name="Vender" component={CreateLoteScreen} options={{ title: "Vender" }} />
+      <Tab.Screen name="Perfil" component={ProfileStack} options={{ title: "Perfil" }} />
     </Tab.Navigator>
   );
 }
