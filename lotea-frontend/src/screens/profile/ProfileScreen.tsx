@@ -23,7 +23,6 @@ import type { Lote } from "../../types/Lote";
 import Avatar from "../../components/ui/Avatar";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
-import LoteCard from "../../components/lotes/LoteCard";
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -122,8 +121,8 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={layoutStyles.center}>
-        <Text style={styles.feedbackTitle}>Loading profile...</Text>
-        <Text style={styles.feedbackText}>Preparing your seller dashboard.</Text>
+        <Text style={styles.feedbackTitle}>Cargando perfil...</Text>
+        <Text style={styles.feedbackText}>Preparando tu panel de vendedor.</Text>
       </View>
     );
   }
@@ -131,8 +130,8 @@ export default function ProfileScreen() {
   if (!user) {
     return (
       <View style={layoutStyles.center}>
-        <Text style={styles.feedbackTitle}>Profile unavailable</Text>
-        <Text style={styles.feedbackText}>Please try again in a few seconds.</Text>
+        <Text style={styles.feedbackTitle}>Perfil no disponible</Text>
+        <Text style={styles.feedbackText}>Intentalo de nuevo en unos segundos.</Text>
       </View>
     );
   }
@@ -146,12 +145,12 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.topBar}>
-        <TouchableOpacity activeOpacity={0.8}>
+        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Profile</Text>
+        <Text style={styles.topBarTitle}>Perfil</Text>
         <TouchableOpacity activeOpacity={0.8}>
-          <Text style={styles.topBarAction}>Edit</Text>
+          <Text style={styles.topBarAction}>Editar</Text>
         </TouchableOpacity>
       </View>
 
@@ -173,37 +172,46 @@ export default function ProfileScreen() {
       <View style={styles.statsRow}>
         <Card style={styles.statCard} contentStyle={styles.statContent}>
           <Text style={styles.statValue}>{myLotes.length}</Text>
-          <Text style={styles.statLabel}>My Lots</Text>
+          <Text style={styles.statLabel}>Mis lotes</Text>
         </Card>
         <Card style={styles.statCard} contentStyle={styles.statContent}>
           <Text style={styles.statValue}>{totalUnits}</Text>
-          <Text style={styles.statLabel}>Units</Text>
+          <Text style={styles.statLabel}>Unidades</Text>
         </Card>
         <Card style={styles.statCard} contentStyle={styles.statContent}>
           <Text style={styles.statValue}>{user?.nombre ? user.nombre.length : 0}</Text>
-          <Text style={styles.statLabel}>Profile</Text>
+          <Text style={styles.statLabel}>Perfil</Text>
         </Card>
       </View>
 
-      <Card>
-        <View style={styles.quickAction}>
-          <View style={styles.quickActionLeft}>
-            <View style={styles.quickIcon}>
-              <Ionicons name="cube-outline" size={18} color={colors.primary} />
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate("Perfil", {
+            screen: "MisLotes",
+          })
+        }
+      >
+        <Card>
+          <View style={styles.quickAction}>
+            <View style={styles.quickActionLeft}>
+              <View style={styles.quickIcon}>
+                <Ionicons name="cube-outline" size={18} color={colors.primary} />
+              </View>
+              <Text style={styles.quickActionText}>Mis lotes</Text>
             </View>
-            <Text style={styles.quickActionText}>My Lots</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
-        </View>
-      </Card>
+        </Card>
+      </TouchableOpacity>
 
       <Card>
         <View style={styles.formSection}>
           <View style={styles.labelRow}>
-            <Text style={componentStyles.inputLabel}>Display name</Text>
+            <Text style={componentStyles.inputLabel}>Nombre visible</Text>
             {success && (
               <View style={styles.successPill}>
-                <Text style={styles.successText}>Saved</Text>
+                <Text style={styles.successText}>Guardado</Text>
               </View>
             )}
           </View>
@@ -212,42 +220,19 @@ export default function ProfileScreen() {
             value={nombre}
             onChangeText={setNombre}
             style={componentStyles.input}
-            placeholder="Your name"
+            placeholder="Tu nombre"
             placeholderTextColor={colors.subtext}
           />
 
           <Button
-            title={saving ? "Saving..." : "Save changes"}
+            title={saving ? "Guardando..." : "Guardar cambios"}
             onPress={handleSave}
             disabled={saving}
           />
 
-          <Button
-            title="Open my lots"
-            variant="secondary"
-            onPress={() =>
-              navigation.navigate("Perfil", {
-                screen: "MisLotes",
-              })
-            }
-          />
-
-          <Button title="Log out" variant="danger" onPress={logout} />
+          <Button title="Cerrar sesion" variant="danger" onPress={logout} />
         </View>
       </Card>
-
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>My Listings</Text>
-        <Text style={styles.sectionSubtitle}>A quick look at your active marketplace cards.</Text>
-      </View>
-
-      <View style={styles.grid}>
-        {myLotes.slice(0, 4).map((lote) => (
-          <View key={lote.id_lote} style={styles.gridItem}>
-            <LoteCard lote={lote} />
-          </View>
-        ))}
-      </View>
     </ScrollView>
   );
 }
@@ -342,26 +327,6 @@ const styles = StyleSheet.create({
   successText: {
     ...typography.caption,
     color: colors.accent,
-  },
-  sectionHeader: {
-    gap: 2,
-  },
-  sectionTitle: {
-    ...typography.heading,
-    color: colors.text,
-  },
-  sectionSubtitle: {
-    ...typography.body,
-    color: colors.subtext,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: spacing.sm,
-  },
-  gridItem: {
-    width: "48%",
   },
   feedbackTitle: {
     ...typography.heading,

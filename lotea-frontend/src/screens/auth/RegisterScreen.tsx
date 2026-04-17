@@ -3,11 +3,18 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import { colors } from "../../styles/colors";
+import { componentStyles, layoutStyles } from "../../styles/theme";
+import { radii, spacing } from "../../styles/spacing";
+import { typography } from "../../styles/typography";
 
 export default function RegisterScreen() {
   const [nombre, setNombre] = useState("");
@@ -37,7 +44,6 @@ export default function RegisterScreen() {
       }
 
       Alert.alert("Usuario creado correctamente");
-
       navigation.navigate("Login");
     } catch (error) {
       console.error(error);
@@ -46,73 +52,122 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.form}>
-        <Text style={styles.title}>Registrarse</Text>
-
-        <TextInput
-          placeholder="Nombre"
-          style={styles.input}
-          value={nombre}
-          onChangeText={setNombre}
-        />
-
-        <TextInput
-          placeholder="Email"
-          style={styles.input}
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        <TextInput
-          placeholder="ContraseÃ±a"
-          secureTextEntry
-          style={styles.input}
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleRegister}>
-          <Text style={styles.buttonText}>Registrarse</Text>
-        </TouchableOpacity>
+    <View style={styles.screen}>
+      <View style={styles.hero}>
+        <View style={styles.heroGlowLarge} />
+        <View style={styles.heroGlowSmall} />
+        <Text style={styles.brand}>LOTEA</Text>
+        <Text style={styles.heroSubtitle}>
+          Crea tu cuenta para publicar, vender y gestionar lotes.
+        </Text>
       </View>
+
+      <Card style={styles.formCard}>
+        <View style={styles.formSection}>
+          <View style={layoutStyles.pageHeader}>
+            <Text style={layoutStyles.headerEyebrow}>Nueva cuenta</Text>
+            <Text style={styles.title}>Registrarse</Text>
+            <Text style={layoutStyles.headerSubtitle}>
+              Completa tus datos para empezar a usar LOTEA.
+            </Text>
+          </View>
+
+          <TextInput
+            placeholder="Nombre"
+            placeholderTextColor={colors.subtext}
+            style={componentStyles.input}
+            value={nombre}
+            onChangeText={setNombre}
+          />
+
+          <TextInput
+            placeholder="Correo electronico"
+            placeholderTextColor={colors.subtext}
+            style={componentStyles.input}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+          />
+
+          <TextInput
+            placeholder="Contraseña"
+            placeholderTextColor={colors.subtext}
+            secureTextEntry
+            style={componentStyles.input}
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          <Button title="Crear cuenta" variant="accent" onPress={handleRegister} />
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("Login")}
+          >
+            <Text style={styles.link}>Ya tengo cuenta</Text>
+          </TouchableOpacity>
+        </View>
+      </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.xxl,
     justifyContent: "center",
-    alignItems: "center",
+    gap: spacing.xl,
   },
-  form: {
-    width: 300,
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 12,
+  hero: {
+    backgroundColor: colors.primary,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
+    overflow: "hidden",
+  },
+  heroGlowLarge: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    top: -76,
+    right: -76,
+  },
+  heroGlowSmall: {
+    position: "absolute",
+    width: 130,
+    height: 130,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(147,197,253,0.32)",
+    bottom: -30,
+    left: -10,
+  },
+  brand: {
+    ...typography.title,
+    color: colors.white,
+  },
+  heroSubtitle: {
+    ...typography.body,
+    color: "#DBEAFE",
+    marginTop: spacing.xs,
+  },
+  formCard: {
+    borderRadius: radii.xl,
+  },
+  formSection: {
+    gap: spacing.md,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 15,
+    ...typography.title,
+    color: colors.text,
   },
-  input: {
-    width: "100%",
-    marginBottom: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-  },
-  button: {
-    backgroundColor: "#16a34a",
-    padding: 12,
-    borderRadius: 6,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  link: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+    textAlign: "center",
   },
 });

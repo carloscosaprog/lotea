@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -50,8 +50,8 @@ export default function ImageUploader({ onChange }: Props) {
         <View style={styles.uploadIcon}>
           <Ionicons name="cloud-upload-outline" size={28} color={colors.primary} />
         </View>
-        <Text style={styles.uploadTitle}>Upload Images</Text>
-        <Text style={styles.uploadSubtitle}>Upload photos, up to 10</Text>
+        <Text style={styles.uploadTitle}>Subir imagenes</Text>
+        <Text style={styles.uploadSubtitle}>Agrega fotos del lote, hasta 10</Text>
       </Pressable>
 
       <FlatList

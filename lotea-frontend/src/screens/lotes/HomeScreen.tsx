@@ -19,7 +19,7 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
 
-const categories = ["Electronics", "Fashion", "Home", "Toys", "Office"];
+const categories = ["Electronica", "Moda", "Hogar", "Juguetes", "Oficina"];
 
 export default function HomeScreen() {
   const [lotes, setLotes] = useState<Lote[]>([]);
@@ -60,7 +60,7 @@ export default function HomeScreen() {
     return (
       <View style={layoutStyles.center}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading marketplace...</Text>
+        <Text style={styles.loadingText}>Cargando marketplace...</Text>
       </View>
     );
   }
@@ -82,7 +82,9 @@ export default function HomeScreen() {
               <View style={styles.heroTopRow}>
                 <View>
                   <Text style={styles.brand}>LOTEA</Text>
-                  <Text style={styles.heroSubtitle}>Find premium bundles and lot deals.</Text>
+                  <Text style={styles.heroSubtitle}>
+                    Encuentra lotes y oportunidades para revender.
+                  </Text>
                 </View>
                 <View style={styles.heroIcon}>
                   <Ionicons name="person-outline" size={20} color={colors.white} />
@@ -94,7 +96,7 @@ export default function HomeScreen() {
                 <TextInput
                   value={search}
                   onChangeText={setSearch}
-                  placeholder="Search for bundles..."
+                  placeholder="Buscar lotes..."
                   placeholderTextColor={colors.subtext}
                   style={styles.searchInput}
                 />
@@ -124,15 +126,19 @@ export default function HomeScreen() {
             </ScrollView>
 
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recommended lots</Text>
-              <Text style={styles.sectionSubtitle}>Curated marketplace picks for fast resale.</Text>
+              <Text style={styles.sectionTitle}>Lotes recomendados</Text>
+              <Text style={styles.sectionSubtitle}>
+                Seleccion cuidada para comprar mejor y vender mas rapido.
+              </Text>
             </View>
           </>
         }
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyTitle}>No lots match your search</Text>
-            <Text style={styles.emptyText}>Try a different keyword to explore more listings.</Text>
+            <Text style={styles.emptyTitle}>No hay lotes para esa busqueda</Text>
+            <Text style={styles.emptyText}>
+              Prueba con otra palabra para descubrir mas publicaciones.
+            </Text>
           </View>
         }
       />
