@@ -25,7 +25,7 @@ Inicialmente el frontend fue desarrollado en React (web), pero el proyecto ha si
 lotea/
 
 * lotea-backend/ → API REST (Node.js + Express)
-* lotea/ → Aplicación móvil (React Native + Expo)
+* lotea-frontend/ → Aplicación móvil (React Native + Expo)
 * lotea_base_datos.sql → Script de base de datos PostgreSQL
 * lotea_estado-actual.txt → Documento con estado del proyecto
 
