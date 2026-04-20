@@ -25,7 +25,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    overflow: "hidden",
     ...shadows.card,
   },
   content: {

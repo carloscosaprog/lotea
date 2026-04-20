@@ -98,9 +98,13 @@ export default function CreateLoteScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        contentInset={{ bottom: 120 }}
       >
         <View style={styles.headerRow}>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.screenTitle}>Publicar lote</Text>
@@ -168,10 +172,20 @@ export default function CreateLoteScreen() {
                   <TouchableOpacity
                     key={cat.id_categoria}
                     activeOpacity={0.85}
-                    style={[styles.categoryItem, selected && styles.categorySelected]}
-                    onPress={() => handleChange("id_categoria", String(cat.id_categoria))}
+                    style={[
+                      styles.categoryItem,
+                      selected && styles.categorySelected,
+                    ]}
+                    onPress={() =>
+                      handleChange("id_categoria", String(cat.id_categoria))
+                    }
                   >
-                    <Text style={[styles.categoryText, selected && styles.categoryTextSelected]}>
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        selected && styles.categoryTextSelected,
+                      ]}
+                    >
                       {cat.nombre}
                     </Text>
                   </TouchableOpacity>
@@ -186,7 +200,11 @@ export default function CreateLoteScreen() {
         <Text style={styles.ctaHelper}>
           Revisa las fotos y los datos antes de publicar tu lote.
         </Text>
-        <Button title="Publicar lote" onPress={handleSubmit} style={styles.ctaButton} />
+        <Button
+          title="Publicar lote"
+          onPress={handleSubmit}
+          style={styles.ctaButton}
+        />
       </View>
     </View>
   );
@@ -203,9 +221,8 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: 220,
+    paddingBottom: 140,
     gap: spacing.xl,
-    flexGrow: 1,
   },
   headerRow: {
     flexDirection: "row",
@@ -221,7 +238,7 @@ const styles = StyleSheet.create({
     height: 22,
   },
   formCardContent: {
-    paddingBottom: spacing.xl,
+    paddingBottom: 100, // se puede ir aumentando el valor para hacer el card mas grande
   },
   formSection: {
     gap: spacing.md,
