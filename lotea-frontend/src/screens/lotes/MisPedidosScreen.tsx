@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { View, Text, FlatList, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+
 import { getPedidos } from "../../services/pedidosService";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
@@ -10,12 +20,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { colors } from "../../styles/colors";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { layoutStyles } from "../../styles/theme";
 
 const BASE_URL = "http://192.168.0.65:3000";
 
 export default function MisPedidosScreen() {
   const [pedidos, setPedidos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const { user } = useAuth();
+  const navigation = useNavigation<any>();
 
   const fetchPedidos = async () => {
     try {
@@ -23,6 +37,8 @@ export default function MisPedidosScreen() {
       setPedidos(data);
     } catch (error) {
       console.log(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,22 +66,72 @@ export default function MisPedidosScreen() {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mis pedidos</Text>
+  if (loading) {
+    return (
+      <View style={layoutStyles.center}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Cargando tus pedidos...</Text>
+      </View>
+    );
+  }
 
+  return (
+    <View style={layoutStyles.screen}>
       <FlatList
         data={pedidos}
         keyExtractor={(item) => item.id_pedido.toString()}
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        ListHeaderComponent={
+          <View style={styles.headerWrap}>
+            <View style={styles.topBar}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name="chevron-back" size={22} color={colors.text} />
+              </TouchableOpacity>
+
+              <Text style={styles.topBarTitle}>Mis pedidos</Text>
+
+              <View style={{ width: 22 }} />
+            </View>
+
+            <View style={layoutStyles.pageHeader}>
+              <Text style={layoutStyles.headerEyebrow}>Compras</Text>
+              <Text style={styles.title}>Tus pedidos realizados</Text>
+              <Text style={layoutStyles.headerSubtitle}>
+                Consulta el estado de tus compras y su progreso.
+              </Text>
+            </View>
+          </View>
+        }
+        ListEmptyComponent={
+          <Card style={{ marginHorizontal: spacing.lg }}>
+            <Text style={styles.emptyTitle}>
+              Aun no has realizado ningun pedido
+            </Text>
+            <Text style={styles.emptyText}>
+              Explora lotes y realiza tu primera compra en LOTEA.
+            </Text>
+            <Button
+              title="Ver lotes"
+              onPress={() => navigation.navigate("Home")}
+              style={styles.emptyButton}
+            />
+          </Card>
+        }
         renderItem={({ item }) => (
-          <Card style={styles.card}>
-            <Text style={styles.lote}>{item.titulo}</Text>
-            <Text style={styles.info}>Cantidad: {item.cantidad}</Text>
-            <Text style={styles.info}>Precio: {item.precio_unitario} EUR</Text>
-            <Text style={styles.estado}>Estado: {item.estado}</Text>
+          <Card contentStyle={styles.cardContent}>
+            <View style={styles.copy}>
+              <Text style={styles.titleItem}>{item.titulo}</Text>
+              <Text style={styles.subtitle}>Cantidad: {item.cantidad}</Text>
+              <Text style={styles.price}>{item.precio_unitario} EUR</Text>
+              <Text style={styles.estado}>Estado: {item.estado}</Text>
+            </View>
 
             {item.id_usuario !== user?.id && item.estado === "pendiente" && (
-              <View style={styles.actions}>
+              <View style={styles.actionsRow}>
                 <Button
                   title="Completar"
                   onPress={() => updateEstado(item.id_pedido, "completado")}
@@ -85,31 +151,70 @@ export default function MisPedidosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: spacing.lg,
-    backgroundColor: colors.background,
+  loadingText: {
+    ...typography.body,
+    color: colors.subtext,
+    marginTop: spacing.sm,
+  },
+  headerWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+    gap: spacing.lg,
+  },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  topBarTitle: {
+    ...typography.heading,
+    color: colors.text,
   },
   title: {
-    ...typography.heading,
-    marginBottom: spacing.lg,
+    ...typography.title,
+    color: colors.text,
   },
-  card: {
-    marginBottom: spacing.md,
+  listContent: {
+    paddingBottom: spacing.xxxl,
   },
-  lote: {
+  cardContent: {
+    marginHorizontal: spacing.lg,
+    gap: spacing.md,
+  },
+  copy: {
+    gap: 4,
+  },
+  titleItem: {
     ...typography.bodyStrong,
+    color: colors.text,
   },
-  info: {
-    ...typography.body,
+  subtitle: {
+    ...typography.caption,
+    color: colors.subtext,
+  },
+  price: {
+    ...typography.heading,
+    color: colors.accent,
   },
   estado: {
     ...typography.caption,
     color: colors.primary,
   },
-  actions: {
+  actionsRow: {
     flexDirection: "row",
     gap: spacing.sm,
-    marginTop: spacing.sm,
+  },
+  emptyTitle: {
+    ...typography.heading,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.subtext,
+  },
+  emptyButton: {
+    marginTop: spacing.lg,
   },
 });
