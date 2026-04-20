@@ -3,12 +3,19 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
+  TouchableOpacity,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useAuth } from "../../context/AuthContext";
 import { useNavigation } from "@react-navigation/native";
+
+import { useAuth } from "../../context/AuthContext";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import { colors } from "../../styles/colors";
+import { componentStyles, layoutStyles } from "../../styles/theme";
+import { radii, spacing } from "../../styles/spacing";
+import { typography } from "../../styles/typography";
 
 export default function LoginScreen() {
   const [identifier, setIdentifier] = useState("");
@@ -51,79 +58,131 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.form}>
-        <Text style={styles.title}>Iniciar sesión</Text>
-
-        <TextInput
-          placeholder="Email o nombre de usuario"
-          style={[styles.input, error ? styles.inputError : null]}
-          value={identifier}
-          onChangeText={setIdentifier}
-        />
-
-        <TextInput
-          placeholder="Contraseña"
-          secureTextEntry
-          style={[styles.input, error ? styles.inputError : null]}
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        {error ? <Text style={styles.error}>{error}</Text> : null}
-
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Entrar</Text>
-        </TouchableOpacity>
+    <View style={styles.screen}>
+      <View style={styles.hero}>
+        <View style={styles.heroGlowLarge} />
+        <View style={styles.heroGlowSmall} />
+        <Text style={styles.brand}>LOTEA</Text>
+        <Text style={styles.heroSubtitle}>
+          Accede para gestionar tus lotes y seguir vendiendo.
+        </Text>
       </View>
+
+      <Card style={styles.formCard}>
+        <View style={styles.formSection}>
+          <View style={layoutStyles.pageHeader}>
+            <Text style={layoutStyles.headerEyebrow}>Bienvenido</Text>
+            <Text style={styles.title}>Iniciar sesion</Text>
+            <Text style={layoutStyles.headerSubtitle}>
+              Entra con tu correo y tu contraseña para continuar.
+            </Text>
+          </View>
+
+          <TextInput
+            placeholder="Correo electronico"
+            placeholderTextColor={colors.subtext}
+            style={[componentStyles.input, error ? styles.inputError : null]}
+            value={identifier}
+            onChangeText={setIdentifier}
+            autoCapitalize="none"
+          />
+
+          <TextInput
+            placeholder="Contraseña"
+            placeholderTextColor={colors.subtext}
+            secureTextEntry
+            style={[componentStyles.input, error ? styles.inputError : null]}
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <Button
+            title="Entrar"
+            onPress={handleLogin}
+            style={styles.primaryButton}
+          />
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate("Register")}
+          >
+            <Text style={styles.link}>Crear cuenta</Text>
+          </TouchableOpacity>
+        </View>
+      </Card>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxxl,
+    paddingBottom: spacing.xxl,
     justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f3f4f6",
+    gap: spacing.xl,
   },
-  form: {
-    width: 300,
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 12,
+  hero: {
+    backgroundColor: colors.primary,
+    borderRadius: radii.xl,
+    padding: spacing.xl,
+    overflow: "hidden",
+  },
+  heroGlowLarge: {
+    position: "absolute",
+    width: 220,
+    height: 220,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    top: -76,
+    right: -76,
+  },
+  heroGlowSmall: {
+    position: "absolute",
+    width: 130,
+    height: 130,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(147,197,253,0.32)",
+    bottom: -30,
+    left: -10,
+  },
+  brand: {
+    ...typography.title,
+    color: colors.white,
+  },
+  heroSubtitle: {
+    ...typography.body,
+    color: "#DBEAFE",
+    marginTop: spacing.xs,
+  },
+  formCard: {
+    borderRadius: radii.xl,
+  },
+  formSection: {
+    gap: spacing.md,
   },
   title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  input: {
-    width: "100%",
-    marginBottom: 10,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
+    ...typography.title,
+    color: colors.text,
   },
   inputError: {
-    borderColor: "red",
+    borderColor: colors.danger,
   },
   error: {
-    color: "red",
-    fontSize: 12,
-    marginBottom: 10,
+    ...typography.caption,
+    color: colors.danger,
     textAlign: "center",
   },
-  button: {
-    backgroundColor: "#2563eb",
-    padding: 12,
-    borderRadius: 6,
-    alignItems: "center",
+  primaryButton: {
+    marginTop: spacing.xs,
   },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  link: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+    textAlign: "center",
   },
 });

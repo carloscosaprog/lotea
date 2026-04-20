@@ -8,12 +8,20 @@ import {
   Image,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
+
 import { getLoteById, updateLote } from "../../services/lotesService";
 import { getCategorias } from "../../services/categoriasService";
 import ImageUploader from "../../components/lotes/ImageUploader";
-import type { Lote } from "../../types/Lote";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import { colors } from "../../styles/colors";
+import { componentStyles, layoutStyles } from "../../styles/theme";
+import { radii, spacing } from "../../styles/spacing";
+import { typography } from "../../styles/typography";
 
 interface Categoria {
   id_categoria: number;
@@ -27,7 +35,8 @@ export default function EditLoteScreen() {
   const navigation = useNavigation<any>();
   const { id } = route.params;
 
-  const [lote, setLote] = useState<Lote | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [lote, setLote] = useState<any>(null);
 
   const [form, setForm] = useState({
     titulo: "",
@@ -49,20 +58,18 @@ export default function EditLoteScreen() {
       if (!id) return;
 
       try {
-        const data = await getLoteById(Number(id));
+        const data: any = await getLoteById(Number(id));
         const cats = await getCategorias();
 
         if (data) {
           setLote(data);
-
           setForm({
             titulo: data.titulo,
             descripcion: data.descripcion,
             precio: String(data.precio),
             cantidad: String(data.cantidad),
-            id_categoria: String(data.id_categoria),
+            id_categoria: String(data.id_categoria ?? ""),
           });
-
           setExistingImages(
             data.imagenes ? data.imagenes.map((img: any) => img.url) : [],
           );
@@ -71,6 +78,8 @@ export default function EditLoteScreen() {
         setCategorias(cats);
       } catch (error) {
         console.error(error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -78,21 +87,21 @@ export default function EditLoteScreen() {
   }, [id]);
 
   const handleChange = (name: string, value: string) => {
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [name]: value,
-    });
+    }));
   };
 
   const removeExistingImage = (index: number) => {
-    setExistingImages(existingImages.filter((_, i) => i !== index));
+    setExistingImages((current) => current.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
     if (!lote) return;
 
     if (existingImages.length === 0 && newImages.length === 0) {
-      Alert.alert("Debes añadir al menos una imagen");
+      Alert.alert("Debes anadir al menos una imagen");
       return;
     }
 
@@ -106,7 +115,7 @@ export default function EditLoteScreen() {
           cantidad: Number(form.cantidad),
           id_categoria: Number(form.id_categoria),
           imagenes: existingImages.map((img) =>
-            img.replace("http://localhost:3000", "http://192.168.0.65:3000"),
+            img.replace("http://localhost:3000", BASE_URL),
           ),
         },
         newImages,
@@ -122,173 +131,286 @@ export default function EditLoteScreen() {
     }
   };
 
+  if (loading) {
+    return (
+      <View style={layoutStyles.center}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.feedbackTitle}>Cargando lote...</Text>
+      </View>
+    );
+  }
+
   if (!lote) {
     return (
-      <View style={styles.center}>
-        <Text>Cargando...</Text>
+      <View style={layoutStyles.center}>
+        <Text style={styles.feedbackTitle}>No se pudo cargar el lote</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Editar lote</Text>
-
-      <TextInput
-        value={form.titulo}
-        onChangeText={(text) => handleChange("titulo", text)}
-        style={styles.input}
-        placeholder="Título"
-      />
-
-      <TextInput
-        value={form.descripcion}
-        onChangeText={(text) => handleChange("descripcion", text)}
-        style={styles.input}
-        placeholder="Descripción"
-      />
-
-      <TextInput
-        value={form.precio}
-        onChangeText={(text) => handleChange("precio", text)}
-        style={styles.input}
-        placeholder="Precio"
-        keyboardType="numeric"
-      />
-
-      <TextInput
-        value={form.cantidad}
-        onChangeText={(text) => handleChange("cantidad", text)}
-        style={styles.input}
-        placeholder="Cantidad"
-        keyboardType="numeric"
-      />
-
-      <Text style={{ marginTop: 10 }}>Categoría:</Text>
-
-      {categorias.map((cat) => (
-        <TouchableOpacity
-          key={cat.id_categoria}
-          style={[
-            styles.categoryItem,
-            form.id_categoria === String(cat.id_categoria) &&
-              styles.categorySelected,
-          ]}
-          onPress={() => handleChange("id_categoria", String(cat.id_categoria))}
-        >
-          <Text>{cat.nombre}</Text>
-        </TouchableOpacity>
-      ))}
-
-      <View style={{ marginTop: 15 }}>
-        <Text style={{ fontWeight: "bold", marginBottom: 5 }}>
-          Imágenes actuales
-        </Text>
-
-        <View style={styles.imageRow}>
-          {existingImages.map((img, index) => (
-            <View key={index} style={styles.imageContainer}>
-              <Image source={{ uri: fixUrl(img) }} style={styles.image} />
-
-              <TouchableOpacity
-                onPress={() => removeExistingImage(index)}
-                style={styles.removeBtn}
-              >
-                <Text style={styles.removeText}>×</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.screenTitle}>Editar lote</Text>
+          <View style={styles.headerSpacer} />
         </View>
-      </View>
 
-      <View style={{ marginTop: 15 }}>
-        <Text style={{ fontWeight: "bold", marginBottom: 5 }}>
-          Añadir imágenes
+        <Card>
+          <Text style={styles.sectionTitle}>Imagenes actuales</Text>
+          <View style={styles.imageRow}>
+            {existingImages.map((img, index) => (
+              <View key={index} style={styles.imageContainer}>
+                <Image source={{ uri: fixUrl(img) }} style={styles.image} />
+
+                <TouchableOpacity
+                  onPress={() => removeExistingImage(index)}
+                  style={styles.removeBtn}
+                >
+                  <Ionicons name="close" size={14} color={colors.white} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        </Card>
+
+        <Card>
+          <ImageUploader onChange={setNewImages} />
+        </Card>
+
+        <Card contentStyle={styles.formCardContent}>
+          <View style={styles.formSection}>
+            <Text style={styles.label}>Titulo</Text>
+            <TextInput
+              value={form.titulo}
+              onChangeText={(text) => handleChange("titulo", text)}
+              style={componentStyles.input}
+              placeholder="Titulo"
+              placeholderTextColor={colors.subtext}
+            />
+
+            <Text style={styles.label}>Descripcion</Text>
+            <TextInput
+              value={form.descripcion}
+              onChangeText={(text) => handleChange("descripcion", text)}
+              style={[componentStyles.input, styles.multilineInput]}
+              placeholder="Descripcion"
+              placeholderTextColor={colors.subtext}
+              multiline
+              textAlignVertical="top"
+            />
+
+            <View style={styles.inlineFields}>
+              <View style={styles.inlineField}>
+                <Text style={styles.label}>Precio</Text>
+                <TextInput
+                  value={form.precio}
+                  onChangeText={(text) => handleChange("precio", text)}
+                  style={componentStyles.input}
+                  placeholder="EUR"
+                  placeholderTextColor={colors.subtext}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inlineField}>
+                <Text style={styles.label}>Cantidad</Text>
+                <TextInput
+                  value={form.cantidad}
+                  onChangeText={(text) => handleChange("cantidad", text)}
+                  style={componentStyles.input}
+                  placeholder="Cantidad"
+                  placeholderTextColor={colors.subtext}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            <Text style={styles.label}>Categoria</Text>
+            <View style={styles.categoryWrap}>
+              {categorias.map((cat) => {
+                const selected = form.id_categoria === String(cat.id_categoria);
+
+                return (
+                  <TouchableOpacity
+                    key={cat.id_categoria}
+                    style={[
+                      styles.categoryItem,
+                      selected && styles.categorySelected,
+                    ]}
+                    onPress={() =>
+                      handleChange("id_categoria", String(cat.id_categoria))
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        selected && styles.categoryTextSelected,
+                      ]}
+                    >
+                      {cat.nombre}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
+        </Card>
+      </ScrollView>
+
+      <View style={styles.footer}>
+        <Text style={styles.ctaHelper}>
+          Guarda los cambios cuando el lote y las imagenes esten listas.
         </Text>
-        <ImageUploader onChange={setNewImages} />
+        <Button
+          title="Guardar cambios"
+          onPress={handleSubmit}
+          style={styles.ctaButton}
+        />
       </View>
-
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Guardar cambios</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 15 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 15,
+  screen: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
-
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-    padding: 10,
-    marginBottom: 10,
+  scroll: {
+    flex: 1,
   },
-
-  categoryItem: {
-    padding: 10,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 6,
-    marginTop: 5,
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: 220,
+    gap: spacing.xl,
+    flexGrow: 1,
   },
-
-  categorySelected: {
-    backgroundColor: "#dbeafe",
-    borderColor: "#2563eb",
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-
+  screenTitle: {
+    ...typography.heading,
+    color: colors.text,
+  },
+  headerSpacer: {
+    width: 22,
+    height: 22,
+  },
+  sectionTitle: {
+    ...typography.heading,
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
   imageRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: spacing.sm,
   },
-
   imageContainer: {
     position: "relative",
   },
-
   image: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+    width: 92,
+    height: 92,
+    borderRadius: radii.md,
   },
-
   removeBtn: {
     position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "red",
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: 8,
+    right: 8,
+    backgroundColor: colors.danger,
+    width: 24,
+    height: 24,
+    borderRadius: radii.full,
     justifyContent: "center",
     alignItems: "center",
   },
-
-  removeText: {
-    color: "#fff",
-    fontSize: 12,
+  formCardContent: {
+    paddingBottom: 100,
   },
-
-  button: {
-    marginTop: 20,
-    backgroundColor: "#2563eb",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
+  formSection: {
+    gap: spacing.md,
   },
-
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
+  label: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  multilineInput: {
+    minHeight: 110,
+    paddingTop: spacing.md,
+  },
+  inlineFields: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  inlineField: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  categoryWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  categoryItem: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  categorySelected: {
+    backgroundColor: "#DBEAFE",
+    borderColor: colors.primary,
+  },
+  categoryText: {
+    ...typography.caption,
+    color: colors.text,
+  },
+  categoryTextSelected: {
+    color: colors.primary,
+    fontWeight: "700",
+  },
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.lg,
+    backgroundColor: "rgba(249,250,251,0.98)",
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    gap: spacing.sm,
+  },
+  ctaHelper: {
+    ...typography.caption,
+    color: colors.subtext,
+    textAlign: "center",
+  },
+  ctaButton: {
+    minHeight: 58,
+    borderRadius: radii.lg,
+  },
+  feedbackTitle: {
+    ...typography.heading,
+    color: colors.text,
+    textAlign: "center",
   },
 });

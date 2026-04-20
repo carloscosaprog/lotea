@@ -40,7 +40,7 @@ export default function LoteListItem({ lote }: Props) {
           <Text numberOfLines={2} style={styles.title}>
             {lote.titulo}
           </Text>
-          <Text style={styles.meta}>{lote.cantidad} units available</Text>
+          <Text style={styles.meta}>{lote.cantidad} unidades disponibles</Text>
           <Text style={styles.price}>{lote.precio} EUR</Text>
         </View>
 
