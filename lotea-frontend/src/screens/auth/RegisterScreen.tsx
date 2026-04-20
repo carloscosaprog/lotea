@@ -90,7 +90,7 @@ export default function RegisterScreen() {
           />
 
           <TextInput
-            placeholder="Contraseña"
+            placeholder="ContraseÃ±a"
             placeholderTextColor={colors.subtext}
             secureTextEntry
             style={componentStyles.input}
@@ -98,7 +98,11 @@ export default function RegisterScreen() {
             onChangeText={setPassword}
           />
 
-          <Button title="Crear cuenta" variant="accent" onPress={handleRegister} />
+          <Button
+            title="Crear cuenta"
+            variant="accent"
+            onPress={handleRegister}
+          />
 
           <TouchableOpacity
             activeOpacity={0.85}

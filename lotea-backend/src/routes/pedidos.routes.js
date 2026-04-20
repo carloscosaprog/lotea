@@ -20,6 +20,13 @@ router.post("/", authMiddleware, async (req, res) => {
 
     const lote = loteResult.rows[0];
 
+    // si el comprador es el mismo que el vendedor
+    if (lote.id_vendedor === id_usuario) {
+      return res
+        .status(403)
+        .json({ message: "No puedes comprar tu propio lote" });
+    }
+
     if (lote.cantidad < cantidad) {
       return res.status(400).json({ message: "Stock insuficiente" });
     }
@@ -69,6 +76,45 @@ router.get("/", authMiddleware, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error al obtener pedidos" });
+  }
+});
+
+// Cambiar estado del pedido
+router.put("/:id", authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  const { estado } = req.body;
+  const id_usuario = req.user.id;
+
+  try {
+    const result = await pool.query(
+      `SELECT p.*, d.id_lote, l.id_vendedor
+       FROM Pedido p
+       JOIN Detalle_Pedido d ON p.id_pedido = d.id_pedido
+       JOIN Lote l ON d.id_lote = l.id_lote
+       WHERE p.id_pedido = $1`,
+      [id],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Pedido no encontrado" });
+    }
+
+    const pedido = result.rows[0];
+
+    // 🔴 SOLO vendedor puede cambiar estado
+    if (pedido.id_vendedor !== id_usuario) {
+      return res.status(403).json({ message: "No autorizado" });
+    }
+
+    await pool.query("UPDATE Pedido SET estado = $1 WHERE id_pedido = $2", [
+      estado,
+      id,
+    ]);
+
+    res.json({ message: "Estado actualizado correctamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al actualizar pedido" });
   }
 });
 

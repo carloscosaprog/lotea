@@ -118,7 +118,7 @@ export default function LoteDetailScreen() {
   const handleDelete = async () => {
     if (!lote) return;
 
-    Alert.alert("Eliminar lote", "�Eliminar lote?", [
+    Alert.alert("Eliminar lote", "ñEliminar lote?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",
@@ -267,7 +267,7 @@ export default function LoteDetailScreen() {
           <View style={styles.summaryCopy}>
             <Text style={styles.title}>{lote.titulo}</Text>
             <Text style={styles.ratingLine}>
-              Lote destacado � {lote.cantidad} unidades
+              Lote destacado ñ {lote.cantidad} unidades
             </Text>
           </View>
           <Text style={styles.price}>{lote.precio} EUR</Text>
