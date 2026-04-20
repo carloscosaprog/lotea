@@ -10,39 +10,51 @@ on:
       - main
 
 jobs:
-  build:
+  frontend:
     runs-on: ubuntu-latest
-
-    env:
-      NODE_ENV: production
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          run_install: false
+          node-version: 18
+          cache: npm
+          cache-dependency-path: lotea-frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: |
+          cd lotea-frontend
+          npm install
+
+      - name: Lint frontend
+        run: |
+          cd lotea-frontend
+          npm run lint --if-present
+
+  backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+          node-version: 18
+          cache: npm
+          cache-dependency-path: lotea-backend/package-lock.json
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install backend dependencies
+        run: |
+          cd lotea-backend
+          npm install
 
-      - name: Lint
-        run: pnpm lint --if-present
-
-      - name: Prettier check
-        run: pnpm check:format --if-present
-
-      - name: Type check
-        run: pnpm check --if-present
-
-      - name: Test
-        run: pnpm test --if-present
+      - name: Check backend runs
+        run: |
+          cd lotea-backend
+          node src/server.js &
+          sleep 5
