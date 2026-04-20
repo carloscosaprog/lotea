@@ -33,6 +33,8 @@ import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = "http://192.168.0.65:3000";
 const screenWidth = Dimensions.get("window").width;
@@ -116,7 +118,7 @@ export default function LoteDetailScreen() {
   const handleDelete = async () => {
     if (!lote) return;
 
-    Alert.alert("Eliminar lote", "¿Eliminar lote?", [
+    Alert.alert("Eliminar lote", "ï¿½Eliminar lote?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",
@@ -127,6 +129,37 @@ export default function LoteDetailScreen() {
         },
       },
     ]);
+  };
+  // pedidos
+  const handleBuy = async () => {
+    if (!lote) return;
+
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      await axios.post(
+        `${BASE_URL}/pedidos`,
+        {
+          id_lote: lote.id_lote,
+          cantidad: 1,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      Alert.alert("Compra realizada", "Pedido creado correctamente");
+    } catch (error: any) {
+      console.log(error);
+
+      if (error.response?.data?.message) {
+        Alert.alert("Error", error.response.data.message);
+      } else {
+        Alert.alert("Error", "No se pudo completar la compra");
+      }
+    }
   };
 
   if (loading) {
@@ -142,7 +175,9 @@ export default function LoteDetailScreen() {
     return (
       <View style={layoutStyles.center}>
         <Text style={styles.feedbackTitle}>Lote no disponible</Text>
-        <Text style={styles.feedbackText}>Intentalo de nuevo en unos segundos.</Text>
+        <Text style={styles.feedbackText}>
+          Intentalo de nuevo en unos segundos.
+        </Text>
       </View>
     );
   }
@@ -161,7 +196,10 @@ export default function LoteDetailScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.8}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
+        >
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.topBarBrand}>LOTEA</Text>
@@ -172,7 +210,12 @@ export default function LoteDetailScreen() {
 
       {user && lote.id_vendedor === user.id && (
         <View style={styles.ownerActions}>
-          <Button title="Eliminar" variant="danger" onPress={handleDelete} style={styles.actionButton} />
+          <Button
+            title="Eliminar"
+            variant="danger"
+            onPress={handleDelete}
+            style={styles.actionButton}
+          />
           <Button
             title="Editar"
             variant="secondary"
@@ -188,7 +231,10 @@ export default function LoteDetailScreen() {
       )}
 
       <Card contentStyle={styles.galleryCardContent}>
-        <TouchableOpacity activeOpacity={0.96} onPress={() => setFullscreen(true)}>
+        <TouchableOpacity
+          activeOpacity={0.96}
+          onPress={() => setFullscreen(true)}
+        >
           <Image
             source={{
               uri: imagenes[imagenActual]?.url
@@ -206,7 +252,10 @@ export default function LoteDetailScreen() {
                 key={index}
                 activeOpacity={0.8}
                 onPress={() => setImagenActual(index)}
-                style={[styles.galleryDot, imagenActual === index && styles.galleryDotActive]}
+                style={[
+                  styles.galleryDot,
+                  imagenActual === index && styles.galleryDotActive,
+                ]}
               />
             ))}
           </View>
@@ -217,7 +266,9 @@ export default function LoteDetailScreen() {
         <View style={styles.summaryHeader}>
           <View style={styles.summaryCopy}>
             <Text style={styles.title}>{lote.titulo}</Text>
-            <Text style={styles.ratingLine}>Lote destacado · {lote.cantidad} unidades</Text>
+            <Text style={styles.ratingLine}>
+              Lote destacado ï¿½ {lote.cantidad} unidades
+            </Text>
           </View>
           <Text style={styles.price}>{lote.precio} EUR</Text>
         </View>
@@ -232,9 +283,15 @@ export default function LoteDetailScreen() {
             })
           }
         >
-          <Avatar uri={vendedorAvatar} name={vendedor?.nombre || lote.vendedor} size={48} />
+          <Avatar
+            uri={vendedorAvatar}
+            name={vendedor?.nombre || lote.vendedor}
+            size={48}
+          />
           <View style={styles.sellerCopy}>
-            <Text style={styles.sellerName}>{vendedor?.nombre || lote.vendedor}</Text>
+            <Text style={styles.sellerName}>
+              {vendedor?.nombre || lote.vendedor}
+            </Text>
             <Text style={styles.sellerLink}>Ver perfil del vendedor</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
@@ -270,7 +327,12 @@ export default function LoteDetailScreen() {
         </View>
       )}
 
-      <Button title="Comprar lote" variant="primary" style={styles.buyButton} />
+      <Button
+        title="Comprar lote"
+        variant="primary"
+        style={styles.buyButton}
+        onPress={handleBuy}
+      />
 
       <Modal visible={fullscreen} transparent animationType="fade">
         <View style={styles.modal}>
