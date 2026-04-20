@@ -74,7 +74,7 @@ export default function LoginScreen() {
             <Text style={layoutStyles.headerEyebrow}>Bienvenido</Text>
             <Text style={styles.title}>Iniciar sesion</Text>
             <Text style={layoutStyles.headerSubtitle}>
-              Entra con tu correo y tu contraseña para continuar.
+              Entra con tu correo y tu contraseÃ±a para continuar.
             </Text>
           </View>
 
@@ -88,7 +88,7 @@ export default function LoginScreen() {
           />
 
           <TextInput
-            placeholder="Contraseña"
+            placeholder="ContraseÃ±a"
             placeholderTextColor={colors.subtext}
             secureTextEntry
             style={[componentStyles.input, error ? styles.inputError : null]}
@@ -98,7 +98,11 @@ export default function LoginScreen() {
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <Button title="Entrar" onPress={handleLogin} style={styles.primaryButton} />
+          <Button
+            title="Entrar"
+            onPress={handleLogin}
+            style={styles.primaryButton}
+          />
 
           <TouchableOpacity
             activeOpacity={0.85}

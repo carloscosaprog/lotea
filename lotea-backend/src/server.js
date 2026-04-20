@@ -15,6 +15,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 const lotesRoutes = require("./routes/lotes.routes");
 const authRoutes = require("./routes/auth.routes");
 const categoriasRoutes = require("./routes/categorias.routes");
+const pedidosRoutes = require("./routes/pedidos.routes");
 
 // Endpoints básicos
 app.get("/", (req, res) => {
@@ -34,6 +35,7 @@ app.get("/test-db", async (req, res) => {
 app.use("/lotes", lotesRoutes);
 app.use("/auth", authRoutes);
 app.use("/categorias", categoriasRoutes);
+app.use("/pedidos", pedidosRoutes);
 
 // Puerto al final
 const PORT = 3000;

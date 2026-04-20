@@ -122,7 +122,9 @@ export default function ProfileScreen() {
     return (
       <View style={layoutStyles.center}>
         <Text style={styles.feedbackTitle}>Cargando perfil...</Text>
-        <Text style={styles.feedbackText}>Preparando tu panel de vendedor.</Text>
+        <Text style={styles.feedbackText}>
+          Preparando tu panel de vendedor.
+        </Text>
       </View>
     );
   }
@@ -131,7 +133,9 @@ export default function ProfileScreen() {
     return (
       <View style={layoutStyles.center}>
         <Text style={styles.feedbackTitle}>Perfil no disponible</Text>
-        <Text style={styles.feedbackText}>Intentalo de nuevo en unos segundos.</Text>
+        <Text style={styles.feedbackText}>
+          Intentalo de nuevo en unos segundos.
+        </Text>
       </View>
     );
   }
@@ -145,7 +149,10 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.topBar}>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Perfil</Text>
@@ -179,7 +186,9 @@ export default function ProfileScreen() {
           <Text style={styles.statLabel}>Unidades</Text>
         </Card>
         <Card style={styles.statCard} contentStyle={styles.statContent}>
-          <Text style={styles.statValue}>{user?.nombre ? user.nombre.length : 0}</Text>
+          <Text style={styles.statValue}>
+            {user?.nombre ? user.nombre.length : 0}
+          </Text>
           <Text style={styles.statLabel}>Perfil</Text>
         </Card>
       </View>
@@ -196,9 +205,38 @@ export default function ProfileScreen() {
           <View style={styles.quickAction}>
             <View style={styles.quickActionLeft}>
               <View style={styles.quickIcon}>
-                <Ionicons name="cube-outline" size={18} color={colors.primary} />
+                <Ionicons
+                  name="cube-outline"
+                  size={18}
+                  color={colors.primary}
+                />
               </View>
               <Text style={styles.quickActionText}>Mis lotes</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+          </View>
+        </Card>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate("Perfil", {
+            screen: "MisPedidos",
+          })
+        }
+      >
+        <Card>
+          <View style={styles.quickAction}>
+            <View style={styles.quickActionLeft}>
+              <View style={styles.quickIcon}>
+                <Ionicons
+                  name="receipt-outline"
+                  size={18}
+                  color={colors.primary}
+                />
+              </View>
+              <Text style={styles.quickActionText}>Mis pedidos</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
           </View>

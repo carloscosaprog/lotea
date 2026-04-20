@@ -161,12 +161,22 @@ export const getMisLotes = async () => {
   const AsyncStorage =
     require("@react-native-async-storage/async-storage").default;
 
-  const user = JSON.parse(await AsyncStorage.getItem("user"));
+  const userString = await AsyncStorage.getItem("user");
+
+  if (!userString) {
+    return [];
+  }
+
+  const user = JSON.parse(userString);
+
+  if (!user?.id_usuario) {
+    return [];
+  }
 
   const res = await fetch(`${BASE_URL}/usuario/${user.id_usuario}`);
 
   if (!res.ok) {
-    throw new Error("Error al obtener mis lotes");
+    return [];
   }
 
   return await res.json();

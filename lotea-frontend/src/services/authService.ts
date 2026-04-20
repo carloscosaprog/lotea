@@ -29,7 +29,6 @@ export const getProfile = async () => {
   if (!res.ok) throw new Error("Error al cargar perfil");
 
   const data = await res.json();
-  console.log("RESPUESTA BACKEND:", data);
 
   return data;
 };
@@ -74,7 +73,6 @@ export const uploadAvatar = async (image: any) => {
   });
 
   const text = await res.text();
-  console.log("RESPUESTA AVATAR:", text);
 
   if (!res.ok) throw new Error("Error subiendo avatar");
 
