@@ -222,8 +222,8 @@ export default function LoteDetailScreen() {
             style={styles.actionButton}
             onPress={() =>
               navigation.navigate("Home", {
-                screen: "UserProfile",
-                params: { id: lote.id_vendedor },
+                screen: "EditLote",
+                params: { id: lote.id_lote },
               })
             }
           />
@@ -267,7 +267,7 @@ export default function LoteDetailScreen() {
           <View style={styles.summaryCopy}>
             <Text style={styles.title}>{lote.titulo}</Text>
             <Text style={styles.ratingLine}>
-              Lote destacado ñ {lote.cantidad} unidades
+              Quedan {lote.cantidad} unidades
             </Text>
           </View>
           <Text style={styles.price}>{lote.precio} EUR</Text>
