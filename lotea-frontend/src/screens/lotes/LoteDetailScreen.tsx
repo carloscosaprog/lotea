@@ -331,7 +331,11 @@ export default function LoteDetailScreen() {
         title="Comprar lote"
         variant="primary"
         style={styles.buyButton}
-        onPress={handleBuy}
+        onPress={() =>
+          navigation.navigate("Compra", {
+            lote,
+          })
+        }
       />
 
       <Modal visible={fullscreen} transparent animationType="fade">
