@@ -156,7 +156,10 @@ export default function EditLoteScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerRow}>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.screenTitle}>Editar lote</Text>
@@ -241,10 +244,20 @@ export default function EditLoteScreen() {
                 return (
                   <TouchableOpacity
                     key={cat.id_categoria}
-                    style={[styles.categoryItem, selected && styles.categorySelected]}
-                    onPress={() => handleChange("id_categoria", String(cat.id_categoria))}
+                    style={[
+                      styles.categoryItem,
+                      selected && styles.categorySelected,
+                    ]}
+                    onPress={() =>
+                      handleChange("id_categoria", String(cat.id_categoria))
+                    }
                   >
-                    <Text style={[styles.categoryText, selected && styles.categoryTextSelected]}>
+                    <Text
+                      style={[
+                        styles.categoryText,
+                        selected && styles.categoryTextSelected,
+                      ]}
+                    >
                       {cat.nombre}
                     </Text>
                   </TouchableOpacity>
@@ -259,7 +272,11 @@ export default function EditLoteScreen() {
         <Text style={styles.ctaHelper}>
           Guarda los cambios cuando el lote y las imagenes esten listas.
         </Text>
-        <Button title="Guardar cambios" onPress={handleSubmit} style={styles.ctaButton} />
+        <Button
+          title="Guardar cambios"
+          onPress={handleSubmit}
+          style={styles.ctaButton}
+        />
       </View>
     </View>
   );
@@ -323,7 +340,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   formCardContent: {
-    paddingBottom: spacing.xl,
+    paddingBottom: 100,
   },
   formSection: {
     gap: spacing.md,

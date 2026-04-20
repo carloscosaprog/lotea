@@ -118,7 +118,7 @@ export default function LoteDetailScreen() {
   const handleDelete = async () => {
     if (!lote) return;
 
-    Alert.alert("Eliminar lote", "ñEliminar lote?", [
+    Alert.alert("Eliminar lote", "¿Desea eliminar el lote permanentemente?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",
