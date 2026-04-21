@@ -43,7 +43,7 @@ export default function MisLotesScreen() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    Alert.alert("Eliminar lote", "�Eliminar lote?", [
+    Alert.alert("Eliminar lote", "¿Eliminar lote?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",

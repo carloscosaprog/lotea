@@ -1,12 +1,14 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
 
 import type { Lote } from "../../types/Lote";
 import Card from "../ui/Card";
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { toggleFavorito, checkFavorito } from "../../services/favoritosService";
 
 interface Props {
   lote: Lote;
@@ -15,13 +17,51 @@ interface Props {
 export default function LoteListItem({ lote }: Props) {
   const navigation = useNavigation<any>();
 
+  const [isFavorito, setIsFavorito] = useState(false);
+  const [totalFavoritos, setTotalFavoritos] = useState(
+    lote.total_favoritos ?? 0,
+  );
+
+  useEffect(() => {
+    const fetchFavorito = async () => {
+      try {
+        const res = await checkFavorito(lote.id_lote);
+        setIsFavorito(res.favorito);
+      } catch (error) {
+        console.log("Error check favorito:", error);
+      }
+    };
+
+    fetchFavorito();
+  }, [lote.id_lote]);
+
+  const primeraImagen = lote.imagenes?.[0];
+
   const imageUri =
-    lote.imagen && lote.imagen.trim() !== ""
-      ? lote.imagen.replace(
+    primeraImagen && primeraImagen.trim() !== ""
+      ? primeraImagen.replace(
           "http://localhost:3000",
           "http://192.168.0.65:3000",
         )
       : "https://picsum.photos/200";
+
+  const handleToggleFavorito = async () => {
+    try {
+      const res = await toggleFavorito(lote.id_lote);
+
+      const wasFavorito = isFavorito;
+
+      setIsFavorito(res.favorito);
+
+      if (!wasFavorito && res.favorito) {
+        setTotalFavoritos((prev) => prev + 1);
+      } else if (wasFavorito && !res.favorito) {
+        setTotalFavoritos((prev) => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.log("Error favorito:", error);
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -45,9 +85,24 @@ export default function LoteListItem({ lote }: Props) {
         </View>
 
         <View style={styles.actions}>
-          <View style={styles.iconBubble}>
-            <Ionicons name="heart-outline" size={18} color={colors.subtext} />
-          </View>
+          {/* LIKE + CONTADOR */}
+          <TouchableOpacity
+            style={styles.iconBubble}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleToggleFavorito();
+            }}
+          >
+            <View style={styles.favContainer}>
+              <Ionicons
+                name={isFavorito ? "heart" : "heart-outline"}
+                size={16}
+                color={isFavorito ? "red" : colors.subtext}
+              />
+              <Text style={styles.favText}>{totalFavoritos}</Text>
+            </View>
+          </TouchableOpacity>
+
           <View style={styles.iconBubble}>
             <Ionicons name="chevron-forward" size={18} color={colors.primary} />
           </View>
@@ -90,7 +145,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconBubble: {
-    width: 34,
+    width: 48,
     height: 34,
     borderRadius: radii.full,
     borderWidth: 1,
@@ -98,5 +153,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     alignItems: "center",
     justifyContent: "center",
+  },
+  favContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  favText: {
+    fontSize: 12,
+    color: colors.text,
+    fontWeight: "600",
   },
 });

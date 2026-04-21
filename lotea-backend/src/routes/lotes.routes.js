@@ -35,11 +35,15 @@ router.get("/usuario/:id", async (req, res) => {
         l.precio,
         l.cantidad,
         l.id_vendedor,
-        i.url AS imagen
+        i.url AS imagen,
+        COUNT(f.id_usuario) AS total_favoritos
       FROM Lote l
       LEFT JOIN Imagen_Lote i 
         ON l.id_lote = i.id_lote AND i.es_principal = true
+      LEFT JOIN Favorito f 
+        ON l.id_lote = f.id_lote
       WHERE l.id_vendedor = $1
+      GROUP BY l.id_lote, i.url
       ORDER BY l.fecha_publicacion DESC
       `,
       [id],
@@ -48,6 +52,7 @@ router.get("/usuario/:id", async (req, res) => {
     const lotes = result.rows.map((lote) => ({
       ...lote,
       imagenes: lote.imagen ? [lote.imagen] : [],
+      total_favoritos: Number(lote.total_favoritos),
     }));
 
     res.json(lotes);
@@ -105,18 +110,23 @@ router.get("/", async (req, res) => {
         l.id_vendedor,
         u.nombre AS vendedor,
         c.nombre AS categoria,
-        i.url AS imagen
+        i.url AS imagen,
+        COUNT(f.id_usuario) AS total_favoritos
       FROM Lote l
       JOIN Usuario u ON l.id_vendedor = u.id_usuario
       LEFT JOIN Categoria c ON l.id_categoria = c.id_categoria
       LEFT JOIN Imagen_Lote i 
         ON l.id_lote = i.id_lote AND i.es_principal = true
+      LEFT JOIN Favorito f 
+        ON l.id_lote = f.id_lote
+      GROUP BY l.id_lote, u.nombre, c.nombre, i.url
       ORDER BY l.fecha_publicacion DESC
     `);
 
     const lotes = result.rows.map((lote) => ({
       ...lote,
       imagenes: lote.imagen ? [lote.imagen] : [],
+      total_favoritos: Number(lote.total_favoritos),
     }));
 
     res.json(lotes);
@@ -159,10 +169,16 @@ router.get("/:id", async (req, res) => {
 
     const imagenes = imagenesQuery.rows.map((img) => img.url);
 
+    const favResult = await pool.query(
+      "SELECT COUNT(*) FROM Favorito WHERE id_lote = $1",
+      [id],
+    );
+
     res.json({
       ...lote.rows[0],
       imagenes,
       imagen: imagenes[0] || null,
+      total_favoritos: Number(favResult.rows[0].count),
     });
   } catch (error) {
     console.error("ERROR GET LOTE:", error);
