@@ -14,10 +14,12 @@ interface Props {
 export default function LoteCard({ lote }: Props) {
   const navigation = useNavigation<any>();
 
+  const primeraImagen = lote.imagenes?.[0];
+
   const imagenSrc =
-    lote.imagen && lote.imagen.trim() !== ""
+    primeraImagen && primeraImagen.trim() !== ""
       ? {
-          uri: lote.imagen.replace(
+          uri: primeraImagen.replace(
             "http://localhost:3000",
             "http://192.168.0.65:3000",
           ),

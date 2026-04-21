@@ -13,6 +13,31 @@ const getAuthHeaders = async () => {
   };
 };
 
+// NORMALIZADOR CLAVE
+const normalizeLote = (lote: any): Lote => {
+  let imagenes: string[] = [];
+
+  if (Array.isArray(lote.imagenes)) {
+    if (lote.imagenes.length > 0) {
+      if (typeof lote.imagenes[0] === "string") {
+        imagenes = lote.imagenes;
+      } else if (lote.imagenes[0]?.url) {
+        imagenes = lote.imagenes.map((img: any) => img.url);
+      }
+    }
+  }
+
+  // fallback si no hay imagenes válidas
+  if (imagenes.length === 0 && lote.imagen) {
+    imagenes = [lote.imagen];
+  }
+
+  return {
+    ...lote,
+    imagenes,
+  };
+};
+
 // helper para construir archivos correctamente
 const buildImageFile = (file: any, index: number) => {
   const uri = file?.uri || file?.assets?.[0]?.uri;
@@ -38,7 +63,9 @@ export const getLotes = async (): Promise<Lote[]> => {
     throw new Error("Error al obtener lotes");
   }
 
-  return await response.json();
+  const data = await response.json();
+
+  return data.map(normalizeLote);
 };
 
 // Obtener lote por ID
@@ -47,7 +74,9 @@ export const getLoteById = async (id: number): Promise<Lote | undefined> => {
 
   if (!response.ok) return undefined;
 
-  return await response.json();
+  const data = await response.json();
+
+  return normalizeLote(data);
 };
 
 // Crear lote
@@ -86,7 +115,9 @@ export const createLote = async (
     throw new Error("Error al crear lote");
   }
 
-  return await response.json();
+  const data = await response.json();
+
+  return normalizeLote(data);
 };
 
 // Actualizar lote
@@ -99,12 +130,10 @@ export const updateLote = async (id: number, lote: any, files: any[]) => {
   formData.append("cantidad", String(lote.cantidad));
   formData.append("id_categoria", String(lote.id_categoria));
 
-  // imágenes existentes
   if (lote.imagenes && lote.imagenes.length > 0) {
     formData.append("imagenes", JSON.stringify(lote.imagenes));
   }
 
-  // nuevas imágenes
   if (files && files.length > 0) {
     files.forEach((file, index) => {
       const image = buildImageFile(file, index);
@@ -146,14 +175,9 @@ export const deleteLote = async (id: number): Promise<boolean> => {
 // Obtener lotes por usuario
 export const getLotesByUser = async (id: number) => {
   const res = await fetch(`${BASE_URL}/usuario/${id}`);
+  const data = await res.json();
 
-  const text = await res.text();
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error("Respuesta no válida del backend");
-  }
+  return data.map(normalizeLote);
 };
 
 // Obtener mis lotes
@@ -179,5 +203,7 @@ export const getMisLotes = async () => {
     return [];
   }
 
-  return await res.json();
+  const data = await res.json();
+
+  return data.map(normalizeLote);
 };

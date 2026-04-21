@@ -43,7 +43,7 @@ export default function MisLotesScreen() {
   }, []);
 
   const handleDelete = async (id: number) => {
-    Alert.alert("Eliminar lote", "¿Eliminar lote?", [
+    Alert.alert("Eliminar lote", "ï¿½Eliminar lote?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",
@@ -80,15 +80,16 @@ export default function MisLotesScreen() {
         ListHeaderComponent={
           <View style={styles.headerWrap}>
             <View style={styles.topBar}>
-              <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.goBack()}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => navigation.goBack()}
+              >
                 <Ionicons name="chevron-back" size={22} color={colors.text} />
               </TouchableOpacity>
               <Text style={styles.topBarTitle}>Mis lotes</Text>
               <TouchableOpacity
                 activeOpacity={0.85}
-                onPress={() =>
-                  navigation.navigate("Vender")
-                }
+                onPress={() => navigation.navigate("Vender")}
               >
                 <Text style={styles.topBarAction}>Nuevo</Text>
               </TouchableOpacity>
@@ -130,7 +131,7 @@ export default function MisLotesScreen() {
             >
               <Image
                 source={{
-                  uri: item.imagen || "https://picsum.photos/100",
+                  uri: item.imagenes?.[0] || "https://picsum.photos/100",
                 }}
                 style={styles.image}
               />
