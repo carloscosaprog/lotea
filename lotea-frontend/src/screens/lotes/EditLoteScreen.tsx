@@ -50,8 +50,11 @@ export default function EditLoteScreen() {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<any[]>([]);
 
-  const fixUrl = (url: string) =>
-    url.replace("http://localhost:3000", BASE_URL);
+  const fixUrl = (url?: string) => {
+    if (!url) return "https://picsum.photos/300";
+
+    return url.replace("http://localhost:3000", BASE_URL);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,9 +73,7 @@ export default function EditLoteScreen() {
             cantidad: String(data.cantidad),
             id_categoria: String(data.id_categoria ?? ""),
           });
-          setExistingImages(
-            data.imagenes ? data.imagenes.map((img: any) => img.url) : [],
-          );
+          setExistingImages(Array.isArray(data.imagenes) ? data.imagenes : []);
         }
 
         setCategorias(cats);
