@@ -14,6 +14,9 @@ export interface Lote {
 
   // formato estándar
   imagenes: string[];
+
+  // favoritos
+  total_favoritos?: number;
 }
 
 export type LoteCreate = {
