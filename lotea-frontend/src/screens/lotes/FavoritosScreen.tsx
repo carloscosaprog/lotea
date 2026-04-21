@@ -87,7 +87,7 @@ export default function FavoritosScreen() {
           </Card>
         }
         renderItem={({ item }) => (
-          <View style={styles.cardWrapper}>
+          <View style={{ flex: 1 }}>
             <LoteCard lote={item} />
           </View>
         )}
@@ -134,13 +134,9 @@ const styles = StyleSheet.create({
 
   /* grid separado del header */
   row: {
-    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
     marginBottom: spacing.sm,
-  },
-
-  cardWrapper: {
-    flex: 1,
   },
 
   emptyTitle: {

@@ -66,12 +66,19 @@ export default function UserProfileScreen() {
         data={lotes}
         keyExtractor={(item) => item.id_lote.toString()}
         numColumns={2}
-        renderItem={({ item }) => <LoteCard lote={item} />}
+        renderItem={({ item }) => (
+          <View style={{ flex: 1 }}>
+            <LoteCard lote={item} />
+          </View>
+        )}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.headerWrap}>
-            <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.8}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.8}
+            >
               <Text style={styles.back}>Volver</Text>
             </TouchableOpacity>
 
@@ -79,7 +86,9 @@ export default function UserProfileScreen() {
               <Card style={styles.heroCard} contentStyle={styles.heroContent}>
                 <View style={styles.heroGlow} />
                 <Avatar uri={user.avatar} name={user.nombre} size={88} />
-                <Text style={styles.username}>{user.nombre || "Sin nombre"}</Text>
+                <Text style={styles.username}>
+                  {user.nombre || "Sin nombre"}
+                </Text>
                 <Text style={styles.email}>{user.email || "Sin email"}</Text>
 
                 <View style={styles.statsRow}>
@@ -94,7 +103,9 @@ export default function UserProfileScreen() {
             )}
 
             <View style={layoutStyles.pageHeader}>
-              <Text style={layoutStyles.headerEyebrow}>Catalogo del vendedor</Text>
+              <Text style={layoutStyles.headerEyebrow}>
+                Catalogo del vendedor
+              </Text>
               <Text style={styles.sectionTitle}>Lotes publicados</Text>
               <Text style={layoutStyles.headerSubtitle}>
                 Explora los productos disponibles de este perfil.
@@ -104,7 +115,9 @@ export default function UserProfileScreen() {
         }
         ListEmptyComponent={
           <Card style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Este usuario aun no tiene lotes</Text>
+            <Text style={styles.emptyTitle}>
+              Este usuario aun no tiene lotes
+            </Text>
             <Text style={styles.emptyText}>
               Vuelve mas tarde para ver nuevas publicaciones.
             </Text>
@@ -181,7 +194,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   row: {
-    justifyContent: "space-between",
+    paddingHorizontal: spacing.lg,
     gap: spacing.sm,
   },
   listContent: {
