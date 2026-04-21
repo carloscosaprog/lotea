@@ -149,12 +149,7 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.topBar}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        <View style={{ width: 22 }} />
         <Text style={styles.topBarTitle}>Perfil</Text>
         <TouchableOpacity activeOpacity={0.8}>
           <Text style={styles.topBarAction}>Editar</Text>
