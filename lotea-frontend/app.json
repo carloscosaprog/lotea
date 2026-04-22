@@ -8,12 +8,15 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
 
+    "icon": "./assets/icon.png",
+
     "ios": {
       "supportsTablet": true
     },
 
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#E6F4FE"
       },
       "edgeToEdgeEnabled": true,
@@ -21,7 +24,14 @@
     },
 
     "web": {
-      "output": "static"
+      "output": "static",
+      "favicon": "./assets/icon.png"
+    },
+
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
 
     "plugins": [
