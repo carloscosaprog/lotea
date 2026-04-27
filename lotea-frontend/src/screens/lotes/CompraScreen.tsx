@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  TextInput,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,9 +28,14 @@ export default function CompraScreen() {
   const { lote } = route.params;
 
   const [cantidad, setCantidad] = useState(1);
+  const [inputValue, setInputValue] = useState("1");
   const [loading, setLoading] = useState(false);
 
   const total = cantidad * Number(lote.precio);
+
+  const comisionPorcentaje = 0.1;
+  const comision = total * comisionPorcentaje;
+  const totalVendedor = total - comision;
 
   const fixUrl = (url?: string) => {
     if (!url) return "";
@@ -40,6 +46,44 @@ export default function CompraScreen() {
     lote.imagenes && lote.imagenes.length > 0 && lote.imagenes[0]?.url
       ? fixUrl(lote.imagenes[0].url)
       : "https://picsum.photos/200";
+
+  const handleCantidadChange = (value: string) => {
+    // Solo permitir números
+    const limpio = value.replace(/[^0-9]/g, "");
+    setInputValue(limpio);
+
+    const numero = parseInt(limpio, 10);
+
+    if (!limpio) return;
+
+    if (numero < 1) {
+      setCantidad(1);
+    } else if (numero > lote.cantidad) {
+      setCantidad(lote.cantidad);
+    } else {
+      setCantidad(numero);
+    }
+  };
+
+  const handleBlur = () => {
+    if (!inputValue) {
+      setCantidad(1);
+      setInputValue("1");
+      return;
+    }
+
+    const numero = parseInt(inputValue, 10);
+
+    if (numero < 1) {
+      setCantidad(1);
+      setInputValue("1");
+    } else if (numero > lote.cantidad) {
+      setCantidad(lote.cantidad);
+      setInputValue(String(lote.cantidad));
+    } else {
+      setInputValue(String(numero));
+    }
+  };
 
   const handleBuy = async () => {
     try {
@@ -102,33 +146,23 @@ export default function CompraScreen() {
         <Card>
           <Text style={styles.label}>Cantidad</Text>
 
-          <View style={styles.counter}>
-            <TouchableOpacity
-              style={styles.counterBtn}
-              onPress={() => setCantidad(Math.max(1, cantidad - 1))}
-            >
-              <Text style={styles.counterText}>-</Text>
-            </TouchableOpacity>
+          <TextInput
+            style={styles.inputFull}
+            value={inputValue}
+            onChangeText={handleCantidadChange}
+            onBlur={handleBlur}
+            keyboardType="number-pad"
+            selectTextOnFocus
+            placeholder="Introduce cantidad"
+          />
 
-            <Text style={styles.value}>{cantidad}</Text>
-
-            <TouchableOpacity
-              style={styles.counterBtn}
-              onPress={() => setCantidad(Math.min(lote.cantidad, cantidad + 1))}
-            >
-              <Text style={styles.counterText}>+</Text>
-            </TouchableOpacity>
-          </View>
-
-          {cantidad === lote.cantidad && (
-            <Text style={styles.warning}>
-              Has alcanzado el máximo disponible
-            </Text>
-          )}
+          <Text style={styles.helper}>Máximo disponible: {lote.cantidad}</Text>
         </Card>
 
         {/* RESUMEN */}
         <Card>
+          <Text style={styles.label}>Resumen de compra</Text>
+
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Precio unidad</Text>
             <Text>{lote.precio} EUR</Text>
@@ -139,6 +173,20 @@ export default function CompraScreen() {
             <Text>{cantidad}</Text>
           </View>
 
+          <View style={styles.divider} />
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Comisión plataforma</Text>
+            <Text>{comision.toFixed(2)} EUR</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Para el vendedor</Text>
+            <Text>{totalVendedor.toFixed(2)} EUR</Text>
+          </View>
+
+          <View style={styles.divider} />
+
           <View style={styles.summaryRow}>
             <Text style={styles.summaryTotal}>Total</Text>
             <Text style={styles.summaryTotal}>{total.toFixed(2)} EUR</Text>
@@ -146,7 +194,7 @@ export default function CompraScreen() {
         </Card>
       </View>
 
-      {/* FOOTER FIJO */}
+      {/* FOOTER */}
       <View style={styles.footer}>
         <View>
           <Text style={styles.footerLabel}>Total</Text>
@@ -211,29 +259,19 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     marginBottom: spacing.sm,
   },
-  counter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  counterBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  inputFull: {
+    borderWidth: 1,
+    borderColor: colors.border,
     borderRadius: radii.md,
-    backgroundColor: "#E5E7EB",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: colors.white,
   },
-  counterText: {
-    fontSize: 20,
-  },
-  value: {
-    fontSize: 20,
-    minWidth: 40,
-    textAlign: "center",
-  },
-  warning: {
+  helper: {
     ...typography.caption,
-    color: "orange",
-    marginTop: spacing.sm,
+    color: colors.subtext,
+    marginTop: spacing.xs,
   },
   summaryRow: {
     flexDirection: "row",
@@ -245,6 +283,11 @@ const styles = StyleSheet.create({
   },
   summaryTotal: {
     ...typography.bodyStrong,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.sm,
   },
   footer: {
     flexDirection: "row",
