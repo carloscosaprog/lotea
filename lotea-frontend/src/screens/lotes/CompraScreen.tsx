@@ -31,11 +31,13 @@ export default function CompraScreen() {
 
   const total = cantidad * Number(lote.precio);
 
-  const fixUrl = (url: string) =>
-    url.replace("http://localhost:3000", BASE_URL);
+  const fixUrl = (url?: string) => {
+    if (!url) return "";
+    return url.replace("http://localhost:3000", BASE_URL);
+  };
 
   const imagenPrincipal =
-    lote.imagenes && lote.imagenes.length > 0
+    lote.imagenes && lote.imagenes.length > 0 && lote.imagenes[0]?.url
       ? fixUrl(lote.imagenes[0].url)
       : "https://picsum.photos/200";
 
