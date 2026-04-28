@@ -7,6 +7,7 @@ import {
   Alert,
   Image,
   TextInput,
+  ScrollView,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -48,7 +49,6 @@ export default function CompraScreen() {
       : "https://picsum.photos/200";
 
   const handleCantidadChange = (value: string) => {
-    // Solo permitir números
     const limpio = value.replace(/[^0-9]/g, "");
     setInputValue(limpio);
 
@@ -119,7 +119,12 @@ export default function CompraScreen() {
 
   return (
     <View style={styles.screen}>
-      <View style={styles.container}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        contentInset={{ bottom: 120 }}
+      >
         {/* HEADER */}
         <View style={styles.topBar}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -192,7 +197,7 @@ export default function CompraScreen() {
             <Text style={styles.summaryTotal}>{total.toFixed(2)} EUR</Text>
           </View>
         </Card>
-      </View>
+      </ScrollView>
 
       {/* FOOTER */}
       <View style={styles.footer}>
@@ -217,9 +222,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  container: {
+  scroll: {
     flex: 1,
-    padding: spacing.lg,
+  },
+  container: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: 140,
     gap: spacing.lg,
   },
   topBar: {
