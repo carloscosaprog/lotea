@@ -223,9 +223,21 @@ export default function ChatScreen() {
                   {formatTime(item.createdAt)}
                 </Text>
                 {isMine && (
-                  <Text style={[styles.messageStatus, styles.messageTimeMine]}>
-                    {item.read ? "Visto" : "Enviado"}
-                  </Text>
+                  <View style={styles.messageStatus}>
+                    <Ionicons
+                      name="checkmark"
+                      size={14}
+                      color={styles.messageStatusIcon.color}
+                    />
+                    {item.read && (
+                      <Ionicons
+                        name="checkmark"
+                        size={14}
+                        color={styles.messageStatusIcon.color}
+                        style={styles.messageStatusSecondIcon}
+                      />
+                    )}
+                  </View>
                 )}
               </View>
             </View>
@@ -335,8 +347,14 @@ const styles = StyleSheet.create({
     color: colors.subtext,
   },
   messageStatus: {
-    ...typography.caption,
+    flexDirection: "row",
     alignSelf: "flex-end",
+  },
+  messageStatusIcon: {
+    color: "#D1D5DB",
+  },
+  messageStatusSecondIcon: {
+    marginLeft: -4,
   },
   inputBar: {
     flexDirection: "row",
