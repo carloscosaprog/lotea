@@ -19,8 +19,14 @@ const ensureChatTables = async () => {
       conversation_id INTEGER NOT NULL REFERENCES Conversation(id) ON DELETE CASCADE,
       sender_id INTEGER NOT NULL REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
       text TEXT NOT NULL,
+      read BOOLEAN DEFAULT false,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
+  `);
+
+  await pool.query(`
+    ALTER TABLE Message
+    ADD COLUMN IF NOT EXISTS read BOOLEAN DEFAULT false
   `);
 };
 
@@ -37,6 +43,7 @@ const normalizeConversation = (row) => ({
   otherUserAvatar: row.otherUserAvatar,
   lastMessage: row.lastMessage,
   lastMessageAt: row.lastMessageAt,
+  unreadCount: Number(row.unreadCount || 0),
 });
 
 const normalizeMessage = (row) => ({
@@ -44,6 +51,7 @@ const normalizeMessage = (row) => ({
   conversationId: row.conversationId,
   senderId: row.senderId,
   text: row.text,
+  read: row.read,
   createdAt: row.createdAt,
 });
 
@@ -84,12 +92,35 @@ const createMessage = async ({ conversationId, senderId, text }) => {
       conversation_id AS "conversationId",
       sender_id AS "senderId",
       text,
+      read,
       created_at AS "createdAt"
     `,
     [conversationId, senderId, cleanText],
   );
 
   return normalizeMessage(result.rows[0]);
+};
+
+const markMessagesAsRead = async ({ conversationId, userId }) => {
+  await ensureChatTables();
+
+  if (!conversationId || !userId) {
+    throw new Error("Datos de lectura incompletos");
+  }
+
+  const result = await pool.query(
+    `
+    UPDATE Message
+    SET read = true
+    WHERE conversation_id = $1
+      AND sender_id <> $2
+      AND read = false
+    RETURNING id
+    `,
+    [conversationId, userId],
+  );
+
+  return result.rowCount;
 };
 
 const findOrCreateConversation = async ({ buyerId, sellerId, loteId }) => {
@@ -141,7 +172,8 @@ router.get("/conversations/:userId", async (req, res) => {
         other_user.nombre AS "otherUserName",
         other_user.avatar AS "otherUserAvatar",
         last_message.text AS "lastMessage",
-        last_message.created_at AS "lastMessageAt"
+        last_message.created_at AS "lastMessageAt",
+        unread_count.total AS "unreadCount"
       FROM Conversation c
       LEFT JOIN Lote l ON l.id_lote = c.lote_id
       LEFT JOIN Imagen_Lote i ON i.id_lote = c.lote_id AND i.es_principal = true
@@ -160,6 +192,13 @@ router.get("/conversations/:userId", async (req, res) => {
         ORDER BY created_at DESC
         LIMIT 1
       ) last_message ON true
+      LEFT JOIN LATERAL (
+        SELECT COUNT(*)::int AS total
+        FROM Message
+        WHERE conversation_id = c.id
+          AND sender_id <> $1
+          AND read = false
+      ) unread_count ON true
       WHERE $1 = ANY(c.participants)
       ORDER BY COALESCE(last_message.created_at, c.created_at) DESC
       `,
@@ -194,6 +233,7 @@ router.get("/messages/:conversationId", async (req, res) => {
         conversation_id AS "conversationId",
         sender_id AS "senderId",
         text,
+        read,
         created_at AS "createdAt"
       FROM Message
       WHERE conversation_id = $1
@@ -219,7 +259,22 @@ router.post("/messages", async (req, res) => {
   }
 });
 
+router.put("/messages/read/:conversationId", async (req, res) => {
+  try {
+    const updated = await markMessagesAsRead({
+      conversationId: req.params.conversationId,
+      userId: req.body.userId,
+    });
+
+    res.json({ ok: true, updated });
+  } catch (error) {
+    console.error("ERROR PUT MESSAGES READ:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;
 module.exports.ensureChatTables = ensureChatTables;
 module.exports.getConversationById = getConversationById;
 module.exports.createMessage = createMessage;
+module.exports.markMessagesAsRead = markMessagesAsRead;

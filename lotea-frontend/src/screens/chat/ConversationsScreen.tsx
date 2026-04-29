@@ -115,6 +115,11 @@ export default function ConversationsScreen() {
                 {item.lastMessage || "Sin mensajes todavia"}
               </Text>
             </View>
+            {Boolean(item.unreadCount && item.unreadCount > 0) && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{item.unreadCount}</Text>
+              </View>
+            )}
             <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
           </TouchableOpacity>
         )}
@@ -183,6 +188,20 @@ const styles = StyleSheet.create({
   lastMessage: {
     ...typography.caption,
     color: colors.subtext,
+  },
+  badge: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: radii.full,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
+  badgeText: {
+    ...typography.caption,
+    color: colors.white,
+    fontWeight: "700",
   },
   emptyBox: {
     flex: 1,

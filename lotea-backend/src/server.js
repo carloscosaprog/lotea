@@ -76,6 +76,27 @@ io.on("connection", (socket) => {
       console.error("ERROR SOCKET SEND_MESSAGE:", error);
     }
   });
+
+  socket.on("mark_as_read", async (data) => {
+    try {
+      await chatRoutes.markMessagesAsRead(data);
+      const conversation = await chatRoutes.getConversationById(
+        data.conversationId,
+      );
+
+      if (!conversation) return;
+
+      conversation.participants
+        .filter((participantId) => participantId !== Number(data.userId))
+        .forEach((participantId) => {
+          io.to(String(participantId)).emit("messages_read", {
+            conversationId: Number(data.conversationId),
+          });
+        });
+    } catch (error) {
+      console.error("ERROR SOCKET MARK_AS_READ:", error);
+    }
+  });
 });
 
 // Puerto al final

@@ -18,6 +18,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   ChatMessage,
   getMessages,
+  markMessagesAsRead,
   sendMessage,
 } from "../../services/chatService";
 import { connectSocket, socket } from "../../services/socket";
@@ -82,6 +83,9 @@ export default function ChatScreen() {
 
     connectSocket(userId);
 
+    markMessagesAsRead(conversationId, userId).catch(() => undefined);
+    socket.emit("mark_as_read", { conversationId, userId });
+
     const handleReceiveMessage = ({ message }: { message: ChatMessage }) => {
       if (message.conversationId !== conversationId) return;
 
@@ -90,12 +94,29 @@ export default function ChatScreen() {
 
         return [...current, message];
       });
+
+      if (message.senderId !== userId) {
+        markMessagesAsRead(conversationId, userId).catch(() => undefined);
+        socket.emit("mark_as_read", { conversationId, userId });
+      }
+    };
+
+    const handleMessagesRead = (data: { conversationId: number }) => {
+      if (data.conversationId !== conversationId) return;
+
+      setMessages((current) =>
+        current.map((message) =>
+          message.senderId === userId ? { ...message, read: true } : message,
+        ),
+      );
     };
 
     socket.on("receive_message", handleReceiveMessage);
+    socket.on("messages_read", handleMessagesRead);
 
     return () => {
       socket.off("receive_message", handleReceiveMessage);
+      socket.off("messages_read", handleMessagesRead);
     };
   }, [conversationId, userId]);
 
@@ -201,6 +222,11 @@ export default function ChatScreen() {
                 >
                   {formatTime(item.createdAt)}
                 </Text>
+                {isMine && (
+                  <Text style={[styles.messageStatus, styles.messageTimeMine]}>
+                    {item.read ? "Visto" : "Enviado"}
+                  </Text>
+                )}
               </View>
             </View>
           );
@@ -307,6 +333,10 @@ const styles = StyleSheet.create({
   },
   messageTimeOther: {
     color: colors.subtext,
+  },
+  messageStatus: {
+    ...typography.caption,
+    alignSelf: "flex-end",
   },
   inputBar: {
     flexDirection: "row",

@@ -13,6 +13,7 @@ export interface Conversation {
   otherUserAvatar?: string | null;
   lastMessage?: string | null;
   lastMessageAt?: string | null;
+  unreadCount?: number;
 }
 
 export interface ChatMessage {
@@ -20,6 +21,7 @@ export interface ChatMessage {
   conversationId: number;
   senderId: number;
   text: string;
+  read: boolean;
   createdAt: string;
 }
 
@@ -85,4 +87,19 @@ export const getOrCreateConversation = async (
   });
 
   return getJson<Conversation>(response);
+};
+
+export const markMessagesAsRead = async (
+  conversationId: number,
+  userId: number,
+) => {
+  const response = await fetch(`${BASE_URL}/messages/read/${conversationId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ userId }),
+  });
+
+  return getJson<{ ok: boolean; updated: number }>(response);
 };
