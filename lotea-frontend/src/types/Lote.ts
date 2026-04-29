@@ -1,8 +1,3 @@
-export interface Imagen {
-  url: string;
-  es_principal?: boolean;
-}
-
 export interface Lote {
   id_lote: number;
   titulo: string;
@@ -14,9 +9,14 @@ export interface Lote {
   vendedor?: string;
   categoria?: string;
 
+  // mantener por compatibilidad
   imagen?: string;
 
-  imagenes?: Imagen[];
+  // formato estándar
+  imagenes: string[];
+
+  // favoritos
+  total_favoritos?: number;
 }
 
 export type LoteCreate = {

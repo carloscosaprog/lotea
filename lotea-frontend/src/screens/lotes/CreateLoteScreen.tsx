@@ -101,13 +101,10 @@ export default function CreateLoteScreen() {
         contentInset={{ bottom: 120 }}
       >
         <View style={styles.headerRow}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="chevron-back" size={22} color={colors.text} />
-          </TouchableOpacity>
+          <View style={styles.headerSpacer} />
+
           <Text style={styles.screenTitle}>Publicar lote</Text>
+
           <View style={styles.headerSpacer} />
         </View>
 

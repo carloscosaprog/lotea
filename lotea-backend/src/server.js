@@ -16,6 +16,7 @@ const lotesRoutes = require("./routes/lotes.routes");
 const authRoutes = require("./routes/auth.routes");
 const categoriasRoutes = require("./routes/categorias.routes");
 const pedidosRoutes = require("./routes/pedidos.routes");
+const favoritosRoutes = require("./routes/favoritos.routes");
 
 // Endpoints básicos
 app.get("/", (req, res) => {
@@ -36,6 +37,7 @@ app.use("/lotes", lotesRoutes);
 app.use("/auth", authRoutes);
 app.use("/categorias", categoriasRoutes);
 app.use("/pedidos", pedidosRoutes);
+app.use("/favoritos", favoritosRoutes);
 
 // Puerto al final
 const PORT = 3000;

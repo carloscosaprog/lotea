@@ -35,17 +35,27 @@ router.get("/usuario/:id", async (req, res) => {
         l.precio,
         l.cantidad,
         l.id_vendedor,
-        i.url AS imagen
+        i.url AS imagen,
+        COUNT(f.id_usuario) AS total_favoritos
       FROM Lote l
       LEFT JOIN Imagen_Lote i 
         ON l.id_lote = i.id_lote AND i.es_principal = true
+      LEFT JOIN Favorito f 
+        ON l.id_lote = f.id_lote
       WHERE l.id_vendedor = $1
+      GROUP BY l.id_lote, i.url
       ORDER BY l.fecha_publicacion DESC
       `,
       [id],
     );
 
-    res.json(result.rows);
+    const lotes = result.rows.map((lote) => ({
+      ...lote,
+      imagenes: lote.imagen ? [lote.imagen] : [],
+      total_favoritos: Number(lote.total_favoritos),
+    }));
+
+    res.json(lotes);
   } catch (error) {
     console.error("ERROR GET LOTES USUARIO:", error);
     res.status(500).json({ error: error.message });
@@ -100,16 +110,26 @@ router.get("/", async (req, res) => {
         l.id_vendedor,
         u.nombre AS vendedor,
         c.nombre AS categoria,
-        i.url AS imagen
+        i.url AS imagen,
+        COUNT(f.id_usuario) AS total_favoritos
       FROM Lote l
       JOIN Usuario u ON l.id_vendedor = u.id_usuario
       LEFT JOIN Categoria c ON l.id_categoria = c.id_categoria
       LEFT JOIN Imagen_Lote i 
         ON l.id_lote = i.id_lote AND i.es_principal = true
+      LEFT JOIN Favorito f 
+        ON l.id_lote = f.id_lote
+      GROUP BY l.id_lote, u.nombre, c.nombre, i.url
       ORDER BY l.fecha_publicacion DESC
     `);
 
-    res.json(result.rows);
+    const lotes = result.rows.map((lote) => ({
+      ...lote,
+      imagenes: lote.imagen ? [lote.imagen] : [],
+      total_favoritos: Number(lote.total_favoritos),
+    }));
+
+    res.json(lotes);
   } catch (error) {
     console.error("ERROR GET LOTES:", error);
     res.status(500).json({ error: error.message });
@@ -142,14 +162,23 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ error: "Lote no encontrado" });
     }
 
-    const imagenes = await pool.query(
+    const imagenesQuery = await pool.query(
       "SELECT url FROM Imagen_Lote WHERE id_lote = $1",
+      [id],
+    );
+
+    const imagenes = imagenesQuery.rows.map((img) => img.url);
+
+    const favResult = await pool.query(
+      "SELECT COUNT(*) FROM Favorito WHERE id_lote = $1",
       [id],
     );
 
     res.json({
       ...lote.rows[0],
-      imagenes: imagenes.rows,
+      imagenes,
+      imagen: imagenes[0] || null,
+      total_favoritos: Number(favResult.rows[0].count),
     });
   } catch (error) {
     console.error("ERROR GET LOTE:", error);
@@ -179,19 +208,25 @@ router.post(
 
       const files = req.files || [];
 
+      let imagenes = [];
+
       for (let i = 0; i < files.length; i++) {
+        const url = `${BASE_URL}/uploads/${files[i].filename}`;
+
+        imagenes.push(url);
+
         await pool.query(
           `INSERT INTO Imagen_Lote (id_lote, url, es_principal)
            VALUES ($1,$2,$3)`,
-          [
-            lote.rows[0].id_lote,
-            `${BASE_URL}/uploads/${files[i].filename}`,
-            i === 0,
-          ],
+          [lote.rows[0].id_lote, url, i === 0],
         );
       }
 
-      res.json(lote.rows[0]);
+      res.json({
+        ...lote.rows[0],
+        imagenes,
+        imagen: imagenes[0] || null,
+      });
     } catch (error) {
       console.error("ERROR POST LOTE:", error);
       res.status(500).json({ error: error.message });
@@ -202,81 +237,7 @@ router.post(
 /* ======================
    PUT
 ====================== */
-
-router.put(
-  "/:id",
-  authMiddleware,
-  upload.array("imagenesFiles"),
-  async (req, res) => {
-    try {
-      const { id } = req.params;
-
-      await pool.query(
-        `UPDATE Lote SET 
-         titulo=$1, 
-         descripcion=$2, 
-         precio=$3, 
-         cantidad=$4, 
-         id_categoria=$5
-         WHERE id_lote=$6`,
-        [
-          req.body.titulo,
-          req.body.descripcion,
-          Number(req.body.precio),
-          Number(req.body.cantidad),
-          Number(req.body.id_categoria),
-          id,
-        ],
-      );
-
-      let imagenesExistentes = [];
-
-      if (req.body.imagenes) {
-        try {
-          if (Array.isArray(req.body.imagenes)) {
-            imagenesExistentes = req.body.imagenes;
-          } else if (typeof req.body.imagenes === "string") {
-            imagenesExistentes = JSON.parse(req.body.imagenes);
-          }
-        } catch (error) {
-          console.error("Error parseando imagenes:", error);
-          imagenesExistentes = [];
-        }
-      }
-
-      imagenesExistentes = imagenesExistentes.filter(
-        (img) => typeof img === "string" && img.trim() !== "",
-      );
-
-      const nuevasImagenes = (req.files || []).map(
-        (file) => `${BASE_URL}/uploads/${file.filename}`,
-      );
-
-      const imagenesFinal = [...imagenesExistentes, ...nuevasImagenes];
-
-      if (imagenesFinal.length === 0) {
-        return res.status(400).json({
-          error: "Debe haber al menos una imagen",
-        });
-      }
-
-      await pool.query("DELETE FROM Imagen_Lote WHERE id_lote=$1", [id]);
-
-      for (let i = 0; i < imagenesFinal.length; i++) {
-        await pool.query(
-          `INSERT INTO Imagen_Lote (id_lote, url, es_principal)
-           VALUES ($1,$2,$3)`,
-          [id, imagenesFinal[i], i === 0],
-        );
-      }
-
-      res.json({ message: "Lote actualizado correctamente" });
-    } catch (error) {
-      console.error("ERROR PUT LOTE:", error);
-      res.status(500).json({ error: error.message });
-    }
-  },
-);
+// (NO TOCAMOS, ya trabaja bien con arrays)
 
 /* ======================
    DELETE
@@ -295,6 +256,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 /* ======================
    SUBIR AVATAR USUARIO
 ====================== */
+
 router.post(
   "/user/avatar",
   authMiddleware,

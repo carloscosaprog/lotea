@@ -48,6 +48,23 @@ CREATE TABLE Imagen_Lote (
 );
 
 -- ======================
+-- TABLA FAVORITO
+-- ======================
+CREATE TABLE Favorito (
+    id_favorito SERIAL PRIMARY KEY,
+    id_usuario INTEGER NOT NULL,
+    id_lote INTEGER NOT NULL,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
+    FOREIGN KEY (id_lote) REFERENCES Lote(id_lote) ON DELETE CASCADE,
+
+    UNIQUE (id_usuario, id_lote)
+);
+-- acelera las consultas de los favoritos de un usuario
+CREATE INDEX idx_favorito_usuario ON Favorito(id_usuario);
+
+-- ======================
 -- TABLA PEDIDO
 -- ======================
 CREATE TABLE Pedido (

@@ -5,6 +5,7 @@ import UserProfileScreen from "../screens/profile/UserProfileScreen";
 import MisLotesScreen from "../screens/lotes/MisLotesScreen";
 import EditLoteScreen from "../screens/lotes/EditLoteScreen";
 import MisPedidosScreen from "../screens/lotes/MisPedidosScreen";
+import FavoritosScreen from "../screens/lotes/FavoritosScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +16,7 @@ export default function ProfileStack() {
       <Stack.Screen name="MisLotes" component={MisLotesScreen} />
       <Stack.Screen name="EditLote" component={EditLoteScreen} />
       <Stack.Screen name="MisPedidos" component={MisPedidosScreen} />
+      <Stack.Screen name="Favoritos" component={FavoritosScreen} />
     </Stack.Navigator>
   );
 }

@@ -68,8 +68,11 @@ export default function LoteDetailScreen() {
     }
   };
 
-  const fixUrl = (url: string) =>
-    url.replace("http://localhost:3000", BASE_URL);
+  const fixUrl = (url?: string) => {
+    if (!url) return "https://picsum.photos/600";
+
+    return url.replace("http://localhost:3000", BASE_URL);
+  };
 
   useEffect(() => {
     const fetchLote = async () => {
@@ -237,9 +240,7 @@ export default function LoteDetailScreen() {
         >
           <Image
             source={{
-              uri: imagenes[imagenActual]?.url
-                ? fixUrl(imagenes[imagenActual].url)
-                : "https://picsum.photos/600",
+              uri: fixUrl(imagenes[imagenActual]),
             }}
             style={styles.mainImage}
           />
@@ -320,7 +321,11 @@ export default function LoteDetailScreen() {
             data={lotesUsuario}
             horizontal
             keyExtractor={(item) => item.id_lote.toString()}
-            renderItem={({ item }) => <LoteCard lote={item} />}
+            renderItem={({ item }) => (
+              <View style={{ width: 220 }}>
+                <LoteCard lote={item} />
+              </View>
+            )}
             contentContainerStyle={styles.moreList}
             showsHorizontalScrollIndicator={false}
           />
@@ -370,7 +375,7 @@ export default function LoteDetailScreen() {
                   onHandlerStateChange={onPinchStateChange}
                 >
                   <Animated.Image
-                    source={{ uri: fixUrl(item.url) }}
+                    source={{ uri: fixUrl(item) }}
                     style={[styles.fullImage, { transform: [{ scale }] }]}
                   />
                 </PinchGestureHandler>

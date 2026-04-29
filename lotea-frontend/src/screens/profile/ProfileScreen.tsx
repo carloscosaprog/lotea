@@ -149,12 +149,7 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.topBar}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.text} />
-        </TouchableOpacity>
+        <View style={{ width: 22 }} />
         <Text style={styles.topBarTitle}>Perfil</Text>
         <TouchableOpacity activeOpacity={0.8}>
           <Text style={styles.topBarAction}>Editar</Text>
@@ -193,6 +188,7 @@ export default function ProfileScreen() {
         </Card>
       </View>
 
+      {/* MIS LOTES */}
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() =>
@@ -218,6 +214,7 @@ export default function ProfileScreen() {
         </Card>
       </TouchableOpacity>
 
+      {/* MIS PEDIDOS */}
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={() =>
@@ -237,6 +234,32 @@ export default function ProfileScreen() {
                 />
               </View>
               <Text style={styles.quickActionText}>Mis pedidos</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+          </View>
+        </Card>
+      </TouchableOpacity>
+
+      {/* MIS FAVORITOS */}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate("Perfil", {
+            screen: "Favoritos",
+          })
+        }
+      >
+        <Card>
+          <View style={styles.quickAction}>
+            <View style={styles.quickActionLeft}>
+              <View style={styles.quickIcon}>
+                <Ionicons
+                  name="heart-outline"
+                  size={18}
+                  color={colors.primary}
+                />
+              </View>
+              <Text style={styles.quickActionText}>Mis favoritos</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
           </View>
