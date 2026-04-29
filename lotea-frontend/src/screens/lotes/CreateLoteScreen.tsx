@@ -34,17 +34,19 @@ export default function CreateLoteScreen() {
     descripcion: "",
     precio: "",
     cantidad: "",
-    id_categoria: "",
   });
 
   const [images, setImages] = useState<any[]>([]);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriasDisponibles, setCategoriasDisponibles] = useState<
+    Categoria[]
+  >([]);
+  const [categorias, setCategorias] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
         const data = await getCategorias();
-        setCategorias(data);
+        setCategoriasDisponibles(data);
       } catch (error) {
         console.error("Error al cargar categorias:", error);
       }
@@ -60,8 +62,16 @@ export default function CreateLoteScreen() {
     }));
   };
 
+  const toggleCategoria = (categoria: string) => {
+    setCategorias((prev) =>
+      prev.includes(categoria)
+        ? prev.filter((item) => item !== categoria)
+        : [...prev, categoria],
+    );
+  };
+
   const handleSubmit = async () => {
-    if (!form.titulo || !form.precio || !form.cantidad || !form.id_categoria) {
+    if (!form.titulo || !form.precio || !form.cantidad || categorias.length === 0) {
       Alert.alert("Completa todos los campos obligatorios");
       return;
     }
@@ -72,13 +82,19 @@ export default function CreateLoteScreen() {
     }
 
     try {
+      const categoriaPrincipal = categoriasDisponibles.find(
+        (cat) => cat.nombre === categorias[0],
+      );
+
       await createLote(
         {
           titulo: form.titulo,
           descripcion: form.descripcion,
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
-          id_categoria: Number(form.id_categoria),
+          id_categoria: categoriaPrincipal?.id_categoria,
+          categoria: categorias[0],
+          categorias,
         },
         images,
       );
@@ -162,8 +178,8 @@ export default function CreateLoteScreen() {
 
             <Text style={styles.label}>Categoria</Text>
             <View style={styles.categoryWrap}>
-              {categorias.map((cat) => {
-                const selected = form.id_categoria === String(cat.id_categoria);
+              {categoriasDisponibles.map((cat) => {
+                const selected = categorias.includes(cat.nombre);
 
                 return (
                   <TouchableOpacity
@@ -173,9 +189,7 @@ export default function CreateLoteScreen() {
                       styles.categoryItem,
                       selected && styles.categorySelected,
                     ]}
-                    onPress={() =>
-                      handleChange("id_categoria", String(cat.id_categoria))
-                    }
+                    onPress={() => toggleCategoria(cat.nombre)}
                   >
                     <Text
                       style={[

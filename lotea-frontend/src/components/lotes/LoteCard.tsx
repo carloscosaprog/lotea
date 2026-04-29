@@ -35,6 +35,11 @@ export default function LoteCard({ lote }: Props) {
       : { uri: "https://picsum.photos/300" };
 
   const totalImagenes = lote.imagenes?.length || 0;
+  const categorias = Array.isArray(lote.categorias)
+    ? lote.categorias
+    : lote.categoria
+      ? [lote.categoria]
+      : [];
 
   useEffect(() => {
     const fetchFavorito = async () => {
@@ -108,6 +113,15 @@ export default function LoteCard({ lote }: Props) {
           </Text>
 
           <Text style={styles.subtitle}>{lote.cantidad} unidades</Text>
+          {categorias.length > 0 && (
+            <View style={styles.categoryWrap}>
+              {categorias.map((categoria) => (
+                <View key={categoria} style={styles.categoryPill}>
+                  <Text style={styles.categoryText}>{categoria}</Text>
+                </View>
+              ))}
+            </View>
+          )}
           <Text style={styles.price}>{lote.precio} EUR</Text>
         </View>
       </Card>
@@ -178,6 +192,23 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.subtext,
     marginTop: 4,
+  },
+  categoryWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  categoryPill: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+    backgroundColor: "#DBEAFE",
+  },
+  categoryText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "700",
   },
   price: {
     ...typography.heading,
