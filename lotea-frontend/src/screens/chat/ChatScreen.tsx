@@ -43,6 +43,7 @@ const formatTime = (value?: string) => {
   return date.toLocaleTimeString("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Madrid",
   });
 };
 
@@ -214,31 +215,33 @@ export default function ChatScreen() {
                 >
                   {item.text}
                 </Text>
-                <Text
-                  style={[
-                    styles.messageTime,
-                    isMine ? styles.messageTimeMine : styles.messageTimeOther,
-                  ]}
-                >
-                  {formatTime(item.createdAt)}
-                </Text>
-                {isMine && (
-                  <View style={styles.messageStatus}>
-                    <Ionicons
-                      name="checkmark"
-                      size={14}
-                      color={styles.messageStatusIcon.color}
-                    />
-                    {item.read && (
+                <View style={styles.messageMeta}>
+                  <Text
+                    style={[
+                      styles.messageTime,
+                      isMine ? styles.messageTimeMine : styles.messageTimeOther,
+                    ]}
+                  >
+                    {formatTime(item.createdAt)}
+                  </Text>
+                  {isMine && (
+                    <View style={styles.messageStatus}>
                       <Ionicons
                         name="checkmark"
                         size={14}
                         color={styles.messageStatusIcon.color}
-                        style={styles.messageStatusSecondIcon}
                       />
-                    )}
-                  </View>
-                )}
+                      {item.read && (
+                        <Ionicons
+                          name="checkmark"
+                          size={14}
+                          color={styles.messageStatusIcon.color}
+                          style={styles.messageStatusSecondIcon}
+                        />
+                      )}
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
           );
@@ -346,9 +349,14 @@ const styles = StyleSheet.create({
   messageTimeOther: {
     color: colors.subtext,
   },
+  messageMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-end",
+    gap: spacing.xxs,
+  },
   messageStatus: {
     flexDirection: "row",
-    alignSelf: "flex-end",
   },
   messageStatusIcon: {
     color: "#D1D5DB",

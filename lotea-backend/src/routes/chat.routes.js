@@ -8,7 +8,7 @@ const ensureChatTables = async () => {
       id SERIAL PRIMARY KEY,
       participants INTEGER[] NOT NULL,
       lote_id INTEGER NOT NULL REFERENCES Lote(id_lote) ON DELETE CASCADE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       UNIQUE (lote_id, participants)
     )
   `);
@@ -20,8 +20,42 @@ const ensureChatTables = async () => {
       sender_id INTEGER NOT NULL REFERENCES Usuario(id_usuario) ON DELETE CASCADE,
       text TEXT NOT NULL,
       read BOOLEAN DEFAULT false,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     )
+  `);
+
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'conversation'
+          AND column_name = 'created_at'
+          AND data_type = 'timestamp without time zone'
+      ) THEN
+        ALTER TABLE Conversation
+        ALTER COLUMN created_at TYPE TIMESTAMPTZ
+        USING created_at AT TIME ZONE 'UTC';
+      END IF;
+    END $$;
+  `);
+
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'message'
+          AND column_name = 'created_at'
+          AND data_type = 'timestamp without time zone'
+      ) THEN
+        ALTER TABLE Message
+        ALTER COLUMN created_at TYPE TIMESTAMPTZ
+        USING created_at AT TIME ZONE 'UTC';
+      END IF;
+    END $$;
   `);
 
   await pool.query(`
