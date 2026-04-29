@@ -134,13 +134,14 @@ const styles = StyleSheet.create({
 
   /* grid separado del header */
   row: {
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.md,
   },
 
   cardWrapper: {
-    flex: 1,
+    width: 220,
   },
 
   emptyTitle: {

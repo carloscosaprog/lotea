@@ -321,7 +321,11 @@ export default function LoteDetailScreen() {
             data={lotesUsuario}
             horizontal
             keyExtractor={(item) => item.id_lote.toString()}
-            renderItem={({ item }) => <LoteCard lote={item} />}
+            renderItem={({ item }) => (
+              <View style={{ width: 220 }}>
+                <LoteCard lote={item} />
+              </View>
+            )}
             contentContainerStyle={styles.moreList}
             showsHorizontalScrollIndicator={false}
           />
