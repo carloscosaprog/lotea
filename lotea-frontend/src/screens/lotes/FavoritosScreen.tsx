@@ -18,6 +18,13 @@ import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { Dimensions } from "react-native";
+
+//calcular el espacio de cada card
+const screenWidth = Dimensions.get("window").width;
+const horizontalPadding = spacing.lg * 2;
+const gap = spacing.md;
+const cardWidth = (screenWidth - horizontalPadding - gap) / 2;
 
 export default function FavoritosScreen() {
   const [lotes, setLotes] = useState<Lote[]>([]);
@@ -57,6 +64,7 @@ export default function FavoritosScreen() {
         numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         ListHeaderComponent={
           <View style={styles.headerWrap}>
             <View style={styles.topBar}>
@@ -134,14 +142,13 @@ const styles = StyleSheet.create({
 
   /* grid separado del header */
   row: {
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.lg,
-    marginBottom: spacing.md,
-    gap: spacing.md,
   },
 
   cardWrapper: {
-    width: 220,
+    width: cardWidth,
+    marginBottom: spacing.md,
   },
 
   emptyTitle: {
