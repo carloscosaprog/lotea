@@ -35,6 +35,11 @@ const normalizeLote = (lote: any): Lote => {
   return {
     ...lote,
     imagenes,
+    categorias: Array.isArray(lote.categorias)
+      ? lote.categorias
+      : lote.categoria
+        ? [lote.categoria]
+        : [],
   };
 };
 
@@ -90,7 +95,13 @@ export const createLote = async (
   formData.append("descripcion", lote.descripcion);
   formData.append("precio", String(lote.precio));
   formData.append("cantidad", String(lote.cantidad));
-  formData.append("id_categoria", String(lote.id_categoria));
+  if (lote.id_categoria) {
+    formData.append("id_categoria", String(lote.id_categoria));
+  }
+  if (lote.categoria) {
+    formData.append("categoria", lote.categoria);
+  }
+  formData.append("categorias", JSON.stringify(lote.categorias));
 
   if (files && files.length > 0) {
     files.forEach((file, index) => {
@@ -128,7 +139,15 @@ export const updateLote = async (id: number, lote: any, files: any[]) => {
   formData.append("descripcion", lote.descripcion);
   formData.append("precio", String(lote.precio));
   formData.append("cantidad", String(lote.cantidad));
-  formData.append("id_categoria", String(lote.id_categoria));
+  if (lote.id_categoria) {
+    formData.append("id_categoria", String(lote.id_categoria));
+  }
+  if (lote.categoria) {
+    formData.append("categoria", lote.categoria);
+  }
+  if (lote.categorias) {
+    formData.append("categorias", JSON.stringify(lote.categorias));
+  }
 
   if (lote.imagenes && lote.imagenes.length > 0) {
     formData.append("imagenes", JSON.stringify(lote.imagenes));
@@ -157,7 +176,9 @@ export const updateLote = async (id: number, lote: any, files: any[]) => {
     throw new Error("Error al actualizar lote");
   }
 
-  return await response.json();
+  const data = await response.json();
+
+  return normalizeLote(data);
 };
 
 // Eliminar lote

@@ -43,10 +43,12 @@ export default function EditLoteScreen() {
     descripcion: "",
     precio: "",
     cantidad: "",
-    id_categoria: "",
   });
 
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriasDisponibles, setCategoriasDisponibles] = useState<
+    Categoria[]
+  >([]);
+  const [categorias, setCategorias] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<any[]>([]);
 
@@ -71,12 +73,18 @@ export default function EditLoteScreen() {
             descripcion: data.descripcion,
             precio: String(data.precio),
             cantidad: String(data.cantidad),
-            id_categoria: String(data.id_categoria ?? ""),
           });
+          setCategorias(
+            Array.isArray(data.categorias) && data.categorias.length > 0
+              ? data.categorias
+              : data.categoria
+                ? [data.categoria]
+                : [],
+          );
           setExistingImages(Array.isArray(data.imagenes) ? data.imagenes : []);
         }
 
-        setCategorias(cats);
+        setCategoriasDisponibles(cats);
       } catch (error) {
         console.error(error);
       } finally {
@@ -94,6 +102,14 @@ export default function EditLoteScreen() {
     }));
   };
 
+  const toggleCategoria = (categoria: string) => {
+    setCategorias((prev) =>
+      prev.includes(categoria)
+        ? prev.filter((item) => item !== categoria)
+        : [...prev, categoria],
+    );
+  };
+
   const removeExistingImage = (index: number) => {
     setExistingImages((current) => current.filter((_, i) => i !== index));
   };
@@ -106,7 +122,16 @@ export default function EditLoteScreen() {
       return;
     }
 
+    if (categorias.length === 0) {
+      Alert.alert("Selecciona al menos una categoria");
+      return;
+    }
+
     try {
+      const categoriaPrincipal = categoriasDisponibles.find(
+        (cat) => cat.nombre === categorias[0],
+      );
+
       await updateLote(
         lote.id_lote,
         {
@@ -114,7 +139,9 @@ export default function EditLoteScreen() {
           descripcion: form.descripcion,
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
-          id_categoria: Number(form.id_categoria),
+          id_categoria: categoriaPrincipal?.id_categoria,
+          categoria: categorias[0],
+          categorias,
           imagenes: existingImages.map((img) =>
             img.replace("http://localhost:3000", BASE_URL),
           ),
@@ -239,8 +266,8 @@ export default function EditLoteScreen() {
 
             <Text style={styles.label}>Categoria</Text>
             <View style={styles.categoryWrap}>
-              {categorias.map((cat) => {
-                const selected = form.id_categoria === String(cat.id_categoria);
+              {categoriasDisponibles.map((cat) => {
+                const selected = categorias.includes(cat.nombre);
 
                 return (
                   <TouchableOpacity
@@ -249,9 +276,7 @@ export default function EditLoteScreen() {
                       styles.categoryItem,
                       selected && styles.categorySelected,
                     ]}
-                    onPress={() =>
-                      handleChange("id_categoria", String(cat.id_categoria))
-                    }
+                    onPress={() => toggleCategoria(cat.nombre)}
                   >
                     <Text
                       style={[

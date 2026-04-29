@@ -186,6 +186,11 @@ export default function LoteDetailScreen() {
   }
 
   const imagenes = lote.imagenes || [];
+  const categorias = Array.isArray(lote.categorias)
+    ? lote.categorias
+    : lote.categoria
+      ? [lote.categoria]
+      : [];
   const vendedorAvatar = vendedor?.avatar
     ? vendedor.avatar.startsWith("http")
       ? vendedor.avatar
@@ -304,9 +309,13 @@ export default function LoteDetailScreen() {
         <Text style={styles.description}>{lote.descripcion}</Text>
       </Card>
 
-      {lote.categoria && (
-        <View style={componentStyles.pill}>
-          <Text style={componentStyles.pillText}>{lote.categoria}</Text>
+      {categorias.length > 0 && (
+        <View style={styles.categoriesRow}>
+          {categorias.map((categoria) => (
+            <View key={categoria} style={componentStyles.pill}>
+              <Text style={componentStyles.pillText}>{categoria}</Text>
+            </View>
+          ))}
         </View>
       )}
 
@@ -483,6 +492,11 @@ const styles = StyleSheet.create({
   description: {
     ...typography.body,
     color: colors.subtext,
+  },
+  categoriesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
   },
   moreSection: {
     gap: spacing.md,
