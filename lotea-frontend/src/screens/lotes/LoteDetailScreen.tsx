@@ -22,6 +22,7 @@ import {
   deleteLote,
   getLotesByUser,
 } from "../../services/lotesService";
+import { getOrCreateConversation } from "../../services/chatService";
 import { getUserById } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import type { Lote } from "../../types/Lote";
@@ -52,8 +53,11 @@ export default function LoteDetailScreen() {
   const [fullscreen, setFullscreen] = useState(false);
   const [lotesUsuario, setLotesUsuario] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contacting, setContacting] = useState(false);
 
   const scale = useRef(new Animated.Value(1)).current;
+  const currentUser = user as { id?: number; id_usuario?: number } | null;
+  const currentUserId = currentUser?.id ?? currentUser?.id_usuario;
 
   const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], {
     useNativeDriver: true,
@@ -165,6 +169,35 @@ export default function LoteDetailScreen() {
     }
   };
 
+  const handleContactSeller = async () => {
+    if (!lote || !currentUserId) return;
+
+    if (lote.id_vendedor === currentUserId) {
+      Alert.alert("Este lote es tuyo", "No puedes contactarte a ti mismo.");
+      return;
+    }
+
+    try {
+      setContacting(true);
+
+      const conversation = await getOrCreateConversation({
+        buyerId: currentUserId,
+        sellerId: lote.id_vendedor,
+        loteId: lote.id_lote,
+      });
+
+      navigation.navigate("Chat", {
+        conversationId: conversation.id,
+        loteTitulo: lote.titulo,
+        otherUserName: vendedor?.nombre || lote.vendedor,
+      });
+    } catch (error) {
+      Alert.alert("Error", "No se pudo abrir la conversacion");
+    } finally {
+      setContacting(false);
+    }
+  };
+
   if (loading) {
     return (
       <View style={layoutStyles.center}>
@@ -216,7 +249,7 @@ export default function LoteDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {user && lote.id_vendedor === user.id && (
+      {currentUserId && lote.id_vendedor === currentUserId && (
         <View style={styles.ownerActions}>
           <Button
             title="Eliminar"
@@ -351,6 +384,16 @@ export default function LoteDetailScreen() {
           })
         }
       />
+
+      {currentUserId && lote.id_vendedor !== currentUserId && (
+        <Button
+          title={contacting ? "Abriendo chat..." : "Contactar con vendedor"}
+          variant="secondary"
+          style={styles.contactButton}
+          onPress={handleContactSeller}
+          disabled={contacting}
+        />
+      )}
 
       <Modal visible={fullscreen} transparent animationType="fade">
         <View style={styles.modal}>
@@ -509,6 +552,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   buyButton: {
+    minHeight: 58,
+    borderRadius: radii.lg,
+  },
+  contactButton: {
     minHeight: 58,
     borderRadius: radii.lg,
   },
