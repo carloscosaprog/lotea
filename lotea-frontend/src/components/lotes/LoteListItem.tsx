@@ -116,6 +116,7 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: "row",
     alignItems: "center",
+    height: 124,
     padding: spacing.sm,
     gap: spacing.sm,
   },

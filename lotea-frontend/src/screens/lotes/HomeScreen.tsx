@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { getLotes } from "../../services/lotesService";
+import { getFavoritos } from "../../services/favoritosService";
 import type { Lote } from "../../types/Lote";
 import LoteListItem from "../../components/lotes/LoteListItem";
 import { colors } from "../../styles/colors";
@@ -19,12 +20,15 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
 
-const categories = ["Electronica", "Moda", "Hogar", "Juguetes", "Oficina"];
+const categories = ["Todas", "Electronica", "Moda", "Hogar", "Juguetes", "Oficina"];
 
 export default function HomeScreen() {
   const [lotes, setLotes] = useState<Lote[]>([]);
+  const [favoritos, setFavoritos] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState(categories[0]);
+  const [activeCategories, setActiveCategories] = useState<string[]>([
+    categories[0],
+  ]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -32,6 +36,13 @@ export default function HomeScreen() {
       try {
         const data = await getLotes();
         setLotes(data);
+
+        try {
+          const favoritosData = await getFavoritos();
+          setFavoritos(favoritosData);
+        } catch {
+          setFavoritos([]);
+        }
       } catch (error) {
         console.error("Error al cargar lotes:", error);
       } finally {
@@ -42,19 +53,51 @@ export default function HomeScreen() {
     fetchLotes();
   }, []);
 
+  const toggleCategory = (category: string) => {
+    setActiveCategories((current) => {
+      if (category === "Todas") return ["Todas"];
+
+      const withoutAll = current.filter((item) => item !== "Todas");
+      const next = withoutAll.includes(category)
+        ? withoutAll.filter((item) => item !== category)
+        : [...withoutAll, category];
+
+      return next.length > 0 ? next : ["Todas"];
+    });
+  };
+
   const filteredLotes = useMemo(() => {
     const query = search.trim().toLowerCase();
+    const lotesByCategory =
+      activeCategories.includes("Todas")
+        ? lotes
+        : lotes.filter((item) => {
+            const categorias = Array.isArray(item.categorias)
+              ? item.categorias
+              : item.categoria
+                ? [item.categoria]
+                : [];
 
-    if (!query) return lotes;
+            return activeCategories.some((category) =>
+              categorias.includes(category),
+            );
+          });
 
-    return lotes.filter((item) =>
-      [item.titulo, item.descripcion, item.categoria]
+    if (!query) return lotesByCategory;
+
+    return lotesByCategory.filter((item) =>
+      [
+        item.titulo,
+        item.descripcion,
+        Array.isArray(item.categorias) ? item.categorias.join(" ") : "",
+        item.categoria,
+      ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(query),
     );
-  }, [lotes, search]);
+  }, [activeCategories, lotes, search]);
 
   if (loading) {
     return (
@@ -109,13 +152,13 @@ export default function HomeScreen() {
               contentContainerStyle={styles.categoriesRow}
             >
               {categories.map((category) => {
-                const isActive = category === activeCategory;
+                const isActive = activeCategories.includes(category);
                 return (
                   <TouchableOpacity
                     key={category}
                     activeOpacity={0.85}
                     style={[styles.pill, isActive && styles.pillActive]}
-                    onPress={() => setActiveCategory(category)}
+                    onPress={() => toggleCategory(category)}
                   >
                     <Text style={[styles.pillText, isActive && styles.pillTextActive]}>
                       {category}
@@ -124,6 +167,24 @@ export default function HomeScreen() {
                 );
               })}
             </ScrollView>
+
+            {favoritos.length > 0 && (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Tus favoritos</Text>
+                <FlatList
+                  data={favoritos}
+                  horizontal
+                  keyExtractor={(item) => item.id_lote.toString()}
+                  renderItem={({ item }) => (
+                    <View style={styles.favoriteItem}>
+                      <LoteListItem lote={item} />
+                    </View>
+                  )}
+                  contentContainerStyle={styles.favoritesList}
+                  showsHorizontalScrollIndicator={false}
+                />
+              </View>
+            )}
 
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Lotes recomendados</Text>
@@ -246,6 +307,13 @@ const styles = StyleSheet.create({
   sectionHeader: {
     marginBottom: spacing.md,
     gap: 2,
+  },
+  favoritesList: {
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+  },
+  favoriteItem: {
+    width: 320,
   },
   sectionTitle: {
     ...typography.heading,
