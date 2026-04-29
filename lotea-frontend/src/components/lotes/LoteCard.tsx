@@ -62,6 +62,7 @@ export default function LoteCard({ lote }: Props) {
       console.log("Error favorito:", error);
     }
   };
+
   return (
     <TouchableOpacity
       activeOpacity={0.92}
@@ -102,7 +103,7 @@ export default function LoteCard({ lote }: Props) {
         </View>
 
         <View style={styles.info}>
-          <Text style={styles.title} numberOfLines={2}>
+          <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
             {lote.titulo}
           </Text>
 
@@ -120,6 +121,7 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: spacing.sm,
+    height: 300,
   },
   content: {
     padding: 0,
@@ -129,7 +131,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: "100%",
-    height: 154,
+    height: 140,
   },
   likeButton: {
     position: "absolute",
