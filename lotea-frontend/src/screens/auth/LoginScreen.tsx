@@ -16,6 +16,7 @@ import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { API_URL } from "../../config/api";
 
 export default function LoginScreen() {
   const [identifier, setIdentifier] = useState("");
@@ -29,7 +30,7 @@ export default function LoginScreen() {
     setError("");
 
     try {
-      const response = await fetch("http://192.168.0.65:3000/auth/login", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

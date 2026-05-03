@@ -1,4 +1,6 @@
-const BASE_URL = "http://192.168.0.65:3000/chat";
+import { API_URL } from "../config/api";
+
+const CHAT_URL = `${API_URL}/chat`;
 
 export interface Conversation {
   id: number;
@@ -48,7 +50,7 @@ const getJson = async <T>(response: Response): Promise<T> => {
 export const getConversations = async (
   userId: number,
 ): Promise<Conversation[]> => {
-  const response = await fetch(`${BASE_URL}/conversations/${userId}`);
+  const response = await fetch(`${CHAT_URL}/conversations/${userId}`);
 
   return getJson<Conversation[]>(response);
 };
@@ -56,7 +58,7 @@ export const getConversations = async (
 export const getMessages = async (
   conversationId: number,
 ): Promise<ChatMessage[]> => {
-  const response = await fetch(`${BASE_URL}/messages/${conversationId}`);
+  const response = await fetch(`${CHAT_URL}/messages/${conversationId}`);
 
   return getJson<ChatMessage[]>(response);
 };
@@ -64,7 +66,7 @@ export const getMessages = async (
 export const sendMessage = async (
   data: SendMessageData,
 ): Promise<ChatMessage> => {
-  const response = await fetch(`${BASE_URL}/messages`, {
+  const response = await fetch(`${CHAT_URL}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -78,7 +80,7 @@ export const sendMessage = async (
 export const getOrCreateConversation = async (
   data: ConversationData,
 ): Promise<Conversation> => {
-  const response = await fetch(`${BASE_URL}/conversations`, {
+  const response = await fetch(`${CHAT_URL}/conversations`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -93,7 +95,7 @@ export const markMessagesAsRead = async (
   conversationId: number,
   userId: number,
 ) => {
-  const response = await fetch(`${BASE_URL}/messages/read/${conversationId}`, {
+  const response = await fetch(`${CHAT_URL}/messages/read/${conversationId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

@@ -1,8 +1,8 @@
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "http://192.168.0.65:3000";
+import { API_URL } from "../config/api";
 
-export const socket = io(SOCKET_URL, {
+export const socket = io(API_URL, {
   autoConnect: false,
   transports: ["websocket"],
 });

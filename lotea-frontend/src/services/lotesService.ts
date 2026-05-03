@@ -1,6 +1,7 @@
 import type { Lote, LoteCreate } from "../types/Lote";
+import { API_URL } from "../config/api";
 
-const BASE_URL = "http://10.0.2.2:3000/lotes";
+const LOTES_URL = `${API_URL}/lotes`;
 
 // helper para token
 const getAuthHeaders = async () => {
@@ -62,7 +63,7 @@ const buildImageFile = (file: any, index: number) => {
 
 // Obtener todos los lotes
 export const getLotes = async (): Promise<Lote[]> => {
-  const response = await fetch(BASE_URL);
+  const response = await fetch(LOTES_URL);
 
   if (!response.ok) {
     throw new Error("Error al obtener lotes");
@@ -75,7 +76,7 @@ export const getLotes = async (): Promise<Lote[]> => {
 
 // Obtener lote por ID
 export const getLoteById = async (id: number): Promise<Lote | undefined> => {
-  const response = await fetch(`${BASE_URL}/${id}`);
+  const response = await fetch(`${LOTES_URL}/${id}`);
 
   if (!response.ok) return undefined;
 
@@ -114,7 +115,7 @@ export const createLote = async (
 
   const headers = await getAuthHeaders();
 
-  const response = await fetch(BASE_URL, {
+  const response = await fetch(LOTES_URL, {
     method: "POST",
     headers,
     body: formData,
@@ -164,7 +165,7 @@ export const updateLote = async (id: number, lote: any, files: any[]) => {
 
   const headers = await getAuthHeaders();
 
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetch(`${LOTES_URL}/${id}`, {
     method: "PUT",
     headers,
     body: formData,
@@ -185,7 +186,7 @@ export const updateLote = async (id: number, lote: any, files: any[]) => {
 export const deleteLote = async (id: number): Promise<boolean> => {
   const headers = await getAuthHeaders();
 
-  const response = await fetch(`${BASE_URL}/${id}`, {
+  const response = await fetch(`${LOTES_URL}/${id}`, {
     method: "DELETE",
     headers,
   });
@@ -195,7 +196,7 @@ export const deleteLote = async (id: number): Promise<boolean> => {
 
 // Obtener lotes por usuario
 export const getLotesByUser = async (id: number) => {
-  const res = await fetch(`${BASE_URL}/usuario/${id}`);
+  const res = await fetch(`${LOTES_URL}/usuario/${id}`);
   const data = await res.json();
 
   return data.map(normalizeLote);
@@ -218,7 +219,7 @@ export const getMisLotes = async () => {
     return [];
   }
 
-  const res = await fetch(`${BASE_URL}/usuario/${user.id_usuario}`);
+  const res = await fetch(`${LOTES_URL}/usuario/${user.id_usuario}`);
 
   if (!res.ok) {
     return [];

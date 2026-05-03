@@ -102,6 +102,6 @@ io.on("connection", (socket) => {
 // Puerto al final
 const PORT = 3000;
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });

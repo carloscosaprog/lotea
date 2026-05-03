@@ -36,8 +36,9 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "../../config/api";
+import { getImageUrl } from "../../utils/getImageUrl";
 
-const BASE_URL = "http://192.168.0.65:3000";
 const screenWidth = Dimensions.get("window").width;
 
 export default function LoteDetailScreen() {
@@ -70,12 +71,6 @@ export default function LoteDetailScreen() {
         useNativeDriver: true,
       }).start();
     }
-  };
-
-  const fixUrl = (url?: string) => {
-    if (!url) return "https://picsum.photos/600";
-
-    return url.replace("http://localhost:3000", BASE_URL);
   };
 
   useEffect(() => {
@@ -145,7 +140,7 @@ export default function LoteDetailScreen() {
       const token = await AsyncStorage.getItem("token");
 
       await axios.post(
-        `${BASE_URL}/pedidos`,
+        `${API_URL}/pedidos`,
         {
           id_lote: lote.id_lote,
           cantidad: 1,
@@ -226,8 +221,8 @@ export default function LoteDetailScreen() {
       : [];
   const vendedorAvatar = vendedor?.avatar
     ? vendedor.avatar.startsWith("http")
-      ? vendedor.avatar
-      : BASE_URL + vendedor.avatar
+      ? getImageUrl(vendedor.avatar)
+      : API_URL + vendedor.avatar
     : null;
 
   return (
@@ -278,7 +273,7 @@ export default function LoteDetailScreen() {
         >
           <Image
             source={{
-              uri: fixUrl(imagenes[imagenActual]),
+              uri: getImageUrl(imagenes[imagenActual]),
             }}
             style={styles.mainImage}
           />
@@ -427,7 +422,7 @@ export default function LoteDetailScreen() {
                   onHandlerStateChange={onPinchStateChange}
                 >
                   <Animated.Image
-                    source={{ uri: fixUrl(item) }}
+                    source={{ uri: getImageUrl(item) }}
                     style={[styles.fullImage, { transform: [{ scale }] }]}
                   />
                 </PinchGestureHandler>

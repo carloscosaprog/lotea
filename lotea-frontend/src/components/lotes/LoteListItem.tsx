@@ -9,6 +9,7 @@ import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { toggleFavorito, checkFavorito } from "../../services/favoritosService";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 interface Props {
   lote: Lote;
@@ -37,13 +38,7 @@ export default function LoteListItem({ lote }: Props) {
 
   const primeraImagen = lote.imagenes?.[0];
 
-  const imageUri =
-    primeraImagen && primeraImagen.trim() !== ""
-      ? primeraImagen.replace(
-          "http://localhost:3000",
-          "http://192.168.0.65:3000",
-        )
-      : "https://picsum.photos/200";
+  const imageUri = getImageUrl(primeraImagen);
 
   const handleToggleFavorito = async () => {
     try {

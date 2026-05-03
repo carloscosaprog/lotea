@@ -1,12 +1,12 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://192.168.0.65:3000";
+import { API_URL } from "../config/api";
 
 export const getPedidos = async () => {
   const token = await AsyncStorage.getItem("token");
 
-  const res = await axios.get(`${BASE_URL}/pedidos`, {
+  const res = await axios.get(`${API_URL}/pedidos`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

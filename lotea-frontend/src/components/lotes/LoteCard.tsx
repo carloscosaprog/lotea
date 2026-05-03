@@ -9,6 +9,7 @@ import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { toggleFavorito, checkFavorito } from "../../services/favoritosService";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 interface Props {
   lote: Lote;
@@ -24,15 +25,7 @@ export default function LoteCard({ lote }: Props) {
 
   const primeraImagen = lote.imagenes?.[0];
 
-  const imagenSrc =
-    primeraImagen && primeraImagen.trim() !== ""
-      ? {
-          uri: primeraImagen.replace(
-            "http://localhost:3000",
-            "http://192.168.0.65:3000",
-          ),
-        }
-      : { uri: "https://picsum.photos/300" };
+  const imagenSrc = { uri: getImageUrl(primeraImagen) };
 
   const totalImagenes = lote.imagenes?.length || 0;
   const categorias = Array.isArray(lote.categorias)

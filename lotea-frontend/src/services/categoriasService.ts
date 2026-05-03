@@ -1,7 +1,7 @@
-const API_URL = "http://192.168.0.65:3000/categorias";
+import { API_URL } from "../config/api";
 
 export const getCategorias = async () => {
-  const response = await fetch(API_URL);
+  const response = await fetch(`${API_URL}/categorias`);
 
   if (!response.ok) {
     throw new Error("Error al obtener categorías");

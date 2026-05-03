@@ -21,19 +21,12 @@ import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
-
-const API_URL = "http://192.168.0.65:3000";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 const getUserId = (user: unknown) => {
   const currentUser = user as { id?: number; id_usuario?: number } | null;
 
   return currentUser?.id ?? currentUser?.id_usuario ?? null;
-};
-
-const fixUrl = (url?: string | null) => {
-  if (!url) return "https://picsum.photos/120";
-
-  return url.replace("http://localhost:3000", API_URL);
 };
 
 export default function ConversationsScreen() {
@@ -103,7 +96,7 @@ export default function ConversationsScreen() {
               })
             }
           >
-            <Image source={{ uri: fixUrl(item.loteImagen) }} style={styles.image} />
+            <Image source={{ uri: getImageUrl(item.loteImagen ?? undefined) }} style={styles.image} />
             <View style={styles.copy}>
               <Text numberOfLines={1} style={styles.title}>
                 {item.otherUserName || "Conversacion"}

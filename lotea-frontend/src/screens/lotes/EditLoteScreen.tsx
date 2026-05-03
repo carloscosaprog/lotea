@@ -22,13 +22,12 @@ import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 interface Categoria {
   id_categoria: number;
   nombre: string;
 }
-
-const BASE_URL = "http://192.168.0.65:3000";
 
 export default function EditLoteScreen() {
   const route = useRoute<any>();
@@ -51,12 +50,6 @@ export default function EditLoteScreen() {
   const [categorias, setCategorias] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<any[]>([]);
-
-  const fixUrl = (url?: string) => {
-    if (!url) return "https://picsum.photos/300";
-
-    return url.replace("http://localhost:3000", BASE_URL);
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,9 +135,7 @@ export default function EditLoteScreen() {
           id_categoria: categoriaPrincipal?.id_categoria,
           categoria: categorias[0],
           categorias,
-          imagenes: existingImages.map((img) =>
-            img.replace("http://localhost:3000", BASE_URL),
-          ),
+          imagenes: existingImages.map((img) => getImageUrl(img)),
         },
         newImages,
       );
@@ -199,7 +190,7 @@ export default function EditLoteScreen() {
           <View style={styles.imageRow}>
             {existingImages.map((img, index) => (
               <View key={index} style={styles.imageContainer}>
-                <Image source={{ uri: fixUrl(img) }} style={styles.image} />
+                <Image source={{ uri: getImageUrl(img) }} style={styles.image} />
 
                 <TouchableOpacity
                   onPress={() => removeExistingImage(index)}
