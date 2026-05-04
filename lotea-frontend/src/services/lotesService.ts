@@ -215,11 +215,13 @@ export const getMisLotes = async () => {
 
   const user = JSON.parse(userString);
 
-  if (!user?.id_usuario) {
+  const userId = user?.id_usuario ?? user?.id;
+
+  if (!userId) {
     return [];
   }
 
-  const res = await fetch(`${LOTES_URL}/usuario/${user.id_usuario}`);
+  const res = await fetch(`${LOTES_URL}/usuario/${userId}`);
 
   if (!res.ok) {
     return [];
