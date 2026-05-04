@@ -22,7 +22,6 @@ import {
   deleteLote,
   getLotesByUser,
 } from "../../services/lotesService";
-import { getOrCreateConversation } from "../../services/chatService";
 import { getUserById } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import type { Lote } from "../../types/Lote";
@@ -173,16 +172,10 @@ export default function LoteDetailScreen() {
     }
 
     try {
-      setContacting(true);
-
-      const conversation = await getOrCreateConversation({
+      navigation.navigate("Chat", {
         buyerId: currentUserId,
         sellerId: lote.id_vendedor,
         loteId: lote.id_lote,
-      });
-
-      navigation.navigate("Chat", {
-        conversationId: conversation.id,
         loteTitulo: lote.titulo,
         otherUserName: vendedor?.nombre || lote.vendedor,
       });

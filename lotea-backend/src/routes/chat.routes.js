@@ -234,6 +234,7 @@ router.get("/conversations/:userId", async (req, res) => {
           AND read = false
       ) unread_count ON true
       WHERE $1 = ANY(c.participants)
+        AND last_message.created_at IS NOT NULL
       ORDER BY COALESCE(last_message.created_at, c.created_at) DESC
       `,
       [userId],

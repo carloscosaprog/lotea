@@ -17,6 +17,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import {
   ChatMessage,
+  getOrCreateConversation,
   getMessages,
   markMessagesAsRead,
   sendMessage,
@@ -54,18 +55,30 @@ export default function ChatScreen() {
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const userId = getUserId(user);
-  const conversationId = Number(route.params?.conversationId);
+  const initialConversationId = route.params?.conversationId
+    ? Number(route.params.conversationId)
+    : null;
   const title = route.params?.otherUserName || route.params?.loteTitulo || "Chat";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [conversationId, setConversationId] = useState<number | null>(
+    initialConversationId,
+  );
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
+    if (!conversationId) {
+      setLoading(false);
+      return;
+    }
+
+    const activeConversationId = conversationId;
+
     const loadMessages = async () => {
       try {
-        const data = await getMessages(conversationId);
+        const data = await getMessages(activeConversationId);
         setMessages(data);
       } catch (error) {
         Alert.alert("Error", "No se pudieron cargar los mensajes");
@@ -74,15 +87,15 @@ export default function ChatScreen() {
       }
     };
 
-    if (conversationId) {
-      loadMessages();
-    }
+    loadMessages();
   }, [conversationId]);
 
   useEffect(() => {
     if (!userId) return;
 
     connectSocket(userId);
+
+    if (!conversationId) return;
 
     markMessagesAsRead(conversationId, userId).catch(() => undefined);
     socket.emit("mark_as_read", { conversationId, userId });
@@ -129,7 +142,7 @@ export default function ChatScreen() {
     setSending(true);
     setText("");
 
-    if (socket.connected) {
+    if (conversationId && socket.connected) {
       socket.emit("send_message", {
         conversationId,
         senderId: userId,
@@ -140,8 +153,20 @@ export default function ChatScreen() {
     }
 
     try {
+      let activeConversationId = conversationId;
+
+      if (!activeConversationId) {
+        const conversation = await getOrCreateConversation({
+          buyerId: route.params?.buyerId,
+          sellerId: route.params?.sellerId,
+          loteId: route.params?.loteId,
+        });
+        activeConversationId = conversation.id;
+        setConversationId(conversation.id);
+      }
+
       const message = await sendMessage({
-        conversationId,
+        conversationId: activeConversationId,
         senderId: userId,
         text: cleanText,
       });
