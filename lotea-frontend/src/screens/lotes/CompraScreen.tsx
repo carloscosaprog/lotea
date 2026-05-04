@@ -19,8 +19,8 @@ import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
 import { spacing, radii } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-
-const BASE_URL = "http://192.168.0.65:3000";
+import { API_URL } from "../../config/api";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 export default function CompraScreen() {
   const route = useRoute<any>();
@@ -38,14 +38,9 @@ export default function CompraScreen() {
   const comision = total * comisionPorcentaje;
   const totalVendedor = total - comision;
 
-  const fixUrl = (url?: string) => {
-    if (!url) return "";
-    return url.replace("http://localhost:3000", BASE_URL);
-  };
-
   const imagenPrincipal =
     lote.imagenes && lote.imagenes.length > 0 && lote.imagenes[0]?.url
-      ? fixUrl(lote.imagenes[0].url)
+      ? getImageUrl(lote.imagenes[0].url)
       : "https://picsum.photos/200";
 
   const handleCantidadChange = (value: string) => {
@@ -92,7 +87,7 @@ export default function CompraScreen() {
       const token = await AsyncStorage.getItem("token");
 
       await axios.post(
-        `${BASE_URL}/pedidos`,
+        `${API_URL}/pedidos`,
         {
           id_lote: lote.id_lote,
           cantidad,

@@ -8,6 +8,7 @@ export interface Lote {
 
   vendedor?: string;
   categoria?: string;
+  categorias: string[];
 
   // mantener por compatibilidad
   imagen?: string;
@@ -24,7 +25,9 @@ export type LoteCreate = {
   descripcion: string;
   precio: number;
   cantidad: number;
-  id_categoria: number;
+  id_categoria?: number;
+  categoria?: string;
+  categorias: string[];
 };
 
 export type LoteUpdate = {
@@ -33,5 +36,7 @@ export type LoteUpdate = {
   precio?: number;
   cantidad?: number;
   id_categoria?: number;
+  categoria?: string;
+  categorias?: string[];
   imagenes?: string[];
 };

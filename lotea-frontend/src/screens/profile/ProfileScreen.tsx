@@ -266,6 +266,32 @@ export default function ProfileScreen() {
         </Card>
       </TouchableOpacity>
 
+      {/* MIS CONVERSACIONES */}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() =>
+          navigation.navigate("Perfil", {
+            screen: "Conversations",
+          })
+        }
+      >
+        <Card>
+          <View style={styles.quickAction}>
+            <View style={styles.quickActionLeft}>
+              <View style={styles.quickIcon}>
+                <Ionicons
+                  name="chatbubble-ellipses-outline"
+                  size={18}
+                  color={colors.primary}
+                />
+              </View>
+              <Text style={styles.quickActionText}>Mis conversaciones</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+          </View>
+        </Card>
+      </TouchableOpacity>
+
       <Card>
         <View style={styles.formSection}>
           <View style={styles.labelRow}>

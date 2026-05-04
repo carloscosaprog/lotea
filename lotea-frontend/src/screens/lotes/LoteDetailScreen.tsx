@@ -35,8 +35,9 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "../../config/api";
+import { getImageUrl } from "../../utils/getImageUrl";
 
-const BASE_URL = "http://192.168.0.65:3000";
 const screenWidth = Dimensions.get("window").width;
 
 export default function LoteDetailScreen() {
@@ -52,8 +53,11 @@ export default function LoteDetailScreen() {
   const [fullscreen, setFullscreen] = useState(false);
   const [lotesUsuario, setLotesUsuario] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contacting, setContacting] = useState(false);
 
   const scale = useRef(new Animated.Value(1)).current;
+  const currentUser = user as { id?: number; id_usuario?: number } | null;
+  const currentUserId = currentUser?.id ?? currentUser?.id_usuario;
 
   const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], {
     useNativeDriver: true,
@@ -66,12 +70,6 @@ export default function LoteDetailScreen() {
         useNativeDriver: true,
       }).start();
     }
-  };
-
-  const fixUrl = (url?: string) => {
-    if (!url) return "https://picsum.photos/600";
-
-    return url.replace("http://localhost:3000", BASE_URL);
   };
 
   useEffect(() => {
@@ -141,7 +139,7 @@ export default function LoteDetailScreen() {
       const token = await AsyncStorage.getItem("token");
 
       await axios.post(
-        `${BASE_URL}/pedidos`,
+        `${API_URL}/pedidos`,
         {
           id_lote: lote.id_lote,
           cantidad: 1,
@@ -162,6 +160,29 @@ export default function LoteDetailScreen() {
       } else {
         Alert.alert("Error", "No se pudo completar la compra");
       }
+    }
+  };
+
+  const handleContactSeller = async () => {
+    if (!lote || !currentUserId) return;
+
+    if (lote.id_vendedor === currentUserId) {
+      Alert.alert("Este lote es tuyo", "No puedes contactarte a ti mismo.");
+      return;
+    }
+
+    try {
+      navigation.navigate("Chat", {
+        buyerId: currentUserId,
+        sellerId: lote.id_vendedor,
+        loteId: lote.id_lote,
+        loteTitulo: lote.titulo,
+        otherUserName: vendedor?.nombre || lote.vendedor,
+      });
+    } catch (error) {
+      Alert.alert("Error", "No se pudo abrir la conversacion");
+    } finally {
+      setContacting(false);
     }
   };
 
@@ -186,10 +207,15 @@ export default function LoteDetailScreen() {
   }
 
   const imagenes = lote.imagenes || [];
+  const categorias = Array.isArray(lote.categorias)
+    ? lote.categorias
+    : lote.categoria
+      ? [lote.categoria]
+      : [];
   const vendedorAvatar = vendedor?.avatar
     ? vendedor.avatar.startsWith("http")
-      ? vendedor.avatar
-      : BASE_URL + vendedor.avatar
+      ? getImageUrl(vendedor.avatar)
+      : API_URL + vendedor.avatar
     : null;
 
   return (
@@ -211,7 +237,7 @@ export default function LoteDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {user && lote.id_vendedor === user.id && (
+      {currentUserId && lote.id_vendedor === currentUserId && (
         <View style={styles.ownerActions}>
           <Button
             title="Eliminar"
@@ -240,7 +266,7 @@ export default function LoteDetailScreen() {
         >
           <Image
             source={{
-              uri: fixUrl(imagenes[imagenActual]),
+              uri: getImageUrl(imagenes[imagenActual]),
             }}
             style={styles.mainImage}
           />
@@ -304,9 +330,13 @@ export default function LoteDetailScreen() {
         <Text style={styles.description}>{lote.descripcion}</Text>
       </Card>
 
-      {lote.categoria && (
-        <View style={componentStyles.pill}>
-          <Text style={componentStyles.pillText}>{lote.categoria}</Text>
+      {categorias.length > 0 && (
+        <View style={styles.categoriesRow}>
+          {categorias.map((categoria) => (
+            <View key={categoria} style={componentStyles.pill}>
+              <Text style={componentStyles.pillText}>{categoria}</Text>
+            </View>
+          ))}
         </View>
       )}
 
@@ -343,6 +373,16 @@ export default function LoteDetailScreen() {
         }
       />
 
+      {currentUserId && lote.id_vendedor !== currentUserId && (
+        <Button
+          title={contacting ? "Abriendo chat..." : "Contactar con vendedor"}
+          variant="secondary"
+          style={styles.contactButton}
+          onPress={handleContactSeller}
+          disabled={contacting}
+        />
+      )}
+
       <Modal visible={fullscreen} transparent animationType="fade">
         <View style={styles.modal}>
           <View style={styles.topModalBar}>
@@ -375,7 +415,7 @@ export default function LoteDetailScreen() {
                   onHandlerStateChange={onPinchStateChange}
                 >
                   <Animated.Image
-                    source={{ uri: fixUrl(item) }}
+                    source={{ uri: getImageUrl(item) }}
                     style={[styles.fullImage, { transform: [{ scale }] }]}
                   />
                 </PinchGestureHandler>
@@ -484,6 +524,11 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.subtext,
   },
+  categoriesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
   moreSection: {
     gap: spacing.md,
   },
@@ -495,6 +540,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   buyButton: {
+    minHeight: 58,
+    borderRadius: radii.lg,
+  },
+  contactButton: {
     minHeight: 58,
     borderRadius: radii.lg,
   },

@@ -1,6 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const BASE_URL = "http://10.0.2.2:3000/favoritos";
+import { API_URL } from "../config/api";
+
+const FAVORITOS_URL = `${API_URL}/favoritos`;
 
 const getAuthHeaders = async () => {
   const token = await AsyncStorage.getItem("token");
@@ -13,7 +15,7 @@ const getAuthHeaders = async () => {
 export const toggleFavorito = async (id_lote: number) => {
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${BASE_URL}/${id_lote}`, {
+  const res = await fetch(`${FAVORITOS_URL}/${id_lote}`, {
     method: "POST",
     headers,
   });
@@ -25,7 +27,7 @@ export const toggleFavorito = async (id_lote: number) => {
 export const checkFavorito = async (id_lote: number) => {
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${BASE_URL}/check/${id_lote}`, {
+  const res = await fetch(`${FAVORITOS_URL}/check/${id_lote}`, {
     headers,
   });
 
@@ -35,7 +37,7 @@ export const checkFavorito = async (id_lote: number) => {
 export const getFavoritos = async () => {
   const headers = await getAuthHeaders();
 
-  const res = await fetch(BASE_URL, {
+  const res = await fetch(FAVORITOS_URL, {
     headers,
   });
 

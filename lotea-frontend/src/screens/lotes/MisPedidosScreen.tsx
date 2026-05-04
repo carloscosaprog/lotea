@@ -21,8 +21,7 @@ import { colors } from "../../styles/colors";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
-
-const BASE_URL = "http://192.168.0.65:3000";
+import { API_URL } from "../../config/api";
 
 export default function MisPedidosScreen() {
   const [pedidos, setPedidos] = useState<any[]>([]);
@@ -51,7 +50,7 @@ export default function MisPedidosScreen() {
       const token = await AsyncStorage.getItem("token");
 
       await axios.put(
-        `${BASE_URL}/pedidos/${id}`,
+        `${API_URL}/pedidos/${id}`,
         { estado },
         {
           headers: {

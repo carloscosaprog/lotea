@@ -1,11 +1,16 @@
 import { useState } from "react";
 import {
-  View,
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
-  Alert,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
@@ -15,6 +20,7 @@ import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { API_URL } from "../../config/api";
 
 export default function RegisterScreen() {
   const [nombre, setNombre] = useState("");
@@ -25,7 +31,7 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     try {
-      const response = await fetch("http://192.168.0.65:3000/auth/register", {
+      const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,67 +58,77 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.hero}>
-        <View style={styles.heroGlowLarge} />
-        <View style={styles.heroGlowSmall} />
-        <Text style={styles.brand}>LOTEA</Text>
-        <Text style={styles.heroSubtitle}>
-          Crea tu cuenta para publicar, vender y gestionar lotes.
-        </Text>
-      </View>
-
-      <Card style={styles.formCard}>
-        <View style={styles.formSection}>
-          <View style={layoutStyles.pageHeader}>
-            <Text style={layoutStyles.headerEyebrow}>Nueva cuenta</Text>
-            <Text style={styles.title}>Registrarse</Text>
-            <Text style={layoutStyles.headerSubtitle}>
-              Completa tus datos para empezar a usar LOTEA.
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView
+          contentContainerStyle={styles.screenContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.hero}>
+            <View style={styles.heroGlowLarge} />
+            <View style={styles.heroGlowSmall} />
+            <Text style={styles.brand}>LOTEA</Text>
+            <Text style={styles.heroSubtitle}>
+              Crea tu cuenta para publicar, vender y gestionar lotes.
             </Text>
           </View>
 
-          <TextInput
-            placeholder="Nombre"
-            placeholderTextColor={colors.subtext}
-            style={componentStyles.input}
-            value={nombre}
-            onChangeText={setNombre}
-          />
+          <Card style={styles.formCard}>
+            <View style={styles.formSection}>
+              <View style={layoutStyles.pageHeader}>
+                <Text style={layoutStyles.headerEyebrow}>Nueva cuenta</Text>
+                <Text style={styles.title}>Registrarse</Text>
+                <Text style={layoutStyles.headerSubtitle}>
+                  Completa tus datos para empezar a usar LOTEA.
+                </Text>
+              </View>
 
-          <TextInput
-            placeholder="Correo electronico"
-            placeholderTextColor={colors.subtext}
-            style={componentStyles.input}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-          />
+              <TextInput
+                placeholder="Nombre"
+                placeholderTextColor={colors.subtext}
+                style={componentStyles.input}
+                value={nombre}
+                onChangeText={setNombre}
+              />
 
-          <TextInput
-            placeholder="Contraseña"
-            placeholderTextColor={colors.subtext}
-            secureTextEntry
-            style={componentStyles.input}
-            value={password}
-            onChangeText={setPassword}
-          />
+              <TextInput
+                placeholder="Correo electronico"
+                placeholderTextColor={colors.subtext}
+                style={componentStyles.input}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+              />
 
-          <Button
-            title="Crear cuenta"
-            variant="accent"
-            onPress={handleRegister}
-          />
+              <TextInput
+                placeholder="Contraseña"
+                placeholderTextColor={colors.subtext}
+                secureTextEntry
+                style={componentStyles.input}
+                value={password}
+                onChangeText={setPassword}
+              />
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate("Login")}
-          >
-            <Text style={styles.link}>Ya tengo cuenta</Text>
-          </TouchableOpacity>
-        </View>
-      </Card>
-    </View>
+              <Button
+                title="Crear cuenta"
+                variant="accent"
+                onPress={handleRegister}
+              />
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate("Login")}
+              >
+                <Text style={styles.link}>Ya tengo cuenta</Text>
+              </TouchableOpacity>
+            </View>
+          </Card>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -120,6 +136,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  screenContent: {
+    flexGrow: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xxxl,
     paddingBottom: spacing.xxl,

@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = "http://192.168.0.65:3000/auth";
+import { API_URL } from "../config/api";
 
 const getAuthHeaders = async () => {
   const token = await AsyncStorage.getItem("token");
@@ -12,7 +12,7 @@ const getAuthHeaders = async () => {
 };
 
 export const getUserById = async (id: number) => {
-  const res = await fetch(`http://192.168.0.65:3000/lotes/user/${id}`);
+  const res = await fetch(`${API_URL}/lotes/user/${id}`);
 
   if (!res.ok) throw new Error("Error al cargar usuario");
 
@@ -22,7 +22,7 @@ export const getUserById = async (id: number) => {
 export const getProfile = async () => {
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${API_URL}/me`, {
+  const res = await fetch(`${API_URL}/auth/me`, {
     headers,
   });
 
@@ -36,7 +36,7 @@ export const getProfile = async () => {
 export const updateProfile = async (nombre: string) => {
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${API_URL}/me`, {
+  const res = await fetch(`${API_URL}/auth/me`, {
     method: "PUT",
     headers,
     body: JSON.stringify({ nombre }),
@@ -63,7 +63,7 @@ export const uploadAvatar = async (image: any) => {
     type: mimeType,
   } as any);
 
-  const res = await fetch("http://192.168.0.65:3000/lotes/user/avatar", {
+  const res = await fetch(`${API_URL}/lotes/user/avatar`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,

@@ -9,6 +9,7 @@ import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { toggleFavorito, checkFavorito } from "../../services/favoritosService";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 interface Props {
   lote: Lote;
@@ -24,17 +25,14 @@ export default function LoteCard({ lote }: Props) {
 
   const primeraImagen = lote.imagenes?.[0];
 
-  const imagenSrc =
-    primeraImagen && primeraImagen.trim() !== ""
-      ? {
-          uri: primeraImagen.replace(
-            "http://localhost:3000",
-            "http://192.168.0.65:3000",
-          ),
-        }
-      : { uri: "https://picsum.photos/300" };
+  const imagenSrc = { uri: getImageUrl(primeraImagen) };
 
   const totalImagenes = lote.imagenes?.length || 0;
+  const categorias = Array.isArray(lote.categorias)
+    ? lote.categorias
+    : lote.categoria
+      ? [lote.categoria]
+      : [];
 
   useEffect(() => {
     const fetchFavorito = async () => {
@@ -108,6 +106,15 @@ export default function LoteCard({ lote }: Props) {
           </Text>
 
           <Text style={styles.subtitle}>{lote.cantidad} unidades</Text>
+          {categorias.length > 0 && (
+            <View style={styles.categoryWrap}>
+              {categorias.map((categoria) => (
+                <View key={categoria} style={styles.categoryPill}>
+                  <Text style={styles.categoryText}>{categoria}</Text>
+                </View>
+              ))}
+            </View>
+          )}
           <Text style={styles.price}>{lote.precio} EUR</Text>
         </View>
       </Card>
@@ -178,6 +185,23 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.subtext,
     marginTop: 4,
+  },
+  categoryWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  categoryPill: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+    backgroundColor: "#DBEAFE",
+  },
+  categoryText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "700",
   },
   price: {
     ...typography.heading,

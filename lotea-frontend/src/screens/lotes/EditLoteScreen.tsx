@@ -22,13 +22,12 @@ import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 interface Categoria {
   id_categoria: number;
   nombre: string;
 }
-
-const BASE_URL = "http://192.168.0.65:3000";
 
 export default function EditLoteScreen() {
   const route = useRoute<any>();
@@ -43,18 +42,14 @@ export default function EditLoteScreen() {
     descripcion: "",
     precio: "",
     cantidad: "",
-    id_categoria: "",
   });
 
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriasDisponibles, setCategoriasDisponibles] = useState<
+    Categoria[]
+  >([]);
+  const [categorias, setCategorias] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const [newImages, setNewImages] = useState<any[]>([]);
-
-  const fixUrl = (url?: string) => {
-    if (!url) return "https://picsum.photos/300";
-
-    return url.replace("http://localhost:3000", BASE_URL);
-  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,12 +66,18 @@ export default function EditLoteScreen() {
             descripcion: data.descripcion,
             precio: String(data.precio),
             cantidad: String(data.cantidad),
-            id_categoria: String(data.id_categoria ?? ""),
           });
+          setCategorias(
+            Array.isArray(data.categorias) && data.categorias.length > 0
+              ? data.categorias
+              : data.categoria
+                ? [data.categoria]
+                : [],
+          );
           setExistingImages(Array.isArray(data.imagenes) ? data.imagenes : []);
         }
 
-        setCategorias(cats);
+        setCategoriasDisponibles(cats);
       } catch (error) {
         console.error(error);
       } finally {
@@ -94,6 +95,14 @@ export default function EditLoteScreen() {
     }));
   };
 
+  const toggleCategoria = (categoria: string) => {
+    setCategorias((prev) =>
+      prev.includes(categoria)
+        ? prev.filter((item) => item !== categoria)
+        : [...prev, categoria],
+    );
+  };
+
   const removeExistingImage = (index: number) => {
     setExistingImages((current) => current.filter((_, i) => i !== index));
   };
@@ -106,7 +115,16 @@ export default function EditLoteScreen() {
       return;
     }
 
+    if (categorias.length === 0) {
+      Alert.alert("Selecciona al menos una categoria");
+      return;
+    }
+
     try {
+      const categoriaPrincipal = categoriasDisponibles.find(
+        (cat) => cat.nombre === categorias[0],
+      );
+
       await updateLote(
         lote.id_lote,
         {
@@ -114,10 +132,10 @@ export default function EditLoteScreen() {
           descripcion: form.descripcion,
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
-          id_categoria: Number(form.id_categoria),
-          imagenes: existingImages.map((img) =>
-            img.replace("http://localhost:3000", BASE_URL),
-          ),
+          id_categoria: categoriaPrincipal?.id_categoria,
+          categoria: categorias[0],
+          categorias,
+          imagenes: existingImages.map((img) => getImageUrl(img)),
         },
         newImages,
       );
@@ -172,7 +190,7 @@ export default function EditLoteScreen() {
           <View style={styles.imageRow}>
             {existingImages.map((img, index) => (
               <View key={index} style={styles.imageContainer}>
-                <Image source={{ uri: fixUrl(img) }} style={styles.image} />
+                <Image source={{ uri: getImageUrl(img) }} style={styles.image} />
 
                 <TouchableOpacity
                   onPress={() => removeExistingImage(index)}
@@ -239,8 +257,8 @@ export default function EditLoteScreen() {
 
             <Text style={styles.label}>Categoria</Text>
             <View style={styles.categoryWrap}>
-              {categorias.map((cat) => {
-                const selected = form.id_categoria === String(cat.id_categoria);
+              {categoriasDisponibles.map((cat) => {
+                const selected = categorias.includes(cat.nombre);
 
                 return (
                   <TouchableOpacity
@@ -249,9 +267,7 @@ export default function EditLoteScreen() {
                       styles.categoryItem,
                       selected && styles.categorySelected,
                     ]}
-                    onPress={() =>
-                      handleChange("id_categoria", String(cat.id_categoria))
-                    }
+                    onPress={() => toggleCategoria(cat.nombre)}
                   >
                     <Text
                       style={[
