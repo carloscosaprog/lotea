@@ -17,6 +17,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import {
   ChatMessage,
+  deleteConversation,
   getOrCreateConversation,
   getMessages,
   markMessagesAsRead,
@@ -67,6 +68,7 @@ export default function ChatScreen() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!conversationId) {
@@ -179,6 +181,33 @@ export default function ChatScreen() {
     }
   };
 
+  const handleDeleteConversation = () => {
+    setMenuOpen(false);
+
+    Alert.alert(
+      "Eliminar conversacion",
+      "Se eliminara esta conversacion y sus mensajes.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (conversationId) {
+                await deleteConversation(conversationId);
+              }
+
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert("Error", "No se pudo eliminar la conversacion");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (loading) {
     return (
       <View style={layoutStyles.center}>
@@ -206,6 +235,33 @@ export default function ChatScreen() {
             <Text numberOfLines={1} style={styles.headerSubtitle}>
               {route.params.loteTitulo}
             </Text>
+          )}
+        </View>
+        <View style={styles.menuWrap}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.menuButton}
+            onPress={() => setMenuOpen((current) => !current)}
+          >
+            <Ionicons name="ellipsis-vertical" size={20} color={colors.text} />
+          </TouchableOpacity>
+
+          {menuOpen && (
+            <View style={styles.menu}>
+              <TouchableOpacity activeOpacity={0.8} style={styles.menuItem}>
+                <Text style={styles.menuText}>Reportar usuario</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                style={styles.menuItem}
+                onPress={handleDeleteConversation}
+              >
+                <Text style={styles.menuTextDanger}>Eliminar conversacion</Text>
+              </TouchableOpacity>
+              <TouchableOpacity activeOpacity={0.8} style={styles.menuItem}>
+                <Text style={styles.menuText}>Bloquear usuario</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </View>
@@ -312,6 +368,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.background,
+    zIndex: 20,
+    elevation: 20,
   },
   headerCopy: {
     flex: 1,
@@ -323,6 +381,42 @@ const styles = StyleSheet.create({
   headerSubtitle: {
     ...typography.caption,
     color: colors.subtext,
+  },
+  menuWrap: {
+    position: "relative",
+  },
+  menuButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menu: {
+    position: "absolute",
+    top: 42,
+    right: 0,
+    width: 210,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    zIndex: 10,
+    overflow: "hidden",
+  },
+  menuItem: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  menuText: {
+    ...typography.body,
+    color: colors.text,
+  },
+  menuTextDanger: {
+    ...typography.body,
+    color: colors.danger,
   },
   messagesContent: {
     padding: spacing.lg,

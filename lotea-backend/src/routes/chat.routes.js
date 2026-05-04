@@ -257,6 +257,21 @@ router.post("/conversations", async (req, res) => {
   }
 });
 
+router.delete("/conversations/:conversationId", async (req, res) => {
+  try {
+    await ensureChatTables();
+
+    await pool.query("DELETE FROM Conversation WHERE id = $1", [
+      req.params.conversationId,
+    ]);
+
+    res.json({ ok: true });
+  } catch (error) {
+    console.error("ERROR DELETE CONVERSATION:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get("/messages/:conversationId", async (req, res) => {
   try {
     await ensureChatTables();

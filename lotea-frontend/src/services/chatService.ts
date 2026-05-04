@@ -91,6 +91,14 @@ export const getOrCreateConversation = async (
   return getJson<Conversation>(response);
 };
 
+export const deleteConversation = async (conversationId: number) => {
+  const response = await fetch(`${CHAT_URL}/conversations/${conversationId}`, {
+    method: "DELETE",
+  });
+
+  return getJson<{ ok: boolean }>(response);
+};
+
 export const markMessagesAsRead = async (
   conversationId: number,
   userId: number,
