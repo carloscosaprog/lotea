@@ -20,38 +20,54 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
 
-const categories = ["Todas", "Electronica", "Moda", "Hogar", "Juguetes", "Oficina"];
+const categories = [
+  "Todas",
+  "Electronica",
+  "Moda",
+  "Hogar",
+  "Juguetes",
+  "Oficina",
+];
 
 export default function HomeScreen() {
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [favoritos, setFavoritos] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeCategories, setActiveCategories] = useState<string[]>([
     categories[0],
   ]);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    const fetchLotes = async () => {
-      try {
-        const data = await getLotes();
-        setLotes(data);
+  const fetchLotes = async () => {
+    try {
+      const data = await getLotes();
+      setLotes(data);
 
-        try {
-          const favoritosData = await getFavoritos();
-          setFavoritos(favoritosData);
-        } catch {
-          setFavoritos([]);
-        }
-      } catch (error) {
-        console.error("Error al cargar lotes:", error);
-      } finally {
+      try {
+        const favoritosData = await getFavoritos();
+        setFavoritos(favoritosData);
+      } catch {
+        setFavoritos([]);
+      }
+    } catch (error) {
+      console.error("Error al cargar lotes:", error);
+    } finally {
+      if (!refreshing) {
         setLoading(false);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchLotes();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchLotes();
+    setRefreshing(false);
+  };
 
   const toggleCategory = (category: string) => {
     setActiveCategories((current) => {
@@ -68,20 +84,19 @@ export default function HomeScreen() {
 
   const filteredLotes = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const lotesByCategory =
-      activeCategories.includes("Todas")
-        ? lotes
-        : lotes.filter((item) => {
-            const categorias = Array.isArray(item.categorias)
-              ? item.categorias
-              : item.categoria
-                ? [item.categoria]
-                : [];
+    const lotesByCategory = activeCategories.includes("Todas")
+      ? lotes
+      : lotes.filter((item) => {
+          const categorias = Array.isArray(item.categorias)
+            ? item.categorias
+            : item.categoria
+              ? [item.categoria]
+              : [];
 
-            return activeCategories.some((category) =>
-              categorias.includes(category),
-            );
-          });
+          return activeCategories.some((category) =>
+            categorias.includes(category),
+          );
+        });
 
     if (!query) return lotesByCategory;
 
@@ -116,6 +131,8 @@ export default function HomeScreen() {
         renderItem={({ item }) => <LoteListItem lote={item} />}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         ListHeaderComponent={
           <>
             <View style={styles.hero}>
@@ -130,7 +147,11 @@ export default function HomeScreen() {
                   </Text>
                 </View>
                 <View style={styles.heroIcon}>
-                  <Ionicons name="person-outline" size={20} color={colors.white} />
+                  <Ionicons
+                    name="person-outline"
+                    size={20}
+                    color={colors.white}
+                  />
                 </View>
               </View>
 
@@ -160,7 +181,12 @@ export default function HomeScreen() {
                     style={[styles.pill, isActive && styles.pillActive]}
                     onPress={() => toggleCategory(category)}
                   >
-                    <Text style={[styles.pillText, isActive && styles.pillTextActive]}>
+                    <Text
+                      style={[
+                        styles.pillText,
+                        isActive && styles.pillTextActive,
+                      ]}
+                    >
                       {category}
                     </Text>
                   </TouchableOpacity>
@@ -196,7 +222,9 @@ export default function HomeScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyTitle}>No hay lotes para esa busqueda</Text>
+            <Text style={styles.emptyTitle}>
+              No hay lotes para esa busqueda
+            </Text>
             <Text style={styles.emptyText}>
               Prueba con otra palabra para descubrir mas publicaciones.
             </Text>
