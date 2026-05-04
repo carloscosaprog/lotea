@@ -6,6 +6,10 @@ Plataforma multiplataforma de compra y venta de productos por lotes.
 
 ## 🎥 Demo del proyecto
 
+### 🎬 Video Demostrativo 2
+[![Ver demo de LOTEA](https://img.youtube.com/vi/7YaI6ksjMEA/hqdefault.jpg)](https://www.youtube.com/watch?v=7YaI6ksjMEA)
+
+### 🎬 Video Demostrativo 1
 [![Ver demo de LOTEA](https://img.youtube.com/vi/3LwFtk3jYSE/hqdefault.jpg)](https://www.youtube.com/watch?v=3LwFtk3jYSE)
 
 ---
