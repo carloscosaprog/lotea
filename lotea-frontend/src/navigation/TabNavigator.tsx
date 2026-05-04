@@ -14,6 +14,7 @@ export default function TabNavigator() {
       tabBar={(props) => <Navbar {...props} />}
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         sceneStyle: { backgroundColor: colors.background },
       }}
     >

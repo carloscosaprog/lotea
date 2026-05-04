@@ -1,10 +1,15 @@
 import { useState } from "react";
 import {
-  View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -59,61 +64,71 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.hero}>
-        <View style={styles.heroGlowLarge} />
-        <View style={styles.heroGlowSmall} />
-        <Text style={styles.brand}>LOTEA</Text>
-        <Text style={styles.heroSubtitle}>
-          Accede para gestionar tus lotes y seguir vendiendo.
-        </Text>
-      </View>
-
-      <Card style={styles.formCard}>
-        <View style={styles.formSection}>
-          <View style={layoutStyles.pageHeader}>
-            <Text style={layoutStyles.headerEyebrow}>Bienvenido</Text>
-            <Text style={styles.title}>Iniciar sesion</Text>
-            <Text style={layoutStyles.headerSubtitle}>
-              Entra con tu correo y tu contraseña para continuar.
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <ScrollView
+          contentContainerStyle={styles.screenContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.hero}>
+            <View style={styles.heroGlowLarge} />
+            <View style={styles.heroGlowSmall} />
+            <Text style={styles.brand}>LOTEA</Text>
+            <Text style={styles.heroSubtitle}>
+              Accede para gestionar tus lotes y seguir vendiendo.
             </Text>
           </View>
 
-          <TextInput
-            placeholder="Correo electronico"
-            placeholderTextColor={colors.subtext}
-            style={[componentStyles.input, error ? styles.inputError : null]}
-            value={identifier}
-            onChangeText={setIdentifier}
-            autoCapitalize="none"
-          />
+          <Card style={styles.formCard}>
+            <View style={styles.formSection}>
+              <View style={layoutStyles.pageHeader}>
+                <Text style={layoutStyles.headerEyebrow}>Bienvenido</Text>
+                <Text style={styles.title}>Iniciar sesion</Text>
+                <Text style={layoutStyles.headerSubtitle}>
+                  Entra con tu correo y tu contraseña para continuar.
+                </Text>
+              </View>
 
-          <TextInput
-            placeholder="Contraseña"
-            placeholderTextColor={colors.subtext}
-            secureTextEntry
-            style={[componentStyles.input, error ? styles.inputError : null]}
-            value={password}
-            onChangeText={setPassword}
-          />
+              <TextInput
+                placeholder="Correo electronico"
+                placeholderTextColor={colors.subtext}
+                style={[componentStyles.input, error ? styles.inputError : null]}
+                value={identifier}
+                onChangeText={setIdentifier}
+                autoCapitalize="none"
+              />
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+              <TextInput
+                placeholder="Contraseña"
+                placeholderTextColor={colors.subtext}
+                secureTextEntry
+                style={[componentStyles.input, error ? styles.inputError : null]}
+                value={password}
+                onChangeText={setPassword}
+              />
 
-          <Button
-            title="Entrar"
-            onPress={handleLogin}
-            style={styles.primaryButton}
-          />
+              {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate("Register")}
-          >
-            <Text style={styles.link}>Crear cuenta</Text>
-          </TouchableOpacity>
-        </View>
-      </Card>
-    </View>
+              <Button
+                title="Entrar"
+                onPress={handleLogin}
+                style={styles.primaryButton}
+              />
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate("Register")}
+              >
+                <Text style={styles.link}>Crear cuenta</Text>
+              </TouchableOpacity>
+            </View>
+          </Card>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -121,6 +136,9 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  screenContent: {
+    flexGrow: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xxxl,
     paddingBottom: spacing.xxl,

@@ -3,7 +3,9 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Keyboard,
   KeyboardAvoidingView,
+  KeyboardEvent,
   Platform,
   StyleSheet,
   Text,
@@ -12,7 +14,9 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -53,6 +57,8 @@ export default function ChatScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const userId = getUserId(user);
@@ -69,6 +75,22 @@ export default function ChatScreen() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const isKeyboardOpen = keyboardHeight > 0;
+
+  const inputBarBottomPadding =
+    Platform.OS === "android" && isKeyboardOpen
+      ? spacing.lg
+      : Math.max(insets.bottom, spacing.lg);
+  const inputBarBottomOffset =
+    Platform.OS === "android" && isKeyboardOpen
+      ? Math.max(keyboardHeight - tabBarHeight - insets.bottom, 0) + spacing.sm
+      : 0;
+  const listBottomPadding =
+    Platform.OS === "android" && isKeyboardOpen
+      ? keyboardHeight + spacing.xxxl
+      : spacing.lg;
 
   useEffect(() => {
     if (!conversationId) {
@@ -91,6 +113,23 @@ export default function ChatScreen() {
 
     loadMessages();
   }, [conversationId]);
+
+  useEffect(() => {
+    const handleKeyboardShow = (event: KeyboardEvent) => {
+      setKeyboardHeight(event.endCoordinates.height);
+      listRef.current?.scrollToEnd({ animated: true });
+    };
+
+    const showSubscription = Keyboard.addListener("keyboardDidShow", handleKeyboardShow);
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (!userId) return;
@@ -221,7 +260,7 @@ export default function ChatScreen() {
     <KeyboardAvoidingView
       style={layoutStyles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={80}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
     >
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.8}>
@@ -270,7 +309,11 @@ export default function ChatScreen() {
         ref={listRef}
         data={messages}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.messagesContent}
+        contentContainerStyle={[
+          styles.messagesContent,
+          { paddingBottom: listBottomPadding },
+        ]}
+        keyboardShouldPersistTaps="handled"
         onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
         renderItem={({ item }) => {
           const isMine = item.senderId === userId;
@@ -335,7 +378,15 @@ export default function ChatScreen() {
         }
       />
 
-      <View style={styles.inputBar}>
+      <View
+        style={[
+          styles.inputBar,
+          {
+            marginBottom: inputBarBottomOffset,
+            paddingBottom: inputBarBottomPadding,
+          },
+        ]}
+      >
         <TextInput
           value={text}
           onChangeText={setText}
@@ -343,6 +394,10 @@ export default function ChatScreen() {
           placeholderTextColor={colors.subtext}
           style={styles.input}
           multiline
+          returnKeyType="send"
+          submitBehavior="submit"
+          onSubmitEditing={handleSend}
+          onFocus={() => listRef.current?.scrollToEnd({ animated: true })}
         />
         <TouchableOpacity
           activeOpacity={0.85}
