@@ -40,6 +40,7 @@ export default function LoginScreen() {
         headers: {
           "Content-Type": "application/json",
         },
+        // Se envía el email y la contraseña en el formato que espera el backend
         body: JSON.stringify({
           email: identifier,
           contrasena: password,
@@ -48,11 +49,15 @@ export default function LoginScreen() {
 
       const data = await response.json();
 
+      // Se adapta el manejo de errores al formato típico de NestJS (message)
       if (!response.ok) {
-        throw new Error(data.error || "Error en login");
+        throw new Error(data.message || data.error || "Error en login");
       }
 
-      await AsyncStorage.setItem("token", data.token);
+      // Se guarda el JWT usando la clave correcta devuelta por el backend
+      await AsyncStorage.setItem("token", data.access_token);
+
+      // Se guarda el usuario en el contexto global para uso posterior en la app
       login(data.user);
     } catch (err) {
       if (err instanceof Error) {
@@ -95,7 +100,10 @@ export default function LoginScreen() {
               <TextInput
                 placeholder="Correo electronico"
                 placeholderTextColor={colors.subtext}
-                style={[componentStyles.input, error ? styles.inputError : null]}
+                style={[
+                  componentStyles.input,
+                  error ? styles.inputError : null,
+                ]}
                 value={identifier}
                 onChangeText={setIdentifier}
                 autoCapitalize="none"
@@ -105,7 +113,10 @@ export default function LoginScreen() {
                 placeholder="Contraseña"
                 placeholderTextColor={colors.subtext}
                 secureTextEntry
-                style={[componentStyles.input, error ? styles.inputError : null]}
+                style={[
+                  componentStyles.input,
+                  error ? styles.inputError : null,
+                ]}
                 value={password}
                 onChangeText={setPassword}
               />
