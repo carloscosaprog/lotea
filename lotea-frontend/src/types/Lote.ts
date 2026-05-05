@@ -6,7 +6,10 @@ export interface Lote {
   cantidad: number;
   id_vendedor: number;
 
-  vendedor?: string;
+  vendedor?: {
+    id_usuario: number;
+    nombre: string;
+  };
   categoria?: string;
   categorias: string[];
 

@@ -19,21 +19,14 @@ import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
-
-const categories = [
-  "Todas",
-  "Electronica",
-  "Moda",
-  "Hogar",
-  "Juguetes",
-  "Oficina",
-];
+import { getCategorias } from "../../services/categoriasService";
 
 export default function HomeScreen() {
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [favoritos, setFavoritos] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [categories, setCategories] = useState<string[]>(["Todas"]);
   const [activeCategories, setActiveCategories] = useState<string[]>([
     categories[0],
   ]);
@@ -61,6 +54,20 @@ export default function HomeScreen() {
 
   useEffect(() => {
     fetchLotes();
+  }, []);
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchLotes();
+
+      try {
+        const cats = await getCategorias();
+        setCategories(["Todas", ...cats.map((c: any) => c.nombre)]);
+      } catch (e) {
+        console.error("Error cargando categorias", e);
+      }
+    };
+
+    loadData();
   }, []);
 
   const onRefresh = async () => {

@@ -1,4 +1,11 @@
-import { Image, StyleProp, StyleSheet, Text, View, ViewStyle } from "react-native";
+import {
+  Image,
+  StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from "react-native";
 
 import { colors } from "../../styles/colors";
 import { radii } from "../../styles/spacing";
@@ -11,13 +18,9 @@ interface AvatarProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export default function Avatar({
-  uri,
-  name,
-  size = 56,
-  style,
-}: AvatarProps) {
-  const initials = (name?.trim().charAt(0) || "U").toUpperCase();
+export default function Avatar({ uri, name, size = 56, style }: AvatarProps) {
+  const safeName = typeof name === "string" ? name : "";
+  const initials = (safeName.trim().charAt(0) || "U").toUpperCase();
 
   return (
     <View
