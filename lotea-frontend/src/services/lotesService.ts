@@ -90,35 +90,21 @@ export const createLote = async (
   lote: LoteCreate,
   files: any[],
 ): Promise<Lote> => {
-  const formData = new FormData();
-
-  formData.append("titulo", lote.titulo);
-  formData.append("descripcion", lote.descripcion);
-  formData.append("precio", String(lote.precio));
-  formData.append("cantidad", String(lote.cantidad));
-  if (lote.id_categoria) {
-    formData.append("id_categoria", String(lote.id_categoria));
-  }
-  if (lote.categoria) {
-    formData.append("categoria", lote.categoria);
-  }
-  formData.append("categorias", JSON.stringify(lote.categorias));
-
-  if (files && files.length > 0) {
-    files.forEach((file, index) => {
-      const image = buildImageFile(file, index);
-      if (!image) return;
-
-      formData.append("imagenesFiles", image as any);
-    });
-  }
-
   const headers = await getAuthHeaders();
 
   const response = await fetch(LOTES_URL, {
     method: "POST",
-    headers,
-    body: formData,
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      titulo: lote.titulo,
+      descripcion: lote.descripcion,
+      precio: lote.precio,
+      cantidad: lote.cantidad,
+      id_categoria: lote.id_categoria,
+    }),
   });
 
   if (!response.ok) {
