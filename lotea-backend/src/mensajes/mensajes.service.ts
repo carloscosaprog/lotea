@@ -1,6 +1,10 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateMensajeDto } from './dto/CreateMensajeDto';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateMensajeDto } from "./dto/CreateMensajeDto";
 
 type MensajeRow = {
   id_mensaje: number;
@@ -57,7 +61,7 @@ export class MensajesService {
     const contenido = dto.contenido ?? dto.text;
 
     if (!id_receptor || !id_lote || !contenido?.trim()) {
-      throw new BadRequestException('Faltan id_receptor, id_lote o contenido');
+      throw new BadRequestException("Faltan id_receptor, id_lote o contenido");
     }
 
     const rows = await this.prisma.$queryRaw<MensajeRow[]>`
@@ -136,7 +140,9 @@ export class MensajesService {
   }
 
   async getConversaciones(id_usuario: number) {
-    const rows = await this.prisma.$queryRaw<(MensajeRow & { unread_count: bigint })[]>`
+    const rows = await this.prisma.$queryRaw<
+      (MensajeRow & { unread_count: bigint })[]
+    >`
       WITH ranked AS (
         SELECT
           m.*,
@@ -153,7 +159,8 @@ export class MensajesService {
             ORDER BY m.fecha DESC
           ) AS rn
         FROM mensaje m
-        WHERE m.id_emisor = ${id_usuario} OR m.id_receptor = ${id_usuario}
+        WHERE (m.id_emisor = ${id_usuario} OR m.id_receptor = ${id_usuario})
+          AND m.id_lote IS NOT NULL
       ),
       unread AS (
         SELECT id_lote, id_emisor AS id_otro, COUNT(*) AS unread_count
@@ -198,7 +205,10 @@ export class MensajesService {
         mensaje.id_emisor === id_usuario ? mensaje.receptor : mensaje.emisor;
 
       return {
-        id: `${mensaje.id_lote}-${otherUser.id_usuario}`,
+        id:
+          mensaje.id_lote && otherUser.id_usuario
+            ? `${mensaje.id_lote}-${otherUser.id_usuario}`
+            : `${mensaje.id_mensaje}`,
         id_lote: mensaje.id_lote,
         otherUserId: otherUser.id_usuario,
         otherUserName: otherUser.nombre,
@@ -212,7 +222,11 @@ export class MensajesService {
     });
   }
 
-  async marcarConversacionLeida(id_usuario: number, id_lote: number, id_otro: number) {
+  async marcarConversacionLeida(
+    id_usuario: number,
+    id_lote: number,
+    id_otro: number,
+  ) {
     await this.prisma.$executeRaw`
       UPDATE mensaje
       SET leido = true
@@ -226,13 +240,19 @@ export class MensajesService {
   }
 
   async remove(id: number) {
-    const msg = await this.prisma.mensaje.findUnique({ where: { id_mensaje: id } });
+    const msg = await this.prisma.mensaje.findUnique({
+      where: { id_mensaje: id },
+    });
     if (!msg) throw new NotFoundException(`Mensaje ${id} no encontrado`);
     await this.prisma.mensaje.delete({ where: { id_mensaje: id } });
     return { message: `Mensaje ${id} eliminado` };
   }
 
-  async removeConversacion(id_usuario: number, id_lote: number, id_otro: number) {
+  async removeConversacion(
+    id_usuario: number,
+    id_lote: number,
+    id_otro: number,
+  ) {
     await this.prisma.$executeRaw`
       DELETE FROM mensaje
       WHERE id_lote = ${id_lote}
