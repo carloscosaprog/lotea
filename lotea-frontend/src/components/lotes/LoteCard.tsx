@@ -49,7 +49,7 @@ export default function LoteCard({ lote }: Props) {
 
   const handleToggleFavorito = async () => {
     try {
-      const res = await toggleFavorito(lote.id_lote);
+      const res = await toggleFavorito(lote.id_lote, isFavorito);
 
       setIsFavorito(res.favorito);
 

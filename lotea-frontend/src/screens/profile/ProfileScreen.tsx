@@ -1,22 +1,18 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
+  Image,
+  Modal,
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import * as ImagePicker from "expo-image-picker";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
-import {
-  getProfile,
-  updateProfile,
-  uploadAvatar,
-} from "../../services/authService";
+import { getProfile } from "../../services/authService";
 import { getMisLotes } from "../../services/lotesService";
 import { useAuth } from "../../context/AuthContext";
 import type { Lote } from "../../types/Lote";
@@ -26,20 +22,20 @@ import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { componentStyles, layoutStyles } from "../../styles/theme";
+import { layoutStyles } from "../../styles/theme";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
-  const [nombre, setNombre] = useState("");
   const [myLotes, setMyLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [avatarOpen, setAvatarOpen] = useState(false);
 
-  const { login, logout } = useAuth();
+  const { logout } = useAuth();
   const navigation = useNavigation<any>();
 
-  useEffect(() => {
+  useFocusEffect(
+    useCallback(() => {
     const loadProfile = async () => {
       try {
         const [profileData, lotesData] = await Promise.all([
@@ -47,7 +43,6 @@ export default function ProfileScreen() {
           getMisLotes(),
         ]);
         setUser(profileData);
-        setNombre(profileData.nombre);
         setMyLotes(lotesData);
       } catch (error) {
         console.error(error);
@@ -58,65 +53,8 @@ export default function ProfileScreen() {
     };
 
     loadProfile();
-  }, []);
-
-  const handleSave = async () => {
-    if (!nombre.trim()) {
-      Alert.alert("El nombre no puede estar vacio");
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setSuccess(false);
-
-      const updated = await updateProfile(nombre);
-      setUser(updated);
-      login(updated);
-
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 2000);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error al actualizar");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handlePickImage = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!permission.granted) {
-      Alert.alert("Necesitamos permiso para acceder a tus fotos");
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-
-    if (!result.canceled) {
-      try {
-        const asset = result.assets[0];
-        const response = await uploadAvatar(asset);
-
-        const updatedUser = {
-          ...user,
-          avatar: response.avatar,
-        };
-
-        setUser(updatedUser);
-        login(updatedUser);
-      } catch (error) {
-        console.log(error);
-        Alert.alert("Error subiendo imagen");
-      }
-    }
-  };
+    }, []),
+  );
 
   if (loading) {
     return (
@@ -141,6 +79,7 @@ export default function ProfileScreen() {
   }
 
   const totalUnits = myLotes.reduce((sum, lote) => sum + lote.cantidad, 0);
+  const avatarUri = user.avatar ? getImageUrl(user.avatar) : null;
 
   return (
     <ScrollView
@@ -151,15 +90,21 @@ export default function ProfileScreen() {
       <View style={styles.topBar}>
         <View style={{ width: 22 }} />
         <Text style={styles.topBarTitle}>Perfil</Text>
-        <TouchableOpacity activeOpacity={0.8}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("EditProfile")}
+        >
           <Text style={styles.topBarAction}>Editar</Text>
         </TouchableOpacity>
       </View>
 
       <Card>
         <View style={styles.profileRow}>
-          <TouchableOpacity onPress={handlePickImage} activeOpacity={0.9}>
-            <Avatar uri={user.avatar} name={user.nombre} size={64} />
+          <TouchableOpacity
+            onPress={() => avatarUri && setAvatarOpen(true)}
+            activeOpacity={0.9}
+          >
+            <Avatar uri={avatarUri} name={user.nombre} size={64} />
           </TouchableOpacity>
 
           <View style={styles.profileCopy}>
@@ -191,11 +136,7 @@ export default function ProfileScreen() {
       {/* MIS LOTES */}
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() =>
-          navigation.navigate("Perfil", {
-            screen: "MisLotes",
-          })
-        }
+        onPress={() => navigation.navigate("MisLotes")}
       >
         <Card>
           <View style={styles.quickAction}>
@@ -217,11 +158,7 @@ export default function ProfileScreen() {
       {/* MIS PEDIDOS */}
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() =>
-          navigation.navigate("Perfil", {
-            screen: "MisPedidos",
-          })
-        }
+        onPress={() => navigation.navigate("MisPedidos")}
       >
         <Card>
           <View style={styles.quickAction}>
@@ -243,11 +180,7 @@ export default function ProfileScreen() {
       {/* MIS FAVORITOS */}
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() =>
-          navigation.navigate("Perfil", {
-            screen: "Favoritos",
-          })
-        }
+        onPress={() => navigation.navigate("Favoritos")}
       >
         <Card>
           <View style={styles.quickAction}>
@@ -269,11 +202,7 @@ export default function ProfileScreen() {
       {/* MIS CONVERSACIONES */}
       <TouchableOpacity
         activeOpacity={0.9}
-        onPress={() =>
-          navigation.navigate("Perfil", {
-            screen: "Conversations",
-          })
-        }
+        onPress={() => navigation.navigate("Conversations")}
       >
         <Card>
           <View style={styles.quickAction}>
@@ -293,33 +222,35 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       <Card>
-        <View style={styles.formSection}>
-          <View style={styles.labelRow}>
-            <Text style={componentStyles.inputLabel}>Nombre visible</Text>
-            {success && (
-              <View style={styles.successPill}>
-                <Text style={styles.successText}>Guardado</Text>
-              </View>
-            )}
+        <View style={styles.accountSection}>
+          <View style={styles.accountIcon}>
+            <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
           </View>
-
-          <TextInput
-            value={nombre}
-            onChangeText={setNombre}
-            style={componentStyles.input}
-            placeholder="Tu nombre"
-            placeholderTextColor={colors.subtext}
-          />
-
-          <Button
-            title={saving ? "Guardando..." : "Guardar cambios"}
-            onPress={handleSave}
-            disabled={saving}
-          />
-
+          <View style={styles.accountCopy}>
+            <Text style={styles.accountTitle}>Tu perfil publico</Text>
+            <Text style={styles.accountText}>
+              Mantén tu nombre y tu avatar actualizados desde Editar.
+            </Text>
+          </View>
           <Button title="Cerrar sesion" variant="danger" onPress={logout} />
         </View>
       </Card>
+
+      <Modal visible={avatarOpen} transparent animationType="fade">
+        <View style={styles.avatarModal}>
+          <TouchableOpacity
+            style={styles.modalClose}
+            onPress={() => setAvatarOpen(false)}
+          >
+            <Ionicons name="close" size={24} color={colors.white} />
+          </TouchableOpacity>
+
+          {avatarUri && (
+            <Image source={{ uri: avatarUri }} style={styles.fullAvatar} />
+          )}
+          <Text style={styles.modalName}>{user.nombre}</Text>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -397,23 +328,60 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.text,
   },
-  formSection: {
+  accountSection: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing.md,
   },
-  labelRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  successPill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+  accountIcon: {
+    width: 44,
+    height: 44,
     borderRadius: radii.full,
-    backgroundColor: colors.accentSoft,
+    backgroundColor: "#DBEAFE",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  successText: {
+  accountCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  accountTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  accountText: {
     ...typography.caption,
-    color: colors.accent,
+    color: colors.subtext,
+  },
+  avatarModal: {
+    flex: 1,
+    backgroundColor: "rgba(2,6,23,0.96)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xl,
+  },
+  modalClose: {
+    position: "absolute",
+    top: 44,
+    right: 24,
+    width: 44,
+    height: 44,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(255,255,255,0.14)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  fullAvatar: {
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    borderWidth: 4,
+    borderColor: colors.white,
+  },
+  modalName: {
+    ...typography.title,
+    color: colors.white,
+    marginTop: spacing.lg,
   },
   feedbackTitle: {
     ...typography.heading,

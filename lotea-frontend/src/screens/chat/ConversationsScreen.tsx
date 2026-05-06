@@ -90,19 +90,21 @@ export default function ConversationsScreen() {
             style={styles.row}
             onPress={() =>
               navigation.navigate("Chat", {
-                conversationId: item.id,
-                loteTitulo: item.loteTitulo,
+                otherUserId: item.otherUserId,
                 otherUserName: item.otherUserName,
               })
             }
           >
-            <Image source={{ uri: getImageUrl(item.loteImagen ?? undefined) }} style={styles.image} />
+            <Image
+              source={{ uri: getImageUrl(item.otherUserAvatar ?? undefined) }}
+              style={styles.image}
+            />
             <View style={styles.copy}>
               <Text numberOfLines={1} style={styles.title}>
                 {item.otherUserName || "Conversacion"}
               </Text>
               <Text numberOfLines={1} style={styles.loteTitle}>
-                {item.loteTitulo || "Lote"}
+                Mensajes
               </Text>
               <Text numberOfLines={1} style={styles.lastMessage}>
                 {item.lastMessage || "Sin mensajes todavia"}

@@ -11,7 +11,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 
 import { useAuth } from "../../context/AuthContext";
@@ -54,11 +53,7 @@ export default function LoginScreen() {
         throw new Error(data.message || data.error || "Error en login");
       }
 
-      // Se guarda el JWT usando la clave correcta devuelta por el backend
-      await AsyncStorage.setItem("token", data.access_token);
-
-      // Se guarda el usuario en el contexto global para uso posterior en la app
-      login(data.user);
+      await login(data.user, data.access_token);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

@@ -1,23 +1,15 @@
 import { API_URL } from "../config/api";
 
-/**
- * Convierte rutas del backend en URLs válidas para el frontend.
- * Soporta:
- * - URLs absolutas
- * - rutas tipo /uploads/...
- * - valores vacíos
- */
-export const getImageUrl = (url?: string) => {
-  console.log("API_URL:", API_URL);
-  if (!url || url.trim() === "") {
-    return "https://picsum.photos/200";
+export const getImageUrl = (url?: string | null) => {
+  const safeUrl = typeof url === "string" ? url.trim() : "";
+
+  if (!safeUrl) {
+    return "https://picsum.photos/300";
   }
 
-  // Si ya es una URL completa, la devolvemos
-  if (url.startsWith("http")) {
-    return url.replace("http://localhost:3000", API_URL);
+  if (safeUrl.startsWith("http")) {
+    return safeUrl.replace("http://localhost:3000", API_URL);
   }
 
-  // Si es ruta relativa, la construimos
-  return `${API_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+  return `${API_URL}${safeUrl.startsWith("/") ? "" : "/"}${safeUrl}`;
 };

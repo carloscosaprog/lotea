@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -32,7 +32,7 @@ export default function HomeScreen() {
   ]);
   const [search, setSearch] = useState("");
 
-  const fetchLotes = async () => {
+  const fetchLotes = useCallback(async () => {
     try {
       const data = await getLotes();
       setLotes(data);
@@ -46,15 +46,10 @@ export default function HomeScreen() {
     } catch (error) {
       console.error("Error al cargar lotes:", error);
     } finally {
-      if (!refreshing) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchLotes();
   }, []);
+
   useEffect(() => {
     const loadData = async () => {
       await fetchLotes();
@@ -68,7 +63,7 @@ export default function HomeScreen() {
     };
 
     loadData();
-  }, []);
+  }, [fetchLotes]);
 
   const onRefresh = async () => {
     setRefreshing(true);

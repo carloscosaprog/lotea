@@ -22,12 +22,9 @@ import { useAuth } from "../../context/AuthContext";
 import {
   ChatMessage,
   deleteConversation,
-  getOrCreateConversation,
   getMessages,
-  markMessagesAsRead,
   sendMessage,
 } from "../../services/chatService";
-import { connectSocket, socket } from "../../services/socket";
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -62,15 +59,15 @@ export default function ChatScreen() {
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const userId = getUserId(user);
-  const initialConversationId = route.params?.conversationId
-    ? Number(route.params.conversationId)
+  const initialOtherUserId = route.params?.otherUserId
+    ? Number(route.params.otherUserId)
+    : route.params?.sellerId
+      ? Number(route.params.sellerId)
     : null;
   const title = route.params?.otherUserName || route.params?.loteTitulo || "Chat";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [conversationId, setConversationId] = useState<number | null>(
-    initialConversationId,
-  );
+  const [otherUserId] = useState<number | null>(initialOtherUserId);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -93,16 +90,14 @@ export default function ChatScreen() {
       : spacing.lg;
 
   useEffect(() => {
-    if (!conversationId) {
+    if (!otherUserId) {
       setLoading(false);
       return;
     }
 
-    const activeConversationId = conversationId;
-
     const loadMessages = async () => {
       try {
-        const data = await getMessages(activeConversationId);
+        const data = await getMessages(otherUserId);
         setMessages(data);
       } catch (error) {
         Alert.alert("Error", "No se pudieron cargar los mensajes");
@@ -112,7 +107,7 @@ export default function ChatScreen() {
     };
 
     loadMessages();
-  }, [conversationId]);
+  }, [otherUserId]);
 
   useEffect(() => {
     const handleKeyboardShow = (event: KeyboardEvent) => {
@@ -131,84 +126,17 @@ export default function ChatScreen() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!userId) return;
-
-    connectSocket(userId);
-
-    if (!conversationId) return;
-
-    markMessagesAsRead(conversationId, userId).catch(() => undefined);
-    socket.emit("mark_as_read", { conversationId, userId });
-
-    const handleReceiveMessage = ({ message }: { message: ChatMessage }) => {
-      if (message.conversationId !== conversationId) return;
-
-      setMessages((current) => {
-        if (current.some((item) => item.id === message.id)) return current;
-
-        return [...current, message];
-      });
-
-      if (message.senderId !== userId) {
-        markMessagesAsRead(conversationId, userId).catch(() => undefined);
-        socket.emit("mark_as_read", { conversationId, userId });
-      }
-    };
-
-    const handleMessagesRead = (data: { conversationId: number }) => {
-      if (data.conversationId !== conversationId) return;
-
-      setMessages((current) =>
-        current.map((message) =>
-          message.senderId === userId ? { ...message, read: true } : message,
-        ),
-      );
-    };
-
-    socket.on("receive_message", handleReceiveMessage);
-    socket.on("messages_read", handleMessagesRead);
-
-    return () => {
-      socket.off("receive_message", handleReceiveMessage);
-      socket.off("messages_read", handleMessagesRead);
-    };
-  }, [conversationId, userId]);
-
   const handleSend = async () => {
     const cleanText = text.trim();
 
-    if (!cleanText || !userId || sending) return;
+    if (!cleanText || !userId || !otherUserId || sending) return;
 
     setSending(true);
     setText("");
 
-    if (conversationId && socket.connected) {
-      socket.emit("send_message", {
-        conversationId,
-        senderId: userId,
-        text: cleanText,
-      });
-      setSending(false);
-      return;
-    }
-
     try {
-      let activeConversationId = conversationId;
-
-      if (!activeConversationId) {
-        const conversation = await getOrCreateConversation({
-          buyerId: route.params?.buyerId,
-          sellerId: route.params?.sellerId,
-          loteId: route.params?.loteId,
-        });
-        activeConversationId = conversation.id;
-        setConversationId(conversation.id);
-      }
-
       const message = await sendMessage({
-        conversationId: activeConversationId,
-        senderId: userId,
+        receiverId: otherUserId,
         text: cleanText,
       });
       setMessages((current) => [...current, message]);
@@ -233,8 +161,8 @@ export default function ChatScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              if (conversationId) {
-                await deleteConversation(conversationId);
+              if (otherUserId) {
+                await deleteConversation(otherUserId);
               }
 
               navigation.goBack();

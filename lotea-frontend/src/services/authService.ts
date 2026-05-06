@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { API_URL } from "../config/api";
 
-const getAuthHeaders = async () => {
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
   const token = await AsyncStorage.getItem("token");
 
   return {
@@ -11,8 +11,22 @@ const getAuthHeaders = async () => {
   };
 };
 
+const getStoredUserId = async () => {
+  const userString = await AsyncStorage.getItem("user");
+
+  if (!userString) return null;
+
+  const user = JSON.parse(userString);
+
+  return user?.id_usuario ?? user?.id ?? null;
+};
+
 export const getUserById = async (id: number) => {
-  const res = await fetch(`${API_URL}/usuarios/${id}`);
+  const headers = await getAuthHeaders();
+
+  const res = await fetch(`${API_URL}/usuarios/${id}`, {
+    headers,
+  });
 
   if (!res.ok) throw new Error("Error al cargar usuario");
 
@@ -20,24 +34,26 @@ export const getUserById = async (id: number) => {
 };
 
 export const getProfile = async () => {
-  const headers = await getAuthHeaders();
+  const userId = await getStoredUserId();
 
-  const res = await fetch(`${API_URL}/auth/me`, {
-    headers,
-  });
+  if (!userId) {
+    throw new Error("No hay usuario guardado");
+  }
 
-  if (!res.ok) throw new Error("Error al cargar perfil");
-
-  const data = await res.json();
-
-  return data;
+  return getUserById(Number(userId));
 };
 
 export const updateProfile = async (nombre: string) => {
+  const userId = await getStoredUserId();
+
+  if (!userId) {
+    throw new Error("No hay usuario guardado");
+  }
+
   const headers = await getAuthHeaders();
 
-  const res = await fetch(`${API_URL}/auth/me`, {
-    method: "PUT",
+  const res = await fetch(`${API_URL}/usuarios/${userId}`, {
+    method: "PATCH",
     headers,
     body: JSON.stringify({ nombre }),
   });
@@ -47,13 +63,15 @@ export const updateProfile = async (nombre: string) => {
   return await res.json();
 };
 
-export const uploadAvatar = async (image: any) => {
+export const uploadAvatar = async (
+  image: any,
+): Promise<{ avatar?: string | null }> => {
   const token = await AsyncStorage.getItem("token");
-
   const formData = new FormData();
   const fileName =
     image.fileName ||
     image.file_name ||
+    image.name ||
     `avatar.${image.mimeType?.split("/")[1] || "jpg"}`;
   const mimeType = image.mimeType || image.type || "image/jpeg";
 
@@ -63,18 +81,26 @@ export const uploadAvatar = async (image: any) => {
     type: mimeType,
   } as any);
 
-  const res = await fetch(`${API_URL}/lotes/user/avatar`, {
+  const res = await fetch(`${API_URL}/usuarios/avatar`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      // IMPORTANTE: NO pongas Content-Type aquí
-    },
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: formData,
   });
 
-  const text = await res.text();
-
   if (!res.ok) throw new Error("Error subiendo avatar");
 
-  return JSON.parse(text);
+  return await res.json();
+};
+
+export const removeAvatar = async (): Promise<{ avatar?: string | null }> => {
+  const token = await AsyncStorage.getItem("token");
+
+  const res = await fetch(`${API_URL}/usuarios/avatar`, {
+    method: "DELETE",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+
+  if (!res.ok) throw new Error("Error eliminando avatar");
+
+  return await res.json();
 };

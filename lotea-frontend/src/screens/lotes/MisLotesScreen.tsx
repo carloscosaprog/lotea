@@ -20,6 +20,7 @@ import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 export default function MisLotesScreen() {
   const [lotes, setLotes] = useState<Lote[]>([]);
@@ -131,7 +132,7 @@ export default function MisLotesScreen() {
             >
               <Image
                 source={{
-                  uri: item.imagenes?.[0] || "https://picsum.photos/100",
+                  uri: getImageUrl(item.imagenes?.[0]),
                 }}
                 style={styles.image}
               />

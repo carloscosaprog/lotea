@@ -33,8 +33,6 @@ import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../config/api";
 import { getImageUrl } from "../../utils/getImageUrl";
 
@@ -79,7 +77,7 @@ export default function LoteDetailScreen() {
           const data = await getLoteById(Number(id));
           if (data) setLote(data);
         }
-      } catch (error) {
+      } catch {
         Alert.alert("Error al cargar el lote");
       } finally {
         setLoading(false);
@@ -128,7 +126,7 @@ export default function LoteDetailScreen() {
           try {
             await deleteLote(lote.id_lote);
             navigation.goBack();
-          } catch (e) {
+          } catch {
             Alert.alert("Error", "No se pudo eliminar el lote");
           }
           navigation.goBack();
@@ -136,38 +134,6 @@ export default function LoteDetailScreen() {
       },
     ]);
   };
-  // pedidos
-  const handleBuy = async () => {
-    if (!lote) return;
-
-    try {
-      const token = await AsyncStorage.getItem("token");
-
-      await axios.post(
-        `${API_URL}/pedidos`,
-        {
-          id_lote: lote.id_lote,
-          cantidad: 1,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      Alert.alert("Compra realizada", "Pedido creado correctamente");
-    } catch (error: any) {
-      console.log(error);
-
-      if (error.response?.data?.message) {
-        Alert.alert("Error", error.response.data.message);
-      } else {
-        Alert.alert("Error", "No se pudo completar la compra");
-      }
-    }
-  };
-
   const handleContactSeller = async () => {
     if (!lote || !currentUserId) return;
 
@@ -184,7 +150,7 @@ export default function LoteDetailScreen() {
         loteTitulo: lote.titulo,
         otherUserName: vendedor?.nombre || nombreVendedor,
       });
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "No se pudo abrir la conversacion");
     } finally {
       setContacting(false);

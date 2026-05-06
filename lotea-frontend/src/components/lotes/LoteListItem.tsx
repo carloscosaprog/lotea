@@ -42,7 +42,7 @@ export default function LoteListItem({ lote }: Props) {
 
   const handleToggleFavorito = async () => {
     try {
-      const res = await toggleFavorito(lote.id_lote);
+      const res = await toggleFavorito(lote.id_lote, isFavorito);
 
       const wasFavorito = isFavorito;
 

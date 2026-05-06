@@ -1,79 +1,78 @@
-import type { Lote, LoteCreate } from "../types/Lote";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { API_URL } from "../config/api";
+import type { Lote, LoteCreate, LoteUpdate } from "../types/Lote";
 
 const LOTES_URL = `${API_URL}/lotes`;
 
-// helper para token
-const getAuthHeaders = async () => {
-  const AsyncStorage =
-    require("@react-native-async-storage/async-storage").default;
+const getAuthHeaders = async (): Promise<Record<string, string>> => {
   const token = await AsyncStorage.getItem("token");
 
-  return {
-    Authorization: `Bearer ${token}`,
-  };
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-// NORMALIZADOR CLAVE
-const normalizeLote = (lote: any): Lote => {
-  console.log("RAW LOTE:", lote);
-  let imagenes: string[] = [];
+export const normalizeLote = (raw: any): Lote => {
+  const lote = raw?.lote ?? raw ?? {};
 
-  if (Array.isArray(lote.imagenes)) {
-    if (lote.imagenes.length > 0) {
-      if (typeof lote.imagenes[0] === "string") {
-        imagenes = lote.imagenes;
-      } else if (lote.imagenes[0]?.url) {
-        imagenes = lote.imagenes.map((img: any) => img.url);
-      }
-    }
-  }
+  const imagenes = Array.isArray(lote.imagenes)
+    ? lote.imagenes
+        .map((img: any) => (typeof img === "string" ? img : img?.url))
+        .filter((url: any): url is string => typeof url === "string" && url.length > 0)
+    : typeof lote.imagen === "string" && lote.imagen.length > 0
+      ? [lote.imagen]
+      : [];
 
-  // fallback si no hay imagenes válidas
-  if (imagenes.length === 0 && lote.imagen) {
-    imagenes = [lote.imagen];
-  }
+  const categoria =
+    typeof lote.categoria === "string"
+      ? lote.categoria
+      : typeof lote.categoria?.nombre === "string"
+        ? lote.categoria.nombre
+        : undefined;
+
+  const categorias = Array.isArray(lote.categorias)
+    ? lote.categorias
+        .map((cat: any) => (typeof cat === "string" ? cat : cat?.nombre))
+        .filter((cat: any): cat is string => typeof cat === "string" && cat.length > 0)
+    : categoria
+      ? [categoria]
+      : [];
+
+  const vendedor =
+    lote.vendedor && typeof lote.vendedor === "object"
+      ? {
+          id_usuario: lote.vendedor.id_usuario,
+          nombre: lote.vendedor.nombre ?? "Usuario",
+        }
+      : null;
 
   return {
     ...lote,
-
-    // normalizar vendedor SIEMPRE a string
-    vendedor:
-      typeof lote.vendedor === "string" ? lote.vendedor : lote.vendedor?.nombre,
-
-    // normalizar categorias SIEMPRE a string[]
-    categorias: Array.isArray(lote.categorias)
-      ? lote.categorias.map((c: any) => (typeof c === "string" ? c : c.nombre))
-      : lote.categoria
-        ? [
-            typeof lote.categoria === "string"
-              ? lote.categoria
-              : lote.categoria?.nombre,
-          ]
-        : [],
-
+    vendedor,
+    categoria,
+    categorias,
     imagenes,
   };
 };
 
-// helper para construir archivos correctamente
 const buildImageFile = (file: any, index: number) => {
   const uri = file?.uri || file?.assets?.[0]?.uri;
 
   if (!uri) return null;
 
-  const filename = uri.split("/").pop() || `image_${index}.jpg`;
-  const match = /\.(\w+)$/.exec(filename);
-  const type = match ? `image/${match[1]}` : "image/jpeg";
+  const filename =
+    file?.fileName || file?.name || uri.split("/").pop() || `image_${index}.jpg`;
+  const mimeType =
+    file?.mimeType ||
+    file?.type ||
+    `image/${filename.split(".").pop() || "jpeg"}`;
 
   return {
     uri,
     name: filename,
-    type,
+    type: mimeType,
   };
 };
 
-// Obtener todos los lotes
 export const getLotes = async (): Promise<Lote[]> => {
   const response = await fetch(LOTES_URL);
 
@@ -83,10 +82,9 @@ export const getLotes = async (): Promise<Lote[]> => {
 
   const data = await response.json();
 
-  return data.map(normalizeLote);
+  return Array.isArray(data) ? data.map(normalizeLote) : [];
 };
 
-// Obtener lote por ID
 export const getLoteById = async (id: number): Promise<Lote | undefined> => {
   const response = await fetch(`${LOTES_URL}/${id}`);
 
@@ -97,26 +95,33 @@ export const getLoteById = async (id: number): Promise<Lote | undefined> => {
   return normalizeLote(data);
 };
 
-// Crear lote
 export const createLote = async (
   lote: LoteCreate,
   files: any[],
 ): Promise<Lote> => {
   const headers = await getAuthHeaders();
+  const formData = new FormData();
+
+  formData.append("titulo", lote.titulo);
+  formData.append("descripcion", lote.descripcion ?? "");
+  formData.append("precio", String(lote.precio));
+  formData.append("cantidad", String(lote.cantidad));
+
+  if (lote.id_categoria) {
+    formData.append("id_categoria", String(lote.id_categoria));
+  }
+
+  files.forEach((file, index) => {
+    const image = buildImageFile(file, index);
+    if (image) {
+      formData.append("imagenesFiles", image as any);
+    }
+  });
 
   const response = await fetch(LOTES_URL, {
     method: "POST",
-    headers: {
-      ...headers,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      titulo: lote.titulo,
-      descripcion: lote.descripcion,
-      precio: lote.precio,
-      cantidad: lote.cantidad,
-      id_categoria: lote.id_categoria,
-    }),
+    headers,
+    body: formData,
   });
 
   if (!response.ok) {
@@ -130,43 +135,19 @@ export const createLote = async (
   return normalizeLote(data);
 };
 
-// Actualizar lote
-export const updateLote = async (id: number, lote: any, files: any[]) => {
-  const formData = new FormData();
-
-  formData.append("titulo", lote.titulo);
-  formData.append("descripcion", lote.descripcion);
-  formData.append("precio", String(lote.precio));
-  formData.append("cantidad", String(lote.cantidad));
-  if (lote.id_categoria) {
-    formData.append("id_categoria", String(lote.id_categoria));
-  }
-  if (lote.categoria) {
-    formData.append("categoria", lote.categoria);
-  }
-  if (lote.categorias) {
-    formData.append("categorias", JSON.stringify(lote.categorias));
-  }
-
-  if (lote.imagenes && lote.imagenes.length > 0) {
-    formData.append("imagenes", JSON.stringify(lote.imagenes));
-  }
-
-  if (files && files.length > 0) {
-    files.forEach((file, index) => {
-      const image = buildImageFile(file, index);
-      if (!image) return;
-
-      formData.append("imagenesFiles", image as any);
-    });
-  }
-
+export const updateLote = async (
+  id: number,
+  lote: LoteUpdate,
+): Promise<Lote> => {
   const headers = await getAuthHeaders();
 
   const response = await fetch(`${LOTES_URL}/${id}`, {
-    method: "PUT",
-    headers,
-    body: formData,
+    method: "PATCH",
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(lote),
   });
 
   if (!response.ok) {
@@ -180,7 +161,6 @@ export const updateLote = async (id: number, lote: any, files: any[]) => {
   return normalizeLote(data);
 };
 
-// Eliminar lote
 export const deleteLote = async (id: number): Promise<boolean> => {
   const headers = await getAuthHeaders();
 
@@ -192,19 +172,17 @@ export const deleteLote = async (id: number): Promise<boolean> => {
   return response.ok;
 };
 
-// Obtener lotes por usuario
-export const getLotesByUser = async (id: number) => {
-  const res = await fetch(`${LOTES_URL}/usuario/${id}`);
+export const getLotesByUser = async (id: number): Promise<Lote[]> => {
+  const res = await fetch(`${LOTES_URL}/vendedor/${id}`);
+
+  if (!res.ok) return [];
+
   const data = await res.json();
 
-  return data.map(normalizeLote);
+  return Array.isArray(data) ? data.map(normalizeLote) : [];
 };
 
-// Obtener mis lotes
-export const getMisLotes = async () => {
-  const AsyncStorage =
-    require("@react-native-async-storage/async-storage").default;
-
+export const getMisLotes = async (): Promise<Lote[]> => {
   const userString = await AsyncStorage.getItem("user");
 
   if (!userString) {
@@ -212,20 +190,11 @@ export const getMisLotes = async () => {
   }
 
   const user = JSON.parse(userString);
-
   const userId = user?.id_usuario ?? user?.id;
 
   if (!userId) {
     return [];
   }
 
-  const res = await fetch(`${LOTES_URL}/usuario/${userId}`);
-
-  if (!res.ok) {
-    return [];
-  }
-
-  const data = await res.json();
-
-  return data.map(normalizeLote);
+  return getLotesByUser(userId);
 };

@@ -45,6 +45,17 @@ export class UsuariosService {
     return this.omitPassword(updated);
   }
 
+  async updateAvatar(id: number, avatar: string | null) {
+    await this.findOne(id);
+
+    const updated = await this.prisma.usuario.update({
+      where: { id_usuario: id },
+      data: { avatar },
+    });
+
+    return this.omitPassword(updated);
+  }
+
   async remove(id: number) {
     await this.findOne(id);
     await this.prisma.usuario.delete({ where: { id_usuario: id } });

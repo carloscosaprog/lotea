@@ -8,7 +8,6 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import { createLote } from "../../services/lotesService";
@@ -93,8 +92,6 @@ export default function CreateLoteScreen() {
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
           id_categoria: categoriaPrincipal?.id_categoria,
-          categoria: categorias[0],
-          categorias,
         },
         images,
       );
