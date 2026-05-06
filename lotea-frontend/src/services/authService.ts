@@ -12,7 +12,7 @@ const getAuthHeaders = async () => {
 };
 
 export const getUserById = async (id: number) => {
-  const res = await fetch(`${API_URL}/lotes/user/${id}`);
+  const res = await fetch(`${API_URL}/usuarios/${id}`);
 
   if (!res.ok) throw new Error("Error al cargar usuario");
 

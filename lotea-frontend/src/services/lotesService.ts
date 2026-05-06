@@ -16,6 +16,7 @@ const getAuthHeaders = async () => {
 
 // NORMALIZADOR CLAVE
 const normalizeLote = (lote: any): Lote => {
+  console.log("RAW LOTE:", lote);
   let imagenes: string[] = [];
 
   if (Array.isArray(lote.imagenes)) {
@@ -35,12 +36,23 @@ const normalizeLote = (lote: any): Lote => {
 
   return {
     ...lote,
-    imagenes,
+
+    // normalizar vendedor SIEMPRE a string
+    vendedor:
+      typeof lote.vendedor === "string" ? lote.vendedor : lote.vendedor?.nombre,
+
+    // normalizar categorias SIEMPRE a string[]
     categorias: Array.isArray(lote.categorias)
-      ? lote.categorias
+      ? lote.categorias.map((c: any) => (typeof c === "string" ? c : c.nombre))
       : lote.categoria
-        ? [lote.categoria]
+        ? [
+            typeof lote.categoria === "string"
+              ? lote.categoria
+              : lote.categoria?.nombre,
+          ]
         : [],
+
+    imagenes,
   };
 };
 
