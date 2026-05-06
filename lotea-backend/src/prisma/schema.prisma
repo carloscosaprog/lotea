@@ -52,6 +52,7 @@ model Lote {
   favoritos        Favorito[]
   detalles_pedido  Detalle_Pedido[]
   grupos_compra    Grupo_Compra[]
+  mensajes          Mensaje[]
 
   @@map("lote")
 }
@@ -147,12 +148,17 @@ model Mensaje {
   id_mensaje Int      @id @default(autoincrement())
   id_emisor  Int
   id_receptor Int
+  id_lote    Int?
   contenido  String
   fecha      DateTime @default(now())
+  leido      Boolean  @default(false)
 
   emisor     Usuario  @relation("Emisor",   fields: [id_emisor],   references: [id_usuario], onDelete: Cascade)
   receptor   Usuario  @relation("Receptor", fields: [id_receptor], references: [id_usuario], onDelete: Cascade)
+  lote       Lote?    @relation(fields: [id_lote], references: [id_lote], onDelete: Cascade)
 
+  @@index([id_lote])
+  @@index([id_receptor, leido])
   @@map("mensaje")
 }
 

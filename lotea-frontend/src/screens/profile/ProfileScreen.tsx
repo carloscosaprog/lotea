@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import { getProfile } from "../../services/authService";
+import { getConversations } from "../../services/chatService";
 import { getMisLotes } from "../../services/lotesService";
 import { useAuth } from "../../context/AuthContext";
 import type { Lote } from "../../types/Lote";
@@ -28,6 +29,7 @@ import { getImageUrl } from "../../utils/getImageUrl";
 export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [myLotes, setMyLotes] = useState<Lote[]>([]);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [avatarOpen, setAvatarOpen] = useState(false);
 
@@ -38,12 +40,19 @@ export default function ProfileScreen() {
     useCallback(() => {
     const loadProfile = async () => {
       try {
-        const [profileData, lotesData] = await Promise.all([
+        const [profileData, lotesData, conversationsData] = await Promise.all([
           getProfile(),
           getMisLotes(),
+          getConversations(),
         ]);
         setUser(profileData);
         setMyLotes(lotesData);
+        setUnreadMessages(
+          conversationsData.reduce(
+            (total, conversation) => total + (conversation.unreadCount ?? 0),
+            0,
+          ),
+        );
       } catch (error) {
         console.error(error);
         Alert.alert("Error al cargar perfil");
@@ -215,6 +224,13 @@ export default function ProfileScreen() {
                 />
               </View>
               <Text style={styles.quickActionText}>Mis conversaciones</Text>
+              {unreadMessages > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </Text>
+                </View>
+              )}
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
           </View>
@@ -327,6 +343,20 @@ const styles = StyleSheet.create({
   quickActionText: {
     ...typography.bodyStrong,
     color: colors.text,
+  },
+  notificationBadge: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: radii.full,
+    backgroundColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
+  notificationBadgeText: {
+    ...typography.caption,
+    color: colors.white,
+    fontWeight: "700",
   },
   accountSection: {
     flexDirection: "row",

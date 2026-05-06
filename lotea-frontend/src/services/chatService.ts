@@ -14,17 +14,35 @@ type BackendMensaje = {
   id_mensaje: number;
   id_emisor: number;
   id_receptor: number;
+  id_lote: number;
   contenido: string;
   fecha: string;
+  leido: boolean;
   emisor?: BackendUser;
   receptor?: BackendUser;
 };
 
-export interface Conversation {
-  id: number;
+type BackendConversation = {
+  id: string;
+  id_lote: number;
   otherUserId: number;
   otherUserName?: string;
   otherUserAvatar?: string | null;
+  loteTitulo?: string;
+  loteImagen?: string | null;
+  lastMessage?: string | null;
+  lastMessageAt?: string | null;
+  unreadCount?: number;
+};
+
+export interface Conversation {
+  id: string;
+  loteId: number;
+  otherUserId: number;
+  otherUserName?: string;
+  otherUserAvatar?: string | null;
+  loteTitulo?: string;
+  loteImagen?: string | null;
   lastMessage?: string | null;
   lastMessageAt?: string | null;
   unreadCount?: number;
@@ -32,7 +50,7 @@ export interface Conversation {
 
 export interface ChatMessage {
   id: number;
-  conversationId: number;
+  loteId: number;
   senderId: number;
   receiverId: number;
   text: string;
@@ -42,6 +60,7 @@ export interface ChatMessage {
 
 interface SendMessageData {
   receiverId: number;
+  loteId: number;
   text: string;
 }
 
@@ -57,7 +76,7 @@ const getAuthHeaders = async (): Promise<Record<string, string>> => {
 const getJson = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || "Error en mensajes");
+    throw new Error(`${response.status}: ${text || "Error en mensajes"}`);
   }
 
   return response.json();
@@ -65,54 +84,47 @@ const getJson = async <T>(response: Response): Promise<T> => {
 
 const normalizeMessage = (mensaje: BackendMensaje): ChatMessage => ({
   id: mensaje.id_mensaje,
-  conversationId: mensaje.id_emisor === mensaje.id_receptor ? mensaje.id_receptor : 0,
+  loteId: mensaje.id_lote,
   senderId: mensaje.id_emisor,
   receiverId: mensaje.id_receptor,
   text: mensaje.contenido,
-  read: false,
+  read: mensaje.leido,
   createdAt: mensaje.fecha,
 });
 
-export const getConversations = async (
-  userId: number,
-): Promise<Conversation[]> => {
+export const getConversations = async (): Promise<Conversation[]> => {
   const headers = await getAuthHeaders();
   const response = await fetch(`${MENSAJES_URL}/conversaciones`, {
     headers,
   });
-  const data = await getJson<BackendMensaje[]>(response);
+  const data = await getJson<BackendConversation[]>(response);
 
-  return data.map((mensaje) => {
-    const otherUser =
-      mensaje.id_emisor === userId ? mensaje.receptor : mensaje.emisor;
-    const otherUserId =
-      mensaje.id_emisor === userId ? mensaje.id_receptor : mensaje.id_emisor;
-
-    return {
-      id: otherUserId,
-      otherUserId,
-      otherUserName: otherUser?.nombre,
-      otherUserAvatar: otherUser?.avatar ?? null,
-      lastMessage: mensaje.contenido,
-      lastMessageAt: mensaje.fecha,
-      unreadCount: 0,
-    };
-  });
+  return data.map((conversation) => ({
+    id: conversation.id,
+    loteId: conversation.id_lote,
+    otherUserId: conversation.otherUserId,
+    otherUserName: conversation.otherUserName,
+    otherUserAvatar: conversation.otherUserAvatar ?? null,
+    loteTitulo: conversation.loteTitulo,
+    loteImagen: conversation.loteImagen ?? null,
+    lastMessage: conversation.lastMessage,
+    lastMessageAt: conversation.lastMessageAt,
+    unreadCount: conversation.unreadCount ?? 0,
+  }));
 };
 
 export const getMessages = async (
+  loteId: number,
   otherUserId: number,
 ): Promise<ChatMessage[]> => {
   const headers = await getAuthHeaders();
-  const response = await fetch(`${MENSAJES_URL}/conversacion/${otherUserId}`, {
-    headers,
-  });
+  const response = await fetch(
+    `${MENSAJES_URL}/conversacion/${loteId}/${otherUserId}`,
+    { headers },
+  );
   const data = await getJson<BackendMensaje[]>(response);
 
-  return data.map((mensaje) => ({
-    ...normalizeMessage(mensaje),
-    conversationId: otherUserId,
-  }));
+  return data.map(normalizeMessage);
 };
 
 export const sendMessage = async (
@@ -124,25 +136,43 @@ export const sendMessage = async (
     headers,
     body: JSON.stringify({
       id_receptor: data.receiverId,
+      id_lote: data.loteId,
       contenido: data.text,
     }),
   });
   const mensaje = await getJson<BackendMensaje>(response);
 
-  return {
-    ...normalizeMessage(mensaje),
-    conversationId: data.receiverId,
-  };
+  return normalizeMessage(mensaje);
 };
 
-export const deleteConversation = async (otherUserId: number) => {
+export const markConversationAsRead = async (
+  loteId: number,
+  otherUserId: number,
+) => {
   const headers = await getAuthHeaders();
-  const response = await fetch(`${MENSAJES_URL}/conversacion/${otherUserId}`, {
-    method: "DELETE",
-    headers,
-  });
+  const response = await fetch(
+    `${MENSAJES_URL}/conversacion/${loteId}/${otherUserId}/leido`,
+    {
+      method: "PATCH",
+      headers,
+    },
+  );
 
   return getJson<{ ok: boolean }>(response);
 };
 
-export const markMessagesAsRead = async () => ({ ok: true, updated: 0 });
+export const deleteConversation = async (
+  loteId: number,
+  otherUserId: number,
+) => {
+  const headers = await getAuthHeaders();
+  const response = await fetch(
+    `${MENSAJES_URL}/conversacion/${loteId}/${otherUserId}`,
+    {
+      method: "DELETE",
+      headers,
+    },
+  );
+
+  return getJson<{ ok: boolean }>(response);
+};

@@ -23,6 +23,7 @@ import {
   ChatMessage,
   deleteConversation,
   getMessages,
+  markConversationAsRead,
   sendMessage,
 } from "../../services/chatService";
 import { colors } from "../../styles/colors";
@@ -59,14 +60,25 @@ export default function ChatScreen() {
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const userId = getUserId(user);
-  const initialOtherUserId = route.params?.otherUserId
-    ? Number(route.params.otherUserId)
-    : route.params?.sellerId
-      ? Number(route.params.sellerId)
-    : null;
+  const otherUserIdParam =
+    route.params?.otherUserId ??
+    route.params?.sellerId ??
+    route.params?.id_receptor ??
+    route.params?.receiverId ??
+    route.params?.conversationId;
+  const loteIdParam = route.params?.loteId ?? route.params?.id_lote;
+  const initialLoteId =
+    loteIdParam && Number.isFinite(Number(loteIdParam))
+      ? Number(loteIdParam)
+      : null;
+  const initialOtherUserId =
+    otherUserIdParam && Number.isFinite(Number(otherUserIdParam))
+      ? Number(otherUserIdParam)
+      : null;
   const title = route.params?.otherUserName || route.params?.loteTitulo || "Chat";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loteId] = useState<number | null>(initialLoteId);
   const [otherUserId] = useState<number | null>(initialOtherUserId);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
@@ -90,16 +102,18 @@ export default function ChatScreen() {
       : spacing.lg;
 
   useEffect(() => {
-    if (!otherUserId) {
+    if (!loteId || !otherUserId) {
       setLoading(false);
       return;
     }
 
     const loadMessages = async () => {
       try {
-        const data = await getMessages(otherUserId);
+        const data = await getMessages(loteId, otherUserId);
         setMessages(data);
+        await markConversationAsRead(loteId, otherUserId);
       } catch (error) {
+        console.error("Error cargando mensajes:", error);
         Alert.alert("Error", "No se pudieron cargar los mensajes");
       } finally {
         setLoading(false);
@@ -107,7 +121,7 @@ export default function ChatScreen() {
     };
 
     loadMessages();
-  }, [otherUserId]);
+  }, [loteId, otherUserId]);
 
   useEffect(() => {
     const handleKeyboardShow = (event: KeyboardEvent) => {
@@ -129,7 +143,7 @@ export default function ChatScreen() {
   const handleSend = async () => {
     const cleanText = text.trim();
 
-    if (!cleanText || !userId || !otherUserId || sending) return;
+    if (!cleanText || !userId || !loteId || !otherUserId || sending) return;
 
     setSending(true);
     setText("");
@@ -137,10 +151,12 @@ export default function ChatScreen() {
     try {
       const message = await sendMessage({
         receiverId: otherUserId,
+        loteId,
         text: cleanText,
       });
       setMessages((current) => [...current, message]);
     } catch (error) {
+      console.error("Error enviando mensaje:", error);
       setText(cleanText);
       Alert.alert("Error", "No se pudo enviar el mensaje");
     } finally {
@@ -161,12 +177,12 @@ export default function ChatScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              if (otherUserId) {
-                await deleteConversation(otherUserId);
+              if (loteId && otherUserId) {
+                await deleteConversation(loteId, otherUserId);
               }
 
               navigation.goBack();
-            } catch (error) {
+            } catch {
               Alert.alert("Error", "No se pudo eliminar la conversacion");
             }
           },

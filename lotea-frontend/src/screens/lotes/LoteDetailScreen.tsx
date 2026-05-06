@@ -143,9 +143,11 @@ export default function LoteDetailScreen() {
     }
 
     try {
+      setContacting(true);
       navigation.navigate("Chat", {
         buyerId: currentUserId,
         sellerId: lote.id_vendedor,
+        otherUserId: lote.id_vendedor,
         loteId: lote.id_lote,
         loteTitulo: lote.titulo,
         otherUserName: vendedor?.nombre || nombreVendedor,
