@@ -17,7 +17,10 @@ export const normalizeLote = (raw: any): Lote => {
   const imagenes = Array.isArray(lote.imagenes)
     ? lote.imagenes
         .map((img: any) => (typeof img === "string" ? img : img?.url))
-        .filter((url: any): url is string => typeof url === "string" && url.length > 0)
+        .filter(
+          (url: any): url is string =>
+            typeof url === "string" && url.length > 0,
+        )
     : typeof lote.imagen === "string" && lote.imagen.length > 0
       ? [lote.imagen]
       : [];
@@ -32,7 +35,10 @@ export const normalizeLote = (raw: any): Lote => {
   const categorias = Array.isArray(lote.categorias)
     ? lote.categorias
         .map((cat: any) => (typeof cat === "string" ? cat : cat?.nombre))
-        .filter((cat: any): cat is string => typeof cat === "string" && cat.length > 0)
+        .filter(
+          (cat: any): cat is string =>
+            typeof cat === "string" && cat.length > 0,
+        )
     : categoria
       ? [categoria]
       : [];
@@ -47,10 +53,16 @@ export const normalizeLote = (raw: any): Lote => {
 
   return {
     ...lote,
+
     vendedor,
     categoria,
     categorias,
     imagenes,
+
+    total_favoritos:
+      typeof lote.total_favoritos === "number"
+        ? lote.total_favoritos
+        : (lote._count?.favoritos ?? 0),
   };
 };
 
@@ -60,7 +72,10 @@ const buildImageFile = (file: any, index: number) => {
   if (!uri) return null;
 
   const filename =
-    file?.fileName || file?.name || uri.split("/").pop() || `image_${index}.jpg`;
+    file?.fileName ||
+    file?.name ||
+    uri.split("/").pop() ||
+    `image_${index}.jpg`;
   const mimeType =
     file?.mimeType ||
     file?.type ||

@@ -13,8 +13,19 @@ export class LotesService {
 
   private readonly loteInclude = {
     categoria: true,
-    vendedor: { select: { id_usuario: true, nombre: true } },
+    vendedor: {
+      select: {
+        id_usuario: true,
+        nombre: true,
+      },
+    },
     imagenes: true,
+
+    _count: {
+      select: {
+        favoritos: true,
+      },
+    },
   };
 
   async create(
