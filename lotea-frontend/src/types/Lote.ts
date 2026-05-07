@@ -18,6 +18,7 @@ export interface Lote {
   imagenes: string[];
 
   total_favoritos?: number;
+  isFavorito?: boolean;
 }
 
 export type LoteCreate = {

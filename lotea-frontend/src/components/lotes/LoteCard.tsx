@@ -47,6 +47,10 @@ export default function LoteCard({ lote }: Props) {
     fetchFavorito();
   }, [lote.id_lote]);
 
+  useEffect(() => {
+    setTotalFavoritos(lote.total_favoritos ?? 0);
+  }, [lote.total_favoritos]);
+
   const handleToggleFavorito = async () => {
     try {
       const res = await toggleFavorito(lote.id_lote, isFavorito);

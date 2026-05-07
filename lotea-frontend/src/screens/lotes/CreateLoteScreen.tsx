@@ -36,6 +36,7 @@ export default function CreateLoteScreen() {
   });
 
   const [images, setImages] = useState<any[]>([]);
+  const [uploaderKey, setUploaderKey] = useState(0);
   const [categoriasDisponibles, setCategoriasDisponibles] = useState<
     Categoria[]
   >([]);
@@ -115,7 +116,9 @@ export default function CreateLoteScreen() {
       // limpiar categorias
       setCategorias([]);
 
-      Alert.alert("Lote publicado correctamente");
+      setUploaderKey((prev) => prev + 1);
+
+      //Alert.alert("Lote publicado correctamente");
 
       navigation.navigate("Home", {
         screen: "HomeMain",
@@ -143,7 +146,7 @@ export default function CreateLoteScreen() {
         </View>
 
         <Card>
-          <ImageUploader onChange={setImages} />
+          <ImageUploader key={uploaderKey} onChange={setImages} />
         </Card>
 
         <Card contentStyle={styles.formCardContent}>

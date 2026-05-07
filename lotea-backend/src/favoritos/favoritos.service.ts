@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateFavoritoDto } from './dto/CreateFavoritoDto';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateFavoritoDto } from "./dto/CreateFavoritoDto";
 
 @Injectable()
 export class FavoritosService {
@@ -23,10 +23,9 @@ export class FavoritosService {
     const fav = await this.prisma.favorito.findUnique({
       where: { id_usuario_id_lote: { id_usuario, id_lote } },
     });
-    if (!fav) throw new NotFoundException('Favorito no encontrado');
     await this.prisma.favorito.delete({
       where: { id_usuario_id_lote: { id_usuario, id_lote } },
     });
-    return { message: 'Favorito eliminado' };
+    return { message: "Favorito eliminado" };
   }
 }

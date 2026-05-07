@@ -36,6 +36,10 @@ export default function LoteListItem({ lote }: Props) {
     fetchFavorito();
   }, [lote.id_lote]);
 
+  useEffect(() => {
+    setTotalFavoritos(lote.total_favoritos ?? 0);
+  }, [lote.total_favoritos]);
+
   const primeraImagen = lote.imagenes?.[0];
 
   const imageUri = getImageUrl(primeraImagen);
