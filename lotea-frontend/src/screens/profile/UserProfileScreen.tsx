@@ -19,6 +19,7 @@ import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 export default function UserProfileScreen() {
   const route = useRoute<any>();
@@ -71,15 +72,24 @@ export default function UserProfileScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.headerWrap}>
-            <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.8}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.8}
+            >
               <Text style={styles.back}>Volver</Text>
             </TouchableOpacity>
 
             {user && (
               <Card style={styles.heroCard} contentStyle={styles.heroContent}>
                 <View style={styles.heroGlow} />
-                <Avatar uri={user.avatar} name={user.nombre} size={88} />
-                <Text style={styles.username}>{user.nombre || "Sin nombre"}</Text>
+                <Avatar
+                  uri={user.avatar ? getImageUrl(user.avatar) : null}
+                  name={user.nombre}
+                  size={88}
+                />
+                <Text style={styles.username}>
+                  {user.nombre || "Sin nombre"}
+                </Text>
                 <Text style={styles.email}>{user.email || "Sin email"}</Text>
 
                 <View style={styles.statsRow}>
@@ -94,7 +104,9 @@ export default function UserProfileScreen() {
             )}
 
             <View style={layoutStyles.pageHeader}>
-              <Text style={layoutStyles.headerEyebrow}>Catalogo del vendedor</Text>
+              <Text style={layoutStyles.headerEyebrow}>
+                Catalogo del vendedor
+              </Text>
               <Text style={styles.sectionTitle}>Lotes publicados</Text>
               <Text style={layoutStyles.headerSubtitle}>
                 Explora los productos disponibles de este perfil.
@@ -104,7 +116,9 @@ export default function UserProfileScreen() {
         }
         ListEmptyComponent={
           <Card style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Este usuario aun no tiene lotes</Text>
+            <Text style={styles.emptyTitle}>
+              Este usuario aun no tiene lotes
+            </Text>
             <Text style={styles.emptyText}>
               Vuelve mas tarde para ver nuevas publicaciones.
             </Text>
