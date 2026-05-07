@@ -70,7 +70,12 @@ export default function CreateLoteScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!form.titulo || !form.precio || !form.cantidad || categorias.length === 0) {
+    if (
+      !form.titulo ||
+      !form.precio ||
+      !form.cantidad ||
+      categorias.length === 0
+    ) {
       Alert.alert("Completa todos los campos obligatorios");
       return;
     }
@@ -95,6 +100,22 @@ export default function CreateLoteScreen() {
         },
         images,
       );
+
+      // limpiar formulario
+      setForm({
+        titulo: "",
+        descripcion: "",
+        precio: "",
+        cantidad: "",
+      });
+
+      // limpiar imagenes
+      setImages([]);
+
+      // limpiar categorias
+      setCategorias([]);
+
+      Alert.alert("Lote publicado correctamente");
 
       navigation.navigate("Home", {
         screen: "HomeMain",
