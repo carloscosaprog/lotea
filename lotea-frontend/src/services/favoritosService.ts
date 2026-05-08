@@ -47,12 +47,10 @@ export const removeFavorito = async (id_lote: number) => {
 
 export const toggleFavorito = async (id_lote: number, isFavorito = false) => {
   if (isFavorito) {
-    await removeFavorito(id_lote);
-    return { favorito: false };
+    return await removeFavorito(id_lote);
   }
 
-  await addFavorito(id_lote);
-  return { favorito: true };
+  return await addFavorito(id_lote);
 };
 
 export const checkFavorito = async (id_lote: number) => {
@@ -76,5 +74,16 @@ export const getFavoritos = async () => {
 
   const data = await res.json();
 
-  return Array.isArray(data) ? data.map(normalizeLote) : [];
+  if (!Array.isArray(data)) {
+    return [];
+  }
+
+  return data.map((fav: any) => {
+    const lote = normalizeLote(fav.lote);
+
+    return {
+      ...lote,
+      isFavorito: true,
+    };
+  });
 };

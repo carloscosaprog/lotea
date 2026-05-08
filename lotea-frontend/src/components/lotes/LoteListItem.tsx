@@ -1,44 +1,27 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
 
 import type { Lote } from "../../types/Lote";
 import Card from "../ui/Card";
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { toggleFavorito, checkFavorito } from "../../services/favoritosService";
+import { toggleFavorito } from "../../services/favoritosService";
 import { getImageUrl } from "../../utils/getImageUrl";
 
 interface Props {
   lote: Lote;
+  onFavoriteChange?: () => void;
 }
 
-export default function LoteListItem({ lote }: Props) {
+export default function LoteListItem({ lote, onFavoriteChange }: Props) {
+  const [, forceUpdate] = useState(0);
   const navigation = useNavigation<any>();
+  const isFavorito = lote.isFavorito ?? false;
 
-  const [isFavorito, setIsFavorito] = useState(false);
-  const [totalFavoritos, setTotalFavoritos] = useState(
-    lote.total_favoritos ?? 0,
-  );
-
-  useEffect(() => {
-    const fetchFavorito = async () => {
-      try {
-        const res = await checkFavorito(lote.id_lote);
-        setIsFavorito(res.favorito);
-      } catch (error) {
-        console.log("Error check favorito:", error);
-      }
-    };
-
-    fetchFavorito();
-  }, [lote.id_lote]);
-
-  useEffect(() => {
-    setTotalFavoritos(lote.total_favoritos ?? 0);
-  }, [lote.total_favoritos]);
+  const totalFavoritos = lote.total_favoritos ?? 0;
 
   const primeraImagen = lote.imagenes?.[0];
 
@@ -48,15 +31,11 @@ export default function LoteListItem({ lote }: Props) {
     try {
       const res = await toggleFavorito(lote.id_lote, isFavorito);
 
-      const wasFavorito = isFavorito;
+      lote.isFavorito = res.favorito;
+      lote.total_favoritos = res.total_favoritos;
 
-      setIsFavorito(res.favorito);
-
-      if (!wasFavorito && res.favorito) {
-        setTotalFavoritos((prev) => prev + 1);
-      } else if (wasFavorito && !res.favorito) {
-        setTotalFavoritos((prev) => Math.max(0, prev - 1));
-      }
+      forceUpdate((prev) => prev + 1);
+      onFavoriteChange?.();
     } catch (error) {
       console.log("Error favorito:", error);
     }
