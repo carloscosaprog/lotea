@@ -61,9 +61,13 @@ export class LotesController {
     return this.lotesService.findAll(user.sub);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get("vendedor/:id")
-  findByVendedor(@Param("id", ParseIntPipe) id: number) {
-    return this.lotesService.findByVendedor(id);
+  findByVendedor(
+    @Param("id", ParseIntPipe) id: number,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.lotesService.findByVendedor(id, user.sub);
   }
 
   @Get(":id")

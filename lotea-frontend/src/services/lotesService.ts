@@ -194,7 +194,11 @@ export const deleteLote = async (id: number): Promise<boolean> => {
 };
 
 export const getLotesByUser = async (id: number): Promise<Lote[]> => {
-  const res = await fetch(`${LOTES_URL}/vendedor/${id}`);
+  const headers = await getAuthHeaders();
+
+  const res = await fetch(`${LOTES_URL}/vendedor/${id}`, {
+    headers,
+  });
 
   if (!res.ok) return [];
 

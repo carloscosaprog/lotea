@@ -121,11 +121,35 @@ export class LotesService {
     return { message: `Lote ${id} eliminado` };
   }
 
-  async findByVendedor(id_vendedor: number) {
-    return this.prisma.lote.findMany({
-      where: { id_vendedor },
-      include: this.loteInclude,
-      orderBy: { fecha_publicacion: "desc" },
+  async findByVendedor(id_vendedor: number, id_usuario: number) {
+    const lotes = await this.prisma.lote.findMany({
+      where: {
+        id_vendedor,
+      },
+
+      include: {
+        ...this.loteInclude,
+
+        favoritos: {
+          where: {
+            id_usuario,
+          },
+
+          select: {
+            id_favorito: true,
+          },
+        },
+      },
+
+      orderBy: {
+        fecha_publicacion: "desc",
+      },
     });
+
+    return lotes.map((lote) => ({
+      ...lote,
+
+      isFavorito: lote.favoritos.length > 0,
+    }));
   }
 }
