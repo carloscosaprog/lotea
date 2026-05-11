@@ -19,8 +19,10 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
 import { getCategorias } from "../../services/categoriasService";
+import { useAuth } from "../../context/AuthContext";
 
 export default function HomeScreen() {
+  const { loading: loadingAuth, user } = useAuth();
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -41,11 +43,20 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
+    if (loadingAuth) {
+      return;
+    }
+
+    if (!user) {
+      return;
+    }
+
     const loadData = async () => {
       await fetchLotes();
 
       try {
         const cats = await getCategorias();
+
         setCategories(["Todas", ...cats.map((c: any) => c.nombre)]);
       } catch (e) {
         console.error("Error cargando categorias", e);
@@ -53,7 +64,7 @@ export default function HomeScreen() {
     };
 
     loadData();
-  }, [fetchLotes]);
+  }, [fetchLotes, loadingAuth, user]);
 
   const onRefresh = async () => {
     setRefreshing(true);

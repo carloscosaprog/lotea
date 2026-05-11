@@ -93,11 +93,17 @@ const buildImageFile = (file: any, index: number) => {
 export const getLotes = async (): Promise<Lote[]> => {
   const headers = await getAuthHeaders();
 
+  // console.log("HEADERS LOTES:", headers); // mostrar el header
+
   const response = await fetch(LOTES_URL, {
     headers,
   });
 
   if (!response.ok) {
+    const text = await response.text();
+
+    console.log("ERROR LOTES:", response.status, text);
+
     throw new Error("Error al obtener lotes");
   }
 

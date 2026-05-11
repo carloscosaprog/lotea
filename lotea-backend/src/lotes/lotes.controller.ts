@@ -55,10 +55,9 @@ export class LotesController {
     return this.lotesService.create(dto, user.sub, files);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
-  findAll(@CurrentUser() user: JwtUser) {
-    return this.lotesService.findAll(user.sub);
+  findAll() {
+    return this.lotesService.findAll();
   }
 
   @UseGuards(JwtAuthGuard)

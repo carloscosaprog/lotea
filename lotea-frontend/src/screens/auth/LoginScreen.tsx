@@ -47,6 +47,7 @@ export default function LoginScreen() {
       });
 
       const data = await response.json();
+      // console.log("LOGIN RESPONSE:", data); // mostrar el login
 
       // Se adapta el manejo de errores al formato típico de NestJS (message)
       if (!response.ok) {
