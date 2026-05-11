@@ -50,7 +50,8 @@ export const normalizeLote = (raw: any): Lote => {
           nombre: lote.vendedor.nombre ?? "Usuario",
         }
       : null;
-
+  const isFavorito =
+    typeof lote.isFavorito === "boolean" ? lote.isFavorito : false;
   return {
     ...lote,
 
@@ -58,6 +59,7 @@ export const normalizeLote = (raw: any): Lote => {
     categoria,
     categorias,
     imagenes,
+    isFavorito,
 
     total_favoritos:
       typeof lote.total_favoritos === "number"
@@ -89,7 +91,11 @@ const buildImageFile = (file: any, index: number) => {
 };
 
 export const getLotes = async (): Promise<Lote[]> => {
-  const response = await fetch(LOTES_URL);
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(LOTES_URL, {
+    headers,
+  });
 
   if (!response.ok) {
     throw new Error("Error al obtener lotes");

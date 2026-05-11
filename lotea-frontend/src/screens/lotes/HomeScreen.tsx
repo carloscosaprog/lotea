@@ -76,7 +76,7 @@ export default function HomeScreen() {
 
   const favoritos = useMemo(() => {
     return lotes.filter((lote) => lote.isFavorito);
-  }, [lotes]);
+  }, [lotes, favoritesVersion]);
 
   const filteredLotes = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -108,7 +108,7 @@ export default function HomeScreen() {
         .toLowerCase()
         .includes(query),
     );
-  }, [activeCategories, lotes, search]);
+  }, [activeCategories, lotes, search, favoritesVersion]);
 
   if (loading) {
     return (

@@ -55,11 +55,31 @@ export class LotesService {
     });
   }
 
-  async findAll() {
-    return this.prisma.lote.findMany({
-      include: this.loteInclude,
-      orderBy: { fecha_publicacion: "desc" },
+  async findAll(id_usuario: number) {
+    const lotes = await this.prisma.lote.findMany({
+      include: {
+        ...this.loteInclude,
+
+        favoritos: {
+          where: {
+            id_usuario,
+          },
+          select: {
+            id_favorito: true,
+          },
+        },
+      },
+
+      orderBy: {
+        fecha_publicacion: "desc",
+      },
     });
+
+    return lotes.map((lote) => ({
+      ...lote,
+
+      isFavorito: lote.favoritos.length > 0,
+    }));
   }
 
   async findOne(id: number) {
