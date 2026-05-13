@@ -10,6 +10,7 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { toggleFavorito } from "../../services/favoritosService";
 import { getImageUrl } from "../../utils/getImageUrl";
+import { formatLoteLocation } from "../../utils/formatLocation";
 
 interface Props {
   lote: Lote;
@@ -26,6 +27,7 @@ export default function LoteListItem({ lote, onFavoriteChange }: Props) {
   const primeraImagen = lote.imagenes?.[0];
 
   const imageUri = getImageUrl(primeraImagen);
+  const locationLabel = formatLoteLocation(lote);
 
   const handleToggleFavorito = async () => {
     try {
@@ -59,6 +61,18 @@ export default function LoteListItem({ lote, onFavoriteChange }: Props) {
             {lote.titulo}
           </Text>
           <Text style={styles.meta}>{lote.cantidad} unidades disponibles</Text>
+          {locationLabel && (
+            <View style={styles.locationRow}>
+              <Ionicons
+                name="location-outline"
+                size={13}
+                color={colors.subtext}
+              />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {locationLabel}
+              </Text>
+            </View>
+          )}
           <Text style={styles.price}>{lote.precio} EUR</Text>
         </View>
 
@@ -94,7 +108,7 @@ const styles = StyleSheet.create({
   content: {
     flexDirection: "row",
     alignItems: "center",
-    height: 124,
+    minHeight: 132,
     padding: spacing.sm,
     gap: spacing.sm,
   },
@@ -115,6 +129,16 @@ const styles = StyleSheet.create({
   meta: {
     ...typography.caption,
     color: colors.subtext,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  locationText: {
+    ...typography.caption,
+    color: colors.subtext,
+    flex: 1,
   },
   price: {
     ...typography.heading,

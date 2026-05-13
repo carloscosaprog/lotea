@@ -21,6 +21,13 @@ const getStoredUserId = async () => {
   return user?.id_usuario ?? user?.id ?? null;
 };
 
+export type UserLocation = {
+  latitud: number | null;
+  longitud: number | null;
+  ciudad?: string | null;
+  direccion?: string | null;
+};
+
 export const getUserById = async (id: number) => {
   const headers = await getAuthHeaders();
 
@@ -59,6 +66,51 @@ export const updateProfile = async (nombre: string) => {
   });
 
   if (!res.ok) throw new Error("Error al actualizar perfil");
+
+  return await res.json();
+};
+
+export const getUserLocation = async (): Promise<UserLocation> => {
+  const headers = await getAuthHeaders();
+
+  const res = await fetch(`${API_URL}/usuarios/location`, {
+    headers,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.log("ERROR UBICACION:", res.status, text);
+
+    return {
+      latitud: null,
+      longitud: null,
+      ciudad: null,
+      direccion: null,
+    };
+  }
+
+  return await res.json();
+};
+
+export const updateUserLocation = async (
+  location: Omit<UserLocation, "latitud" | "longitud"> & {
+    latitud: number;
+    longitud: number;
+  },
+) => {
+  const headers = await getAuthHeaders();
+
+  const res = await fetch(`${API_URL}/usuarios/location`, {
+    method: "PATCH",
+    headers,
+    body: JSON.stringify(location),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.log("ERROR ACTUALIZAR UBICACION:", res.status, text);
+    throw new Error(`Error al actualizar ubicacion (${res.status})`);
+  }
 
   return await res.json();
 };

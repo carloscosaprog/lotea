@@ -16,6 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { PinchGestureHandler, State } from "react-native-gesture-handler";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import MapView, { Circle, Marker } from "react-native-maps";
 
 import {
   getLoteById,
@@ -35,8 +36,10 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { API_URL } from "../../config/api";
 import { getImageUrl } from "../../utils/getImageUrl";
+import { formatLoteLocation } from "../../utils/formatLocation";
 
 const screenWidth = Dimensions.get("window").width;
+const APPROXIMATION_RADIUS_METERS = 900;
 
 export default function LoteDetailScreen() {
   const route = useRoute<any>();
@@ -117,7 +120,7 @@ export default function LoteDetailScreen() {
   const handleDelete = async () => {
     if (!lote) return;
 
-    Alert.alert("Eliminar lote", "¿Desea eliminar el lote permanentemente?", [
+    Alert.alert("Eliminar lote", "Desea eliminar el lote permanentemente?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Eliminar",
@@ -208,6 +211,15 @@ export default function LoteDetailScreen() {
       ? getImageUrl(vendedor.avatar)
       : API_URL + vendedor.avatar
     : null;
+  const locationLabel = formatLoteLocation(lote);
+  const hasMapLocation =
+    typeof lote.latitud === "number" && typeof lote.longitud === "number";
+  const mapCoordinate = hasMapLocation
+    ? {
+        latitude: lote.latitud as number,
+        longitude: lote.longitud as number,
+      }
+    : null;
 
   return (
     <ScrollView
@@ -292,6 +304,58 @@ export default function LoteDetailScreen() {
           </View>
           <Text style={styles.price}>{lote.precio} EUR</Text>
         </View>
+
+        {locationLabel && (
+          <View style={styles.locationPanel}>
+            <View style={styles.locationIcon}>
+              <Ionicons
+                name="location-outline"
+                size={18}
+                color={colors.primary}
+              />
+            </View>
+            <View style={styles.locationCopy}>
+              <Text style={styles.locationTitle}>Ubicacion aproximada</Text>
+              <Text style={styles.locationText}>{locationLabel}</Text>
+            </View>
+          </View>
+        )}
+
+        {mapCoordinate && (
+          <View style={styles.detailMapWrap}>
+            <MapView
+              style={styles.detailMap}
+              initialRegion={{
+                ...mapCoordinate,
+                latitudeDelta: 0.04,
+                longitudeDelta: 0.04,
+              }}
+              scrollEnabled={false}
+              zoomEnabled={false}
+              rotateEnabled={false}
+              pitchEnabled={false}
+            >
+              <Circle
+                center={mapCoordinate}
+                radius={APPROXIMATION_RADIUS_METERS}
+                fillColor="rgba(59,130,246,0.16)"
+                strokeColor="rgba(59,130,246,0.55)"
+                strokeWidth={2}
+              />
+              <Marker coordinate={mapCoordinate} />
+            </MapView>
+            <View style={styles.mapCaption}>
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={14}
+                color={colors.accent}
+              />
+              <Text style={styles.mapCaptionText}>
+                Zona aproximada del lote
+              </Text>
+            </View>
+          </View>
+        )}
 
         <TouchableOpacity
           style={styles.sellerRow}
@@ -507,6 +571,68 @@ const styles = StyleSheet.create({
   sellerLink: {
     ...typography.caption,
     color: colors.primary,
+  },
+  locationPanel: {
+    marginTop: spacing.lg,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "#F8FAFC",
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  locationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.full,
+    backgroundColor: "#DBEAFE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  locationCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  locationTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  locationText: {
+    ...typography.caption,
+    color: colors.subtext,
+  },
+  detailMapWrap: {
+    height: 190,
+    marginTop: spacing.md,
+    borderRadius: radii.md,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "#E5E7EB",
+  },
+  detailMap: {
+    flex: 1,
+  },
+  mapCaption: {
+    position: "absolute",
+    left: spacing.sm,
+    bottom: spacing.sm,
+    borderRadius: radii.full,
+    backgroundColor: colors.white,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  mapCaptionText: {
+    ...typography.caption,
+    color: colors.text,
+    fontWeight: "700",
   },
   descriptionTitle: {
     ...typography.heading,

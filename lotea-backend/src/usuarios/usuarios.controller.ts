@@ -7,6 +7,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { JwtUser } from '../auth/interfaces/jwt-user.interface';
 import { CreateUsuarioDto } from './dto/CreateUsuarioDto';
+import { UpdateUsuarioLocationDto } from './dto/UpdateUsuarioLocationDto';
 import { UpdateUsuarioDto } from './dto/UpdateUsuarioDto';
 import { UsuariosService } from './usuarios.service';
 
@@ -58,6 +59,21 @@ export class UsuariosController {
   @Delete('avatar')
   removeAvatar(@CurrentUser() user: JwtUser) {
     return this.usuariosService.updateAvatar(user.sub, null);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('location')
+  getLocation(@CurrentUser() user: JwtUser) {
+    return this.usuariosService.getLocation(user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('location')
+  updateLocation(
+    @CurrentUser() user: JwtUser,
+    @Body() dto: UpdateUsuarioLocationDto,
+  ) {
+    return this.usuariosService.updateLocation(user.sub, dto);
   }
 
   @UseGuards(JwtAuthGuard)

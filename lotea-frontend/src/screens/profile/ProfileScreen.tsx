@@ -186,6 +186,33 @@ export default function ProfileScreen() {
         </Card>
       </TouchableOpacity>
 
+      {/* MI UBICACION */}
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => navigation.navigate("EditLocation")}
+      >
+        <Card>
+          <View style={styles.quickAction}>
+            <View style={styles.quickActionLeft}>
+              <View style={styles.quickIcon}>
+                <Ionicons
+                  name="location-outline"
+                  size={18}
+                  color={colors.primary}
+                />
+              </View>
+              <View>
+                <Text style={styles.quickActionText}>Mi ubicacion</Text>
+                <Text style={styles.quickActionHint}>
+                  {user?.ciudad || "Elige tu zona de venta"}
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+          </View>
+        </Card>
+      </TouchableOpacity>
+
       {/* MIS FAVORITOS */}
       <TouchableOpacity
         activeOpacity={0.9}
@@ -343,6 +370,11 @@ const styles = StyleSheet.create({
   quickActionText: {
     ...typography.bodyStrong,
     color: colors.text,
+  },
+  quickActionHint: {
+    ...typography.caption,
+    color: colors.subtext,
+    marginTop: 2,
   },
   notificationBadge: {
     minWidth: 24,

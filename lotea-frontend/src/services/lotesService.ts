@@ -5,6 +5,11 @@ import type { Lote, LoteCreate, LoteUpdate } from "../types/Lote";
 
 const LOTES_URL = `${API_URL}/lotes`;
 
+export type LoteQuery = {
+  maxDistance?: number;
+  sortBy?: "newest" | "nearest";
+};
+
 const getAuthHeaders = async (): Promise<Record<string, string>> => {
   const token = await AsyncStorage.getItem("token");
 
@@ -48,14 +53,50 @@ export const normalizeLote = (raw: any): Lote => {
       ? {
           id_usuario: lote.vendedor.id_usuario,
           nombre: lote.vendedor.nombre ?? "Usuario",
+          latitud:
+            typeof lote.vendedor.latitud === "number"
+              ? lote.vendedor.latitud
+              : null,
+          longitud:
+            typeof lote.vendedor.longitud === "number"
+              ? lote.vendedor.longitud
+              : null,
+          ciudad:
+            typeof lote.vendedor.ciudad === "string"
+              ? lote.vendedor.ciudad
+              : null,
+          direccion:
+            typeof lote.vendedor.direccion === "string"
+              ? lote.vendedor.direccion
+              : null,
         }
       : null;
   const isFavorito =
     typeof lote.isFavorito === "boolean" ? lote.isFavorito : false;
+  const distancia_km =
+    typeof lote.distancia_km === "number" ? lote.distancia_km : undefined;
+  const ciudad =
+    typeof lote.ciudad === "string" ? lote.ciudad : vendedor?.ciudad ?? null;
+  const direccion =
+    typeof lote.direccion === "string"
+      ? lote.direccion
+      : vendedor?.direccion ?? null;
+  const latitud =
+    typeof lote.latitud === "number" ? lote.latitud : vendedor?.latitud ?? null;
+  const longitud =
+    typeof lote.longitud === "number"
+      ? lote.longitud
+      : vendedor?.longitud ?? null;
+
   return {
     ...lote,
 
     vendedor,
+    distancia_km,
+    ciudad,
+    direccion,
+    latitud,
+    longitud,
     categoria,
     categorias,
     imagenes,
@@ -66,6 +107,22 @@ export const normalizeLote = (raw: any): Lote => {
         ? lote.total_favoritos
         : (lote._count?.favoritos ?? 0),
   };
+};
+
+const buildLotesUrl = (query?: LoteQuery) => {
+  const params = new URLSearchParams();
+
+  if (typeof query?.maxDistance === "number") {
+    params.append("maxDistance", String(query.maxDistance));
+  }
+
+  if (query?.sortBy) {
+    params.append("sortBy", query.sortBy);
+  }
+
+  const queryString = params.toString();
+
+  return queryString ? `${LOTES_URL}?${queryString}` : LOTES_URL;
 };
 
 const buildImageFile = (file: any, index: number) => {
@@ -90,12 +147,12 @@ const buildImageFile = (file: any, index: number) => {
   };
 };
 
-export const getLotes = async (): Promise<Lote[]> => {
+export const getLotes = async (query?: LoteQuery): Promise<Lote[]> => {
   const headers = await getAuthHeaders();
 
   // console.log("HEADERS LOTES:", headers); // mostrar el header
 
-  const response = await fetch(LOTES_URL, {
+  const response = await fetch(buildLotesUrl(query), {
     headers,
   });
 
@@ -113,7 +170,11 @@ export const getLotes = async (): Promise<Lote[]> => {
 };
 
 export const getLoteById = async (id: number): Promise<Lote | undefined> => {
-  const response = await fetch(`${LOTES_URL}/${id}`);
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${LOTES_URL}/${id}`, {
+    headers,
+  });
 
   if (!response.ok) return undefined;
 

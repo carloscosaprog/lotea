@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -18,7 +19,9 @@ import { extname, join } from "path";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { JwtUser } from "../auth/interfaces/jwt-user.interface";
+import { OptionalJwtAuthGuard } from "../auth/optional-jwt-auth.guard";
 import { CreateLoteDto } from "./dto/CreateLoteDto";
+import { LoteQueryDto } from "./dto/LoteQueryDto";
 import { UpdateLoteDto } from "./dto/UpdateLoteDto";
 import { LotesService } from "./lotes.service";
 
@@ -55,9 +58,10 @@ export class LotesController {
     return this.lotesService.create(dto, user.sub, files);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
-  findAll() {
-    return this.lotesService.findAll();
+  findAll(@Query() query: LoteQueryDto, @CurrentUser() user: JwtUser | null) {
+    return this.lotesService.findAll(query, user?.sub);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -69,9 +73,13 @@ export class LotesController {
     return this.lotesService.findByVendedor(id, user.sub);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(":id")
-  findOne(@Param("id", ParseIntPipe) id: number) {
-    return this.lotesService.findOne(id);
+  findOne(
+    @Param("id", ParseIntPipe) id: number,
+    @CurrentUser() user: JwtUser | null,
+  ) {
+    return this.lotesService.findOne(id, user?.sub);
   }
 
   @UseGuards(JwtAuthGuard)

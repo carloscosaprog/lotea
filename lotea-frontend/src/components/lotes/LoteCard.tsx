@@ -10,6 +10,7 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { toggleFavorito } from "../../services/favoritosService";
 import { getImageUrl } from "../../utils/getImageUrl";
+import { formatLoteLocation } from "../../utils/formatLocation";
 
 interface Props {
   lote: Lote;
@@ -28,6 +29,7 @@ export default function LoteCard({ lote }: Props) {
   const imagenSrc = { uri: getImageUrl(primeraImagen) };
 
   const totalImagenes = lote.imagenes?.length || 0;
+  const locationLabel = formatLoteLocation(lote);
   const categorias = Array.isArray(lote.categorias)
     ? lote.categorias
     : lote.categoria
@@ -92,6 +94,18 @@ export default function LoteCard({ lote }: Props) {
           </Text>
 
           <Text style={styles.subtitle}>{lote.cantidad} unidades</Text>
+          {locationLabel && (
+            <View style={styles.locationRow}>
+              <Ionicons
+                name="location-outline"
+                size={13}
+                color={colors.subtext}
+              />
+              <Text style={styles.locationText} numberOfLines={1}>
+                {locationLabel}
+              </Text>
+            </View>
+          )}
           {categorias.length > 0 && (
             <View style={styles.categoryWrap}>
               {categorias.map((categoria) => (
@@ -114,7 +128,7 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: spacing.sm,
-    height: 300,
+    height: 324,
   },
   content: {
     padding: 0,
@@ -171,6 +185,17 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.subtext,
     marginTop: 4,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: 3,
+  },
+  locationText: {
+    ...typography.caption,
+    color: colors.subtext,
+    flex: 1,
   },
   categoryWrap: {
     flexDirection: "row",
