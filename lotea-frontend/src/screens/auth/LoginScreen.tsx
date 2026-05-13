@@ -11,7 +11,6 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 
 import { useAuth } from "../../context/AuthContext";
@@ -40,6 +39,7 @@ export default function LoginScreen() {
         headers: {
           "Content-Type": "application/json",
         },
+        // Se envía el email y la contraseña en el formato que espera el backend
         body: JSON.stringify({
           email: identifier,
           contrasena: password,
@@ -47,13 +47,14 @@ export default function LoginScreen() {
       });
 
       const data = await response.json();
+      // console.log("LOGIN RESPONSE:", data); // mostrar el login
 
+      // Se adapta el manejo de errores al formato típico de NestJS (message)
       if (!response.ok) {
-        throw new Error(data.error || "Error en login");
+        throw new Error(data.message || data.error || "Error en login");
       }
 
-      await AsyncStorage.setItem("token", data.token);
-      login(data.user);
+      await login(data.user, data.access_token);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -95,7 +96,10 @@ export default function LoginScreen() {
               <TextInput
                 placeholder="Correo electronico"
                 placeholderTextColor={colors.subtext}
-                style={[componentStyles.input, error ? styles.inputError : null]}
+                style={[
+                  componentStyles.input,
+                  error ? styles.inputError : null,
+                ]}
                 value={identifier}
                 onChangeText={setIdentifier}
                 autoCapitalize="none"
@@ -105,7 +109,10 @@ export default function LoginScreen() {
                 placeholder="Contraseña"
                 placeholderTextColor={colors.subtext}
                 secureTextEntry
-                style={[componentStyles.input, error ? styles.inputError : null]}
+                style={[
+                  componentStyles.input,
+                  error ? styles.inputError : null,
+                ]}
                 value={password}
                 onChangeText={setPassword}
               />

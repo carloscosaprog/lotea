@@ -31,7 +31,7 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
+      const response = await fetch(`${API_URL}/usuarios/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,7 +46,7 @@ export default function RegisterScreen() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Error en registro");
+        throw new Error(data.message || data.error || "Error en registro");
       }
 
       Alert.alert("Usuario creado correctamente");

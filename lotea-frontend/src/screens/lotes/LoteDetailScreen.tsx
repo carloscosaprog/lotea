@@ -33,8 +33,6 @@ import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../config/api";
 import { getImageUrl } from "../../utils/getImageUrl";
 
@@ -79,7 +77,7 @@ export default function LoteDetailScreen() {
           const data = await getLoteById(Number(id));
           if (data) setLote(data);
         }
-      } catch (error) {
+      } catch {
         Alert.alert("Error al cargar el lote");
       } finally {
         setLoading(false);
@@ -125,44 +123,21 @@ export default function LoteDetailScreen() {
         text: "Eliminar",
         style: "destructive",
         onPress: async () => {
-          await deleteLote(lote.id_lote);
-          navigation.goBack();
+          try {
+            await deleteLote(lote.id_lote);
+
+            await deleteLote(lote.id_lote);
+
+            navigation.navigate("Home", {
+              screen: "HomeScreen",
+            });
+          } catch {
+            Alert.alert("Error", "No se pudo eliminar el lote");
+          }
         },
       },
     ]);
   };
-  // pedidos
-  const handleBuy = async () => {
-    if (!lote) return;
-
-    try {
-      const token = await AsyncStorage.getItem("token");
-
-      await axios.post(
-        `${API_URL}/pedidos`,
-        {
-          id_lote: lote.id_lote,
-          cantidad: 1,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      Alert.alert("Compra realizada", "Pedido creado correctamente");
-    } catch (error: any) {
-      console.log(error);
-
-      if (error.response?.data?.message) {
-        Alert.alert("Error", error.response.data.message);
-      } else {
-        Alert.alert("Error", "No se pudo completar la compra");
-      }
-    }
-  };
-
   const handleContactSeller = async () => {
     if (!lote || !currentUserId) return;
 
@@ -172,14 +147,16 @@ export default function LoteDetailScreen() {
     }
 
     try {
+      setContacting(true);
       navigation.navigate("Chat", {
         buyerId: currentUserId,
         sellerId: lote.id_vendedor,
+        otherUserId: lote.id_vendedor,
         loteId: lote.id_lote,
         loteTitulo: lote.titulo,
-        otherUserName: vendedor?.nombre || lote.vendedor,
+        otherUserName: vendedor?.nombre || nombreVendedor,
       });
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "No se pudo abrir la conversacion");
     } finally {
       setContacting(false);
@@ -206,12 +183,26 @@ export default function LoteDetailScreen() {
     );
   }
 
-  const imagenes = lote.imagenes || [];
+  const imagenes = Array.isArray(lote.imagenes) ? lote.imagenes : [];
   const categorias = Array.isArray(lote.categorias)
-    ? lote.categorias
+    ? lote.categorias.map((c: any) => (typeof c === "string" ? c : c.nombre))
     : lote.categoria
-      ? [lote.categoria]
+      ? [
+          typeof lote.categoria === "string"
+            ? lote.categoria
+            : typeof lote.categoria === "object"
+              ? (lote.categoria as any).nombre
+              : "",
+        ]
       : [];
+  const nombreVendedor =
+    typeof vendedor?.nombre === "string"
+      ? vendedor.nombre
+      : typeof lote.vendedor === "string"
+        ? lote.vendedor
+        : typeof lote.vendedor === "object" && lote.vendedor !== null
+          ? (lote.vendedor as any).nombre
+          : "Usuario";
   const vendedorAvatar = vendedor?.avatar
     ? vendedor.avatar.startsWith("http")
       ? getImageUrl(vendedor.avatar)
@@ -266,7 +257,9 @@ export default function LoteDetailScreen() {
         >
           <Image
             source={{
-              uri: getImageUrl(imagenes[imagenActual]),
+              uri: imagenes[imagenActual]
+                ? getImageUrl(imagenes[imagenActual])
+                : "https://via.placeholder.com/300",
             }}
             style={styles.mainImage}
           />
@@ -312,12 +305,12 @@ export default function LoteDetailScreen() {
         >
           <Avatar
             uri={vendedorAvatar}
-            name={vendedor?.nombre || lote.vendedor}
+            name={vendedor?.nombre || nombreVendedor}
             size={48}
           />
           <View style={styles.sellerCopy}>
             <Text style={styles.sellerName}>
-              {vendedor?.nombre || lote.vendedor}
+              {vendedor?.nombre || nombreVendedor}
             </Text>
             <Text style={styles.sellerLink}>Ver perfil del vendedor</Text>
           </View>

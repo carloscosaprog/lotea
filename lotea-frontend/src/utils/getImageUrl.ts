@@ -1,9 +1,15 @@
 import { API_URL } from "../config/api";
 
-export const getImageUrl = (url?: string) => {
-  if (!url || url.trim() === "") {
-    return "https://picsum.photos/200";
+export const getImageUrl = (url?: string | null) => {
+  const safeUrl = typeof url === "string" ? url.trim() : "";
+
+  if (!safeUrl) {
+    return "https://picsum.photos/300";
   }
 
-  return url.replace("http://localhost:3000", API_URL);
+  if (safeUrl.startsWith("http")) {
+    return safeUrl.replace("http://localhost:3000", API_URL);
+  }
+
+  return `${API_URL}${safeUrl.startsWith("/") ? "" : "/"}${safeUrl}`;
 };

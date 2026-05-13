@@ -8,7 +8,6 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import { createLote } from "../../services/lotesService";
@@ -37,6 +36,7 @@ export default function CreateLoteScreen() {
   });
 
   const [images, setImages] = useState<any[]>([]);
+  const [uploaderKey, setUploaderKey] = useState(0);
   const [categoriasDisponibles, setCategoriasDisponibles] = useState<
     Categoria[]
   >([]);
@@ -71,7 +71,12 @@ export default function CreateLoteScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!form.titulo || !form.precio || !form.cantidad || categorias.length === 0) {
+    if (
+      !form.titulo ||
+      !form.precio ||
+      !form.cantidad ||
+      categorias.length === 0
+    ) {
       Alert.alert("Completa todos los campos obligatorios");
       return;
     }
@@ -93,11 +98,27 @@ export default function CreateLoteScreen() {
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
           id_categoria: categoriaPrincipal?.id_categoria,
-          categoria: categorias[0],
-          categorias,
         },
         images,
       );
+
+      // limpiar formulario
+      setForm({
+        titulo: "",
+        descripcion: "",
+        precio: "",
+        cantidad: "",
+      });
+
+      // limpiar imagenes
+      setImages([]);
+
+      // limpiar categorias
+      setCategorias([]);
+
+      setUploaderKey((prev) => prev + 1);
+
+      //Alert.alert("Lote publicado correctamente");
 
       navigation.navigate("Home", {
         screen: "HomeMain",
@@ -125,7 +146,7 @@ export default function CreateLoteScreen() {
         </View>
 
         <Card>
-          <ImageUploader onChange={setImages} />
+          <ImageUploader key={uploaderKey} onChange={setImages} />
         </Card>
 
         <Card contentStyle={styles.formCardContent}>

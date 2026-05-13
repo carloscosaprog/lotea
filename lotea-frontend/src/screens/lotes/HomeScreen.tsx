@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -12,56 +12,59 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 
 import { getLotes } from "../../services/lotesService";
-import { getFavoritos } from "../../services/favoritosService";
 import type { Lote } from "../../types/Lote";
 import LoteListItem from "../../components/lotes/LoteListItem";
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
-
-const categories = [
-  "Todas",
-  "Electronica",
-  "Moda",
-  "Hogar",
-  "Juguetes",
-  "Oficina",
-];
+import { getCategorias } from "../../services/categoriasService";
+import { useAuth } from "../../context/AuthContext";
 
 export default function HomeScreen() {
+  const { loading: loadingAuth, user } = useAuth();
   const [lotes, setLotes] = useState<Lote[]>([]);
-  const [favoritos, setFavoritos] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeCategories, setActiveCategories] = useState<string[]>([
-    categories[0],
-  ]);
+  const [categories, setCategories] = useState<string[]>(["Todas"]);
+  const [activeCategories, setActiveCategories] = useState<string[]>(["Todas"]);
   const [search, setSearch] = useState("");
+  const [favoritesVersion, setFavoritesVersion] = useState(0);
 
-  const fetchLotes = async () => {
+  const fetchLotes = useCallback(async () => {
     try {
       const data = await getLotes();
       setLotes(data);
-
-      try {
-        const favoritosData = await getFavoritos();
-        setFavoritos(favoritosData);
-      } catch {
-        setFavoritos([]);
-      }
     } catch (error) {
       console.error("Error al cargar lotes:", error);
     } finally {
-      if (!refreshing) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchLotes();
-  }, []);
+    if (loadingAuth) {
+      return;
+    }
+
+    if (!user) {
+      return;
+    }
+
+    const loadData = async () => {
+      await fetchLotes();
+
+      try {
+        const cats = await getCategorias();
+
+        setCategories(["Todas", ...cats.map((c: any) => c.nombre)]);
+      } catch (e) {
+        console.error("Error cargando categorias", e);
+      }
+    };
+
+    loadData();
+  }, [fetchLotes, loadingAuth, user]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -81,6 +84,10 @@ export default function HomeScreen() {
       return next.length > 0 ? next : ["Todas"];
     });
   };
+
+  const favoritos = useMemo(() => {
+    return lotes.filter((lote) => lote.isFavorito);
+  }, [lotes, favoritesVersion]);
 
   const filteredLotes = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -112,7 +119,7 @@ export default function HomeScreen() {
         .toLowerCase()
         .includes(query),
     );
-  }, [activeCategories, lotes, search]);
+  }, [activeCategories, lotes, search, favoritesVersion]);
 
   if (loading) {
     return (
@@ -128,7 +135,12 @@ export default function HomeScreen() {
       <FlatList
         data={filteredLotes}
         keyExtractor={(item) => item.id_lote.toString()}
-        renderItem={({ item }) => <LoteListItem lote={item} />}
+        renderItem={({ item }) => (
+          <LoteListItem
+            lote={item}
+            onFavoriteChange={() => setFavoritesVersion((prev) => prev + 1)}
+          />
+        )}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         refreshing={refreshing}
@@ -203,7 +215,12 @@ export default function HomeScreen() {
                   keyExtractor={(item) => item.id_lote.toString()}
                   renderItem={({ item }) => (
                     <View style={styles.favoriteItem}>
-                      <LoteListItem lote={item} />
+                      <LoteListItem
+                        lote={item}
+                        onFavoriteChange={() =>
+                          setFavoritesVersion((prev) => prev + 1)
+                        }
+                      />
                     </View>
                   )}
                   contentContainerStyle={styles.favoritesList}

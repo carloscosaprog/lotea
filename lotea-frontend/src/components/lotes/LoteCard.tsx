@@ -1,14 +1,14 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import type { Lote } from "../../types/Lote";
 import Card from "../ui/Card";
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { toggleFavorito, checkFavorito } from "../../services/favoritosService";
+import { toggleFavorito } from "../../services/favoritosService";
 import { getImageUrl } from "../../utils/getImageUrl";
 
 interface Props {
@@ -17,11 +17,11 @@ interface Props {
 
 export default function LoteCard({ lote }: Props) {
   const navigation = useNavigation<any>();
+  const [, forceUpdate] = useState(0);
 
-  const [isFavorito, setIsFavorito] = useState(false);
-  const [totalFavoritos, setTotalFavoritos] = useState(
-    lote.total_favoritos ?? 0,
-  );
+  const isFavorito = lote.isFavorito ?? false;
+
+  const totalFavoritos = lote.total_favoritos ?? 0;
 
   const primeraImagen = lote.imagenes?.[0];
 
@@ -34,28 +34,14 @@ export default function LoteCard({ lote }: Props) {
       ? [lote.categoria]
       : [];
 
-  useEffect(() => {
-    const fetchFavorito = async () => {
-      try {
-        const res = await checkFavorito(lote.id_lote);
-        setIsFavorito(res.favorito);
-      } catch (error) {
-        console.log("Error check favorito:", error);
-      }
-    };
-
-    fetchFavorito();
-  }, [lote.id_lote]);
-
   const handleToggleFavorito = async () => {
     try {
-      const res = await toggleFavorito(lote.id_lote);
+      const res = await toggleFavorito(lote.id_lote, isFavorito);
 
-      setIsFavorito(res.favorito);
+      lote.isFavorito = res.favorito;
+      lote.total_favoritos = res.total_favoritos;
 
-      setTotalFavoritos((prev) =>
-        res.favorito ? prev + 1 : Math.max(prev - 1, 0),
-      );
+      forceUpdate((prev) => prev + 1);
     } catch (error) {
       console.log("Error favorito:", error);
     }

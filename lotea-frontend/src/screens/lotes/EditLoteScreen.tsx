@@ -15,7 +15,6 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 
 import { getLoteById, updateLote } from "../../services/lotesService";
 import { getCategorias } from "../../services/categoriasService";
-import ImageUploader from "../../components/lotes/ImageUploader";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
@@ -49,7 +48,6 @@ export default function EditLoteScreen() {
   >([]);
   const [categorias, setCategorias] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
-  const [newImages, setNewImages] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,17 +101,8 @@ export default function EditLoteScreen() {
     );
   };
 
-  const removeExistingImage = (index: number) => {
-    setExistingImages((current) => current.filter((_, i) => i !== index));
-  };
-
   const handleSubmit = async () => {
     if (!lote) return;
-
-    if (existingImages.length === 0 && newImages.length === 0) {
-      Alert.alert("Debes anadir al menos una imagen");
-      return;
-    }
 
     if (categorias.length === 0) {
       Alert.alert("Selecciona al menos una categoria");
@@ -133,11 +122,7 @@ export default function EditLoteScreen() {
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
           id_categoria: categoriaPrincipal?.id_categoria,
-          categoria: categorias[0],
-          categorias,
-          imagenes: existingImages.map((img) => getImageUrl(img)),
         },
-        newImages,
       );
 
       navigation.navigate("Home", {
@@ -191,20 +176,9 @@ export default function EditLoteScreen() {
             {existingImages.map((img, index) => (
               <View key={index} style={styles.imageContainer}>
                 <Image source={{ uri: getImageUrl(img) }} style={styles.image} />
-
-                <TouchableOpacity
-                  onPress={() => removeExistingImage(index)}
-                  style={styles.removeBtn}
-                >
-                  <Ionicons name="close" size={14} color={colors.white} />
-                </TouchableOpacity>
               </View>
             ))}
           </View>
-        </Card>
-
-        <Card>
-          <ImageUploader onChange={setNewImages} />
         </Card>
 
         <Card contentStyle={styles.formCardContent}>
