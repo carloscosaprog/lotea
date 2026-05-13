@@ -9,7 +9,17 @@ export interface Lote {
   vendedor?: {
     id_usuario: number;
     nombre: string;
+    latitud?: number | null;
+    longitud?: number | null;
+    ciudad?: string | null;
+    direccion?: string | null;
   } | null;
+
+  distancia_km?: number;
+  ciudad?: string | null;
+  direccion?: string | null;
+  latitud?: number | null;
+  longitud?: number | null;
 
   categoria?: string;
   categorias: string[];

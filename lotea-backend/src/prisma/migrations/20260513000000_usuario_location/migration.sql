@@ -1,0 +1,4 @@
+ALTER TABLE "usuario" ADD COLUMN "latitud" DOUBLE PRECISION;
+ALTER TABLE "usuario" ADD COLUMN "longitud" DOUBLE PRECISION;
+ALTER TABLE "usuario" ADD COLUMN "ciudad" TEXT;
+ALTER TABLE "usuario" ADD COLUMN "direccion" TEXT;

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUsuarioDto } from './dto/CreateUsuarioDto';
+import { UpdateUsuarioLocationDto } from './dto/UpdateUsuarioLocationDto';
 import { UpdateUsuarioDto } from './dto/UpdateUsuarioDto';
 
 @Injectable()
@@ -51,6 +52,33 @@ export class UsuariosService {
     const updated = await this.prisma.usuario.update({
       where: { id_usuario: id },
       data: { avatar },
+    });
+
+    return this.omitPassword(updated);
+  }
+
+  async getLocation(id: number) {
+    const usuario = await this.findOne(id);
+
+    return {
+      latitud: usuario.latitud,
+      longitud: usuario.longitud,
+      ciudad: usuario.ciudad,
+      direccion: usuario.direccion,
+    };
+  }
+
+  async updateLocation(id: number, dto: UpdateUsuarioLocationDto) {
+    await this.findOne(id);
+
+    const updated = await this.prisma.usuario.update({
+      where: { id_usuario: id },
+      data: {
+        latitud: dto.latitud,
+        longitud: dto.longitud,
+        ciudad: dto.ciudad?.trim() || null,
+        direccion: dto.direccion?.trim() || null,
+      },
     });
 
     return this.omitPassword(updated);

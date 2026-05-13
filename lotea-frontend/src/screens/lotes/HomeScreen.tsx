@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
 
 import { getLotes } from "../../services/lotesService";
 import type { Lote } from "../../types/Lote";
@@ -29,18 +30,25 @@ export default function HomeScreen() {
   const [categories, setCategories] = useState<string[]>(["Todas"]);
   const [activeCategories, setActiveCategories] = useState<string[]>(["Todas"]);
   const [search, setSearch] = useState("");
+  const [distanceFilterEnabled, setDistanceFilterEnabled] = useState(false);
+  const [distanceValue, setDistanceValue] = useState(25);
+  const [sortBy, setSortBy] = useState<"newest" | "nearest">("newest");
   const [favoritesVersion, setFavoritesVersion] = useState(0);
+  const profileCity = (user as any)?.ciudad;
 
   const fetchLotes = useCallback(async () => {
     try {
-      const data = await getLotes();
+      const data = await getLotes({
+        maxDistance: distanceFilterEnabled ? distanceValue : undefined,
+        sortBy,
+      });
       setLotes(data);
     } catch (error) {
       console.error("Error al cargar lotes:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [distanceFilterEnabled, distanceValue, sortBy]);
 
   useEffect(() => {
     if (loadingAuth) {
@@ -206,6 +214,125 @@ export default function HomeScreen() {
               })}
             </ScrollView>
 
+            <View style={styles.filterBlock}>
+              <View style={styles.distanceCard}>
+                <View style={styles.distanceHeader}>
+                  <View style={styles.distanceTitleWrap}>
+                    <Ionicons
+                      name="location-outline"
+                      size={18}
+                      color={colors.primary}
+                    />
+                    <View>
+                      <Text style={styles.distanceTitle}>Zona de busqueda</Text>
+                      <Text style={styles.distanceSubtitle}>
+                        {profileCity || "Configura tu ubicacion en Perfil"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <TouchableOpacity
+                    activeOpacity={0.86}
+                    style={[
+                      styles.switchButton,
+                      distanceFilterEnabled && styles.switchButtonActive,
+                    ]}
+                    onPress={() => {
+                      setDistanceFilterEnabled((current) => !current);
+                      setSortBy("nearest");
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.switchText,
+                        distanceFilterEnabled && styles.switchTextActive,
+                      ]}
+                    >
+                      {distanceFilterEnabled ? "Activo" : "Todos"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View
+                  style={[
+                    styles.sliderWrap,
+                    !distanceFilterEnabled && styles.sliderWrapDisabled,
+                  ]}
+                >
+                  <View style={styles.sliderValueRow}>
+                    <Text style={styles.sliderLabel}>Radio maximo</Text>
+                    <Text style={styles.sliderValue}>{distanceValue} km</Text>
+                  </View>
+                  <Slider
+                    value={distanceValue}
+                    minimumValue={1}
+                    maximumValue={100}
+                    step={1}
+                    minimumTrackTintColor={colors.primary}
+                    maximumTrackTintColor={colors.border}
+                    thumbTintColor={colors.primary}
+                    disabled={!distanceFilterEnabled}
+                    onValueChange={setDistanceValue}
+                  />
+                  <View style={styles.sliderScale}>
+                    <Text style={styles.sliderScaleText}>1 km</Text>
+                    <Text style={styles.sliderScaleText}>100 km</Text>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.sortRow}>
+                <TouchableOpacity
+                  activeOpacity={0.86}
+                  style={[
+                    styles.sortButton,
+                    sortBy === "newest" && styles.sortButtonActive,
+                  ]}
+                  onPress={() => setSortBy("newest")}
+                >
+                  <Ionicons
+                    name="time-outline"
+                    size={15}
+                    color={sortBy === "newest" ? colors.primary : colors.subtext}
+                  />
+                  <Text
+                    style={[
+                      styles.sortButtonText,
+                      sortBy === "newest" && styles.sortButtonTextActive,
+                    ]}
+                  >
+                    Recientes
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.86}
+                  style={[
+                    styles.sortButton,
+                    sortBy === "nearest" && styles.sortButtonActive,
+                  ]}
+                  onPress={() => setSortBy("nearest")}
+                >
+                  <Ionicons
+                    name="navigate-outline"
+                    size={15}
+                    color={
+                      sortBy === "nearest" ? colors.primary : colors.subtext
+                    }
+                  />
+                  <Text
+                    style={[
+                      styles.sortButtonText,
+                      sortBy === "nearest" && styles.sortButtonTextActive,
+                    ]}
+                  >
+                    Cercanos
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+            </View>
+
             {favoritos.length > 0 && (
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Tus favoritos</Text>
@@ -352,6 +479,116 @@ const styles = StyleSheet.create({
   sectionHeader: {
     marginBottom: spacing.md,
     gap: 2,
+  },
+  filterBlock: {
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  distanceCard: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  distanceHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  distanceTitleWrap: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  distanceTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  distanceSubtitle: {
+    ...typography.caption,
+    color: colors.subtext,
+    marginTop: 2,
+  },
+  switchButton: {
+    minHeight: 36,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F8FAFC",
+  },
+  switchButtonActive: {
+    backgroundColor: "#DBEAFE",
+    borderColor: "#BFDBFE",
+  },
+  switchText: {
+    ...typography.caption,
+    color: colors.subtext,
+    fontWeight: "700",
+  },
+  switchTextActive: {
+    color: colors.primary,
+  },
+  sliderWrap: {
+    gap: spacing.xs,
+  },
+  sliderWrapDisabled: {
+    opacity: 0.42,
+  },
+  sliderValueRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  sliderLabel: {
+    ...typography.caption,
+    color: colors.subtext,
+  },
+  sliderValue: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+  },
+  sliderScale: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  sliderScaleText: {
+    ...typography.caption,
+    color: colors.subtext,
+  },
+  sortRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+  },
+  sortButton: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.white,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+  },
+  sortButtonActive: {
+    backgroundColor: "#DBEAFE",
+    borderColor: "#BFDBFE",
+  },
+  sortButtonText: {
+    ...typography.caption,
+    color: colors.subtext,
+    fontWeight: "700",
+  },
+  sortButtonTextActive: {
+    color: colors.primary,
   },
   favoritesList: {
     gap: spacing.sm,

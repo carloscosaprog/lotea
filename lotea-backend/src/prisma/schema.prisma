@@ -13,6 +13,10 @@ model Usuario {
   email            String   @unique @db.VarChar(150)
   contrasena       String   @db.VarChar(255)
   avatar           String?
+  latitud          Float?
+  longitud         Float?
+  ciudad           String?
+  direccion        String?
   fecha_registro   DateTime @default(now())
 
   lotes            Lote[]              @relation("VendedorLotes")

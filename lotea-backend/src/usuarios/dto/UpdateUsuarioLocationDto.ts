@@ -1,42 +1,24 @@
 import {
-  IsEmail,
   IsNumber,
   IsOptional,
   IsString,
   Max,
   Min,
-  MinLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class CreateUsuarioDto {
-  @IsString()
-  nombre: string;
-
-  @IsEmail()
-  email: string;
-
-  @IsString()
-  @MinLength(6)
-  contrasena: string;
-
-  @IsOptional()
-  @IsString()
-  avatar?: string;
-
-  @IsOptional()
+export class UpdateUsuarioLocationDto {
   @Type(() => Number)
   @IsNumber()
   @Min(-90)
   @Max(90)
-  latitud?: number;
+  latitud: number;
 
-  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(-180)
   @Max(180)
-  longitud?: number;
+  longitud: number;
 
   @IsOptional()
   @IsString()
