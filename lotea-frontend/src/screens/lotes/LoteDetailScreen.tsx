@@ -125,11 +125,15 @@ export default function LoteDetailScreen() {
         onPress: async () => {
           try {
             await deleteLote(lote.id_lote);
-            navigation.goBack();
+
+            await deleteLote(lote.id_lote);
+
+            navigation.navigate("Home", {
+              screen: "HomeScreen",
+            });
           } catch {
             Alert.alert("Error", "No se pudo eliminar el lote");
           }
-          navigation.goBack();
         },
       },
     ]);
