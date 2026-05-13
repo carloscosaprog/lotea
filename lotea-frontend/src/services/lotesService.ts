@@ -39,7 +39,9 @@ export const normalizeLote = (raw: any): Lote => {
 
   const categorias = Array.isArray(lote.categorias)
     ? lote.categorias
-        .map((cat: any) => (typeof cat === "string" ? cat : cat?.nombre))
+        .map((cat: any) =>
+          typeof cat === "string" ? cat : cat?.nombre ?? cat?.categoria?.nombre,
+        )
         .filter(
           (cat: any): cat is string =>
             typeof cat === "string" && cat.length > 0,
@@ -197,6 +199,10 @@ export const createLote = async (
 
   if (lote.id_categoria) {
     formData.append("id_categoria", String(lote.id_categoria));
+  }
+
+  if (lote.categoriasIds?.length) {
+    formData.append("categoriasIds", JSON.stringify(lote.categoriasIds));
   }
 
   files.forEach((file, index) => {

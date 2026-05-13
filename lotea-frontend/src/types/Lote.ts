@@ -37,6 +37,7 @@ export type LoteCreate = {
   precio: number;
   cantidad: number;
   id_categoria?: number;
+  categoriasIds?: number[];
 };
 
 export type LoteUpdate = {
@@ -45,4 +46,5 @@ export type LoteUpdate = {
   precio?: number;
   cantidad?: number;
   id_categoria?: number;
+  categoriasIds?: number[];
 };

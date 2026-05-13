@@ -36,6 +36,7 @@ model Categoria {
   nombre       String @unique @db.VarChar(100)
 
   lotes        Lote[]
+  lotesCategorias Lote_Categoria[]
 
   @@map("categoria")
 }
@@ -52,6 +53,7 @@ model Lote {
 
   vendedor         Usuario    @relation("VendedorLotes", fields: [id_vendedor], references: [id_usuario], onDelete: Cascade)
   categoria        Categoria? @relation(fields: [id_categoria], references: [id_categoria], onDelete: SetNull)
+  categorias       Lote_Categoria[]
   imagenes         Imagen_Lote[]
   favoritos        Favorito[]
   detalles_pedido  Detalle_Pedido[]
@@ -59,6 +61,17 @@ model Lote {
   mensajes          Mensaje[]
 
   @@map("lote")
+}
+
+model Lote_Categoria {
+  id_lote      Int
+  id_categoria Int
+
+  lote      Lote      @relation(fields: [id_lote], references: [id_lote], onDelete: Cascade)
+  categoria Categoria @relation(fields: [id_categoria], references: [id_categoria], onDelete: Cascade)
+
+  @@id([id_lote, id_categoria])
+  @@map("lote_categoria")
 }
 
 model Imagen_Lote {
