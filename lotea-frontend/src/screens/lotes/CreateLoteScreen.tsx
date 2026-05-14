@@ -19,10 +19,14 @@ import { colors } from "../../styles/colors";
 import { componentStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { getCategoryIcon } from "../../utils/categoryIcons";
 
 interface Categoria {
   id_categoria: number;
   nombre: string;
+  slug: string;
+  icono?: string;
+  subcategorias?: Categoria[];
 }
 
 export default function CreateLoteScreen() {
@@ -40,7 +44,13 @@ export default function CreateLoteScreen() {
   const [categoriasDisponibles, setCategoriasDisponibles] = useState<
     Categoria[]
   >([]);
-  const [categorias, setCategorias] = useState<string[]>([]);
+  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<
+    number[]
+  >([]);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [categoriaActiva, setCategoriaActiva] = useState<Categoria | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -62,11 +72,11 @@ export default function CreateLoteScreen() {
     }));
   };
 
-  const toggleCategoria = (categoria: string) => {
-    setCategorias((prev) =>
-      prev.includes(categoria)
-        ? prev.filter((item) => item !== categoria)
-        : [...prev, categoria],
+  const toggleCategoria = (id_categoria: number) => {
+    setCategoriasSeleccionadas((prev) =>
+      prev.includes(id_categoria)
+        ? prev.filter((id) => id !== id_categoria)
+        : [...prev, id_categoria],
     );
   };
 
@@ -75,7 +85,7 @@ export default function CreateLoteScreen() {
       !form.titulo ||
       !form.precio ||
       !form.cantidad ||
-      categorias.length === 0
+      categoriasSeleccionadas.length === 0
     ) {
       Alert.alert("Completa todos los campos obligatorios");
       return;
@@ -87,18 +97,13 @@ export default function CreateLoteScreen() {
     }
 
     try {
-      const categoriasIds = categoriasDisponibles
-        .filter((cat) => categorias.includes(cat.nombre))
-        .map((cat) => cat.id_categoria);
-
       await createLote(
         {
           titulo: form.titulo,
           descripcion: form.descripcion,
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
-          id_categoria: categoriasIds[0],
-          categoriasIds,
+          categoriasIds: categoriasSeleccionadas,
         },
         images,
       );
@@ -115,7 +120,7 @@ export default function CreateLoteScreen() {
       setImages([]);
 
       // limpiar categorias
-      setCategorias([]);
+      setCategoriasSeleccionadas([]);
 
       setUploaderKey((prev) => prev + 1);
 
@@ -197,47 +202,168 @@ export default function CreateLoteScreen() {
                 />
               </View>
             </View>
+            {currentStep === 1 && (
+              <>
+                <Button
+                  title="Continuar"
+                  onPress={() => {
+                    if (!form.titulo || !form.precio || !form.cantidad) {
+                      Alert.alert("Completa todos los campos obligatorios");
+                      return;
+                    }
 
-            <Text style={styles.label}>Categorias</Text>
-            <View style={styles.categoryWrap}>
-              {categoriasDisponibles.map((cat) => {
-                const selected = categorias.includes(cat.nombre);
+                    if (images.length === 0) {
+                      Alert.alert("Debes anadir al menos una imagen");
+                      return;
+                    }
 
-                return (
+                    setCurrentStep(2);
+                  }}
+                  style={styles.ctaButton}
+                />
+              </>
+            )}
+
+            {currentStep === 2 && (
+              <>
+                <Text style={styles.stepTitle}>
+                  {categoriaActiva
+                    ? `Selecciona una subcategoria`
+                    : "Selecciona una categoria"}
+                </Text>
+
+                {categoriaActiva && (
                   <TouchableOpacity
-                    key={cat.id_categoria}
-                    activeOpacity={0.85}
-                    style={[
-                      styles.categoryItem,
-                      selected && styles.categorySelected,
-                    ]}
-                    onPress={() => toggleCategoria(cat.nombre)}
+                    style={styles.backButton}
+                    onPress={() => setCategoriaActiva(null)}
                   >
-                    <Text
-                      style={[
-                        styles.categoryText,
-                        selected && styles.categoryTextSelected,
-                      ]}
-                    >
-                      {cat.nombre}
-                    </Text>
+                    <Text style={styles.backButtonText}>← Volver</Text>
                   </TouchableOpacity>
-                );
-              })}
-            </View>
+                )}
+
+                <View style={styles.categoriesGrid}>
+                  {!categoriaActiva &&
+                    categoriasDisponibles.map((categoriaPadre) => {
+                      const hasSubcategorias =
+                        categoriaPadre.subcategorias &&
+                        categoriaPadre.subcategorias.length > 0;
+
+                      return (
+                        <TouchableOpacity
+                          key={categoriaPadre.id_categoria}
+                          activeOpacity={0.9}
+                          style={styles.categoryCard}
+                          onPress={() => {
+                            if (hasSubcategorias) {
+                              setCategoriaActiva(categoriaPadre);
+                            } else {
+                              toggleCategoria(categoriaPadre.id_categoria);
+                            }
+                          }}
+                        >
+                          {(() => {
+                            const Icon = getCategoryIcon(categoriaPadre.icono);
+
+                            return (
+                              <Icon
+                                size={32}
+                                color={colors.text}
+                                strokeWidth={1.8}
+                              />
+                            );
+                          })()}
+
+                          <Text style={styles.categoryCardText}>
+                            {categoriaPadre.nombre}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+
+                  {categoriaActiva &&
+                    categoriaActiva.subcategorias?.map((subcategoria) => {
+                      const selected = categoriasSeleccionadas.includes(
+                        subcategoria.id_categoria,
+                      );
+
+                      return (
+                        <TouchableOpacity
+                          key={subcategoria.id_categoria}
+                          activeOpacity={0.9}
+                          style={[
+                            styles.categoryCard,
+                            selected && styles.categoryCardSelected,
+                          ]}
+                          onPress={() =>
+                            toggleCategoria(subcategoria.id_categoria)
+                          }
+                        >
+                          {(() => {
+                            console.log(
+                              subcategoria.nombre,
+                              subcategoria.icono,
+                            );
+
+                            const Icon = getCategoryIcon(subcategoria.icono);
+
+                            return (
+                              <Icon
+                                size={32}
+                                color={selected ? colors.primary : colors.text}
+                                strokeWidth={1.8}
+                              />
+                            );
+                          })()}
+
+                          <Text
+                            style={[
+                              styles.categoryCardText,
+                              selected && styles.categoryCardTextSelected,
+                            ]}
+                          >
+                            {subcategoria.nombre}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                </View>
+
+                <Button
+                  title="Continuar"
+                  onPress={() => {
+                    if (categoriasSeleccionadas.length === 0) {
+                      Alert.alert("Selecciona al menos una categoria");
+                      return;
+                    }
+
+                    setCurrentStep(3);
+                  }}
+                  style={styles.ctaButton}
+                />
+              </>
+            )}
+
+            {currentStep === 3 && (
+              <>
+                <Button
+                  title="Publicar lote"
+                  onPress={handleSubmit}
+                  style={styles.ctaButton}
+                />
+              </>
+            )}
           </View>
         </Card>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Text style={styles.ctaHelper}>
-          Revisa las fotos y los datos antes de publicar tu lote.
-        </Text>
-        <Button
-          title="Publicar lote"
-          onPress={handleSubmit}
-          style={styles.ctaButton}
-        />
+        {currentStep === 2 && (
+          <>
+            <Text style={styles.ctaHelper}>
+              Selecciona las categorias que mejor describen el lote.
+            </Text>
+          </>
+        )}
       </View>
     </View>
   );
@@ -292,6 +418,14 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
+  parentCategory: {
+    gap: spacing.sm,
+  },
+
+  parentCategoryTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
   categoryWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -339,5 +473,56 @@ const styles = StyleSheet.create({
   ctaButton: {
     minHeight: 58,
     borderRadius: radii.lg,
+  },
+  stepTitle: {
+    ...typography.heading,
+    color: colors.text,
+  },
+
+  backButton: {
+    alignSelf: "flex-start",
+  },
+
+  backButtonText: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+  },
+
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.md,
+  },
+
+  categoryCard: {
+    width: "47%",
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+
+  categoryCardSelected: {
+    borderColor: colors.primary,
+    backgroundColor: "#DBEAFE",
+  },
+
+  categoryEmoji: {
+    fontSize: 34,
+  },
+
+  categoryCardText: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    textAlign: "center",
+  },
+
+  categoryCardTextSelected: {
+    color: colors.primary,
   },
 });

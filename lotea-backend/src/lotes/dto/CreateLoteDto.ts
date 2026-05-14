@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   Min,
+  ArrayMinSize,
 } from "class-validator";
 
 const parseCategoriasIds = (value: unknown): number[] | undefined => {
@@ -60,7 +61,7 @@ export class CreateLoteDto {
 
   @Transform(({ value }) => parseCategoriasIds(value))
   @IsArray()
+  @ArrayMinSize(1)
   @IsInt({ each: true })
-  @Min(1, { each: false })
   categoriasIds: number[];
 }
