@@ -110,9 +110,9 @@ export default function EditLoteScreen() {
     }
 
     try {
-      const categoriaPrincipal = categoriasDisponibles.find(
-        (cat) => cat.nombre === categorias[0],
-      );
+      const categoriasIds = categoriasDisponibles
+        .filter((cat) => categorias.includes(cat.nombre))
+        .map((cat) => cat.id_categoria);
 
       await updateLote(
         lote.id_lote,
@@ -121,7 +121,8 @@ export default function EditLoteScreen() {
           descripcion: form.descripcion,
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
-          id_categoria: categoriaPrincipal?.id_categoria,
+          id_categoria: categoriasIds[0],
+          categoriasIds,
         },
       );
 
@@ -229,7 +230,7 @@ export default function EditLoteScreen() {
               </View>
             </View>
 
-            <Text style={styles.label}>Categoria</Text>
+            <Text style={styles.label}>Categorias</Text>
             <View style={styles.categoryWrap}>
               {categoriasDisponibles.map((cat) => {
                 const selected = categorias.includes(cat.nombre);

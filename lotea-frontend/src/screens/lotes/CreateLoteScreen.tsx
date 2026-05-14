@@ -87,9 +87,9 @@ export default function CreateLoteScreen() {
     }
 
     try {
-      const categoriaPrincipal = categoriasDisponibles.find(
-        (cat) => cat.nombre === categorias[0],
-      );
+      const categoriasIds = categoriasDisponibles
+        .filter((cat) => categorias.includes(cat.nombre))
+        .map((cat) => cat.id_categoria);
 
       await createLote(
         {
@@ -97,7 +97,8 @@ export default function CreateLoteScreen() {
           descripcion: form.descripcion,
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
-          id_categoria: categoriaPrincipal?.id_categoria,
+          id_categoria: categoriasIds[0],
+          categoriasIds,
         },
         images,
       );
@@ -197,7 +198,7 @@ export default function CreateLoteScreen() {
               </View>
             </View>
 
-            <Text style={styles.label}>Categoria</Text>
+            <Text style={styles.label}>Categorias</Text>
             <View style={styles.categoryWrap}>
               {categoriasDisponibles.map((cat) => {
                 const selected = categorias.includes(cat.nombre);

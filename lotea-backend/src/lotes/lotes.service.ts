@@ -21,6 +21,11 @@ export class LotesService {
 
   private readonly loteInclude = {
     categoria: true,
+    categorias: {
+      include: {
+        categoria: true,
+      },
+    },
     vendedor: {
       select: {
         id_usuario: true,
@@ -107,13 +112,43 @@ export class LotesService {
     };
   }
 
+  private getSelectedCategoryIds(dto: {
+    id_categoria?: number | null;
+    categoriasIds?: number[] | null;
+  }) {
+    const categoryIds = dto.categoriasIds?.length
+      ? dto.categoriasIds
+      : dto.id_categoria
+        ? [dto.id_categoria]
+        : [];
+
+    return Array.from(new Set(categoryIds));
+  }
+
   async create(
     dto: CreateLoteDto,
     id_vendedor: number,
     files: Express.Multer.File[] = [],
   ) {
+    const { categoriasIds, ...loteData } = dto;
+    const selectedCategoryIds = this.getSelectedCategoryIds({
+      id_categoria: loteData.id_categoria,
+      categoriasIds,
+    });
+
     const lote = await this.prisma.lote.create({
-      data: { ...dto, id_vendedor },
+      data: {
+        ...loteData,
+        id_categoria: selectedCategoryIds[0] ?? loteData.id_categoria,
+        id_vendedor,
+        categorias: {
+          create: selectedCategoryIds.map((id_categoria) => ({
+            categoria: {
+              connect: { id_categoria },
+            },
+          })),
+        },
+      },
     });
 
     const imagenes = files.filter((file) => Boolean(file.filename));
@@ -201,9 +236,30 @@ export class LotesService {
       throw new ForbiddenException("No puedes editar este lote");
     }
 
+    const { categoriasIds, ...loteData } = dto;
+    const selectedCategoryIds = this.getSelectedCategoryIds({
+      id_categoria: loteData.id_categoria,
+      categoriasIds,
+    });
+
     return this.prisma.lote.update({
       where: { id_lote: id },
-      data: dto,
+      data: {
+        ...loteData,
+        ...(selectedCategoryIds.length > 0
+          ? {
+              id_categoria: selectedCategoryIds[0],
+              categorias: {
+                deleteMany: {},
+                create: selectedCategoryIds.map((id_categoria) => ({
+                  categoria: {
+                    connect: { id_categoria },
+                  },
+                })),
+              },
+            }
+          : {}),
+      },
       include: this.loteInclude,
     });
   }
