@@ -399,13 +399,6 @@ export default function EditLoteScreen() {
                   La primera imagen visible sera la portada.
                 </Text>
               </View>
-              <TouchableOpacity
-                activeOpacity={0.85}
-                style={styles.addSmallButton}
-                onPress={pickImages}
-              >
-                <Plus size={18} color={colors.white} />
-              </TouchableOpacity>
             </View>
 
             <ScrollView
@@ -756,7 +749,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: 150,
+    paddingBottom: 170,
     gap: spacing.lg,
     flexGrow: 1,
   },
@@ -869,15 +862,15 @@ const styles = StyleSheet.create({
   },
   tabs: {
     gap: spacing.sm,
-    paddingRight: spacing.lg,
   },
   tab: {
+    width: 120,
+    height: 52,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.full,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.white,
@@ -895,6 +888,7 @@ const styles = StyleSheet.create({
   },
   sectionContent: {
     gap: spacing.lg,
+    paddingBottom: 80,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -1034,7 +1028,8 @@ const styles = StyleSheet.create({
   },
   inlineFields: {
     flexDirection: "row",
-    gap: spacing.md,
+    justifyContent: "space-between",
+    gap: spacing.sm,
   },
   inlineField: {
     flex: 1,
