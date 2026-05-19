@@ -20,6 +20,7 @@ import { componentStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { getCategoryIcon } from "../../utils/categoryIcons";
+import { Image } from "react-native";
 
 interface Categoria {
   id_categoria: number;
@@ -134,6 +135,13 @@ export default function CreateLoteScreen() {
       Alert.alert("Error al crear lote");
     }
   };
+  const categoriasSeleccionadasData = categoriasDisponibles
+    .flatMap((categoriaPadre) => {
+      const subcategorias = categoriaPadre.subcategorias || [];
+
+      return [categoriaPadre, ...subcategorias];
+    })
+    .filter((cat) => categoriasSeleccionadas.includes(cat.id_categoria));
 
   return (
     <View style={styles.screen}>
@@ -144,11 +152,24 @@ export default function CreateLoteScreen() {
         contentInset={{ bottom: 120 }}
       >
         <View style={styles.headerRow}>
-          <View style={styles.headerSpacer} />
+          {currentStep > 1 ? (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setCurrentStep((prev) => prev - 1)}
+            >
+              <Text style={styles.backArrow}>←</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.headerSpacer} />
+          )}
 
-          <Text style={styles.screenTitle}>Publicar lote</Text>
+          <Text style={styles.screenTitle}>
+            {currentStep === 1 && "Detalles"}
+            {currentStep === 2 && "Categorias"}
+            {currentStep === 3 && "Resumen"}
+          </Text>
 
-          <View style={styles.headerSpacer} />
+          <Text style={styles.stepCounter}>{currentStep}/3</Text>
         </View>
 
         <Card>
@@ -157,53 +178,58 @@ export default function CreateLoteScreen() {
 
         <Card contentStyle={styles.formCardContent}>
           <View style={styles.formSection}>
-            <Text style={styles.label}>Titulo</Text>
-            <TextInput
-              placeholder="Titulo del lote"
-              placeholderTextColor={colors.subtext}
-              style={componentStyles.input}
-              value={form.titulo}
-              onChangeText={(text) => handleChange("titulo", text)}
-            />
-
-            <Text style={styles.label}>Descripcion</Text>
-            <TextInput
-              placeholder="Describe el contenido del lote"
-              placeholderTextColor={colors.subtext}
-              style={[componentStyles.input, styles.multilineInput]}
-              multiline
-              textAlignVertical="top"
-              value={form.descripcion}
-              onChangeText={(text) => handleChange("descripcion", text)}
-            />
-
-            <View style={styles.inlineFields}>
-              <View style={styles.inlineField}>
-                <Text style={styles.label}>Precio</Text>
-                <TextInput
-                  placeholder="EUR"
-                  placeholderTextColor={colors.subtext}
-                  keyboardType="numeric"
-                  style={componentStyles.input}
-                  value={form.precio}
-                  onChangeText={(text) => handleChange("precio", text)}
-                />
-              </View>
-
-              <View style={styles.inlineField}>
-                <Text style={styles.label}>Unidades disponibles</Text>
-                <TextInput
-                  placeholder="Cantidad"
-                  placeholderTextColor={colors.subtext}
-                  keyboardType="numeric"
-                  style={componentStyles.input}
-                  value={form.cantidad}
-                  onChangeText={(text) => handleChange("cantidad", text)}
-                />
-              </View>
-            </View>
             {currentStep === 1 && (
               <>
+                <Text style={styles.label}>Titulo</Text>
+
+                <TextInput
+                  placeholder="Titulo del lote"
+                  placeholderTextColor={colors.subtext}
+                  style={componentStyles.input}
+                  value={form.titulo}
+                  onChangeText={(text) => handleChange("titulo", text)}
+                />
+
+                <Text style={styles.label}>Descripcion</Text>
+
+                <TextInput
+                  placeholder="Describe el contenido del lote"
+                  placeholderTextColor={colors.subtext}
+                  style={[componentStyles.input, styles.multilineInput]}
+                  multiline
+                  textAlignVertical="top"
+                  value={form.descripcion}
+                  onChangeText={(text) => handleChange("descripcion", text)}
+                />
+
+                <View style={styles.inlineFields}>
+                  <View style={styles.inlineField}>
+                    <Text style={styles.label}>Precio</Text>
+
+                    <TextInput
+                      placeholder="EUR"
+                      placeholderTextColor={colors.subtext}
+                      keyboardType="numeric"
+                      style={componentStyles.input}
+                      value={form.precio}
+                      onChangeText={(text) => handleChange("precio", text)}
+                    />
+                  </View>
+
+                  <View style={styles.inlineField}>
+                    <Text style={styles.label}>Unidades disponibles</Text>
+
+                    <TextInput
+                      placeholder="Cantidad"
+                      placeholderTextColor={colors.subtext}
+                      keyboardType="numeric"
+                      style={componentStyles.input}
+                      value={form.cantidad}
+                      onChangeText={(text) => handleChange("cantidad", text)}
+                    />
+                  </View>
+                </View>
+
                 <Button
                   title="Continuar"
                   onPress={() => {
@@ -299,11 +325,6 @@ export default function CreateLoteScreen() {
                           }
                         >
                           {(() => {
-                            console.log(
-                              subcategoria.nombre,
-                              subcategoria.icono,
-                            );
-
                             const Icon = getCategoryIcon(subcategoria.icono);
 
                             return (
@@ -345,6 +366,59 @@ export default function CreateLoteScreen() {
 
             {currentStep === 3 && (
               <>
+                <Text style={styles.stepTitle}>Resumen del lote</Text>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.previewImagesRow}
+                >
+                  {images.map((img, index) => (
+                    <Image
+                      key={index}
+                      source={{ uri: img.uri }}
+                      style={styles.previewImage}
+                    />
+                  ))}
+                </ScrollView>
+
+                <View style={styles.summarySection}>
+                  <Text style={styles.summaryTitle}>{form.titulo}</Text>
+
+                  {!!form.descripcion && (
+                    <Text style={styles.summaryDescription}>
+                      {form.descripcion}
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.summaryPriceBox}>
+                  <Text style={styles.summaryPrice}>{form.precio} €</Text>
+
+                  <Text style={styles.summaryStock}>
+                    {form.cantidad} unidades disponibles
+                  </Text>
+                </View>
+
+                <View style={styles.summarySection}>
+                  <Text style={styles.summaryLabel}>
+                    Categorias seleccionadas
+                  </Text>
+
+                  <View style={styles.selectedCategoriesWrap}>
+                    {categoriasSeleccionadasData.map((cat) => (
+                      <View
+                        key={cat.id_categoria}
+                        style={styles.selectedCategory}
+                      >
+                        <Text style={styles.selectedCategoryText}>
+                          {cat.nombre}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
                 <Button
                   title="Publicar lote"
                   onPress={handleSubmit}
@@ -391,6 +465,16 @@ const styles = StyleSheet.create({
   screenTitle: {
     ...typography.heading,
     color: colors.text,
+  },
+  backArrow: {
+    fontSize: 28,
+    color: colors.text,
+    fontWeight: "600",
+  },
+
+  stepCounter: {
+    ...typography.bodyStrong,
+    color: colors.subtext,
   },
   headerSpacer: {
     width: 22,
@@ -524,5 +608,73 @@ const styles = StyleSheet.create({
 
   categoryCardTextSelected: {
     color: colors.primary,
+  },
+  previewImagesRow: {
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+
+  previewImage: {
+    width: 140,
+    height: 140,
+    borderRadius: radii.lg,
+  },
+
+  summarySection: {
+    gap: spacing.sm,
+  },
+
+  summaryTitle: {
+    ...typography.heading,
+    color: colors.text,
+  },
+
+  summaryDescription: {
+    ...typography.body,
+    color: colors.subtext,
+  },
+
+  summaryPriceBox: {
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.xs,
+  },
+
+  summaryPrice: {
+    fontSize: 34,
+    fontWeight: "700",
+    color: colors.text,
+  },
+
+  summaryStock: {
+    ...typography.body,
+    color: colors.subtext,
+  },
+
+  summaryLabel: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+
+  selectedCategoriesWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+
+  selectedCategory: {
+    backgroundColor: "#DBEAFE",
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+
+  selectedCategoryText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "700",
   },
 });
