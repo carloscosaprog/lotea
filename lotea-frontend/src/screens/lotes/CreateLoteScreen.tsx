@@ -21,6 +21,7 @@ import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { getCategoryIcon } from "../../utils/categoryIcons";
 import { Image } from "react-native";
+import { useRef } from "react";
 
 interface Categoria {
   id_categoria: number;
@@ -52,6 +53,7 @@ export default function CreateLoteScreen() {
   const [categoriaActiva, setCategoriaActiva] = useState<Categoria | null>(
     null,
   );
+  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -65,6 +67,13 @@ export default function CreateLoteScreen() {
 
     fetchCategorias();
   }, []);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({
+      y: 0,
+      animated: true,
+    });
+  }, [currentStep, categoriaActiva]);
 
   const handleChange = (name: string, value: string) => {
     setForm((prev) => ({
@@ -146,6 +155,7 @@ export default function CreateLoteScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -172,9 +182,11 @@ export default function CreateLoteScreen() {
           <Text style={styles.stepCounter}>{currentStep}/3</Text>
         </View>
 
-        <Card>
-          <ImageUploader key={uploaderKey} onChange={setImages} />
-        </Card>
+        {currentStep === 1 && (
+          <Card>
+            <ImageUploader key={uploaderKey} onChange={setImages} />
+          </Card>
+        )}
 
         <Card contentStyle={styles.formCardContent}>
           <View style={styles.formSection}>
@@ -269,42 +281,62 @@ export default function CreateLoteScreen() {
 
                 <View style={styles.categoriesGrid}>
                   {!categoriaActiva &&
-                    categoriasDisponibles.map((categoriaPadre) => {
-                      const hasSubcategorias =
-                        categoriaPadre.subcategorias &&
-                        categoriaPadre.subcategorias.length > 0;
+                    [...categoriasDisponibles]
+                      .sort((a, b) => {
+                        if (a.nombre === "Otros") return 1;
+                        if (b.nombre === "Otros") return -1;
+                        return 0;
+                      })
+                      .map((categoriaPadre) => {
+                        const hasSubcategorias =
+                          categoriaPadre.subcategorias &&
+                          categoriaPadre.subcategorias.length > 0;
 
-                      return (
-                        <TouchableOpacity
-                          key={categoriaPadre.id_categoria}
-                          activeOpacity={0.9}
-                          style={styles.categoryCard}
-                          onPress={() => {
-                            if (hasSubcategorias) {
-                              setCategoriaActiva(categoriaPadre);
-                            } else {
-                              toggleCategoria(categoriaPadre.id_categoria);
-                            }
-                          }}
-                        >
-                          {(() => {
-                            const Icon = getCategoryIcon(categoriaPadre.icono);
+                        return (
+                          <TouchableOpacity
+                            key={categoriaPadre.id_categoria}
+                            activeOpacity={0.9}
+                            style={[
+                              styles.categoryCard,
+                              categoriasSeleccionadas.includes(
+                                categoriaPadre.id_categoria,
+                              ) && styles.categoryCardSelected,
+                            ]}
+                            onPress={() => {
+                              if (hasSubcategorias) {
+                                setCategoriaActiva(categoriaPadre);
+                              } else {
+                                toggleCategoria(categoriaPadre.id_categoria);
+                              }
+                            }}
+                          >
+                            {(() => {
+                              const Icon = getCategoryIcon(
+                                categoriaPadre.icono,
+                              );
 
-                            return (
-                              <Icon
-                                size={32}
-                                color={colors.text}
-                                strokeWidth={1.8}
-                              />
-                            );
-                          })()}
+                              return (
+                                <Icon
+                                  size={32}
+                                  color={colors.text}
+                                  strokeWidth={1.8}
+                                />
+                              );
+                            })()}
 
-                          <Text style={styles.categoryCardText}>
-                            {categoriaPadre.nombre}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
+                            <Text
+                              style={[
+                                styles.categoryCardText,
+                                categoriasSeleccionadas.includes(
+                                  categoriaPadre.id_categoria,
+                                ) && styles.categoryCardTextSelected,
+                              ]}
+                            >
+                              {categoriaPadre.nombre}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
 
                   {categoriaActiva &&
                     categoriaActiva.subcategorias?.map((subcategoria) => {
@@ -369,6 +401,7 @@ export default function CreateLoteScreen() {
                 <Text style={styles.stepTitle}>Resumen del lote</Text>
 
                 <ScrollView
+                  ref={scrollRef}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={styles.previewImagesRow}

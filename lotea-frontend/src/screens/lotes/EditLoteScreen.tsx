@@ -22,10 +22,14 @@ import { componentStyles, layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { getImageUrl } from "../../utils/getImageUrl";
+import { getCategoryIcon } from "../../utils/categoryIcons";
 
 interface Categoria {
   id_categoria: number;
   nombre: string;
+  slug: string;
+  icono?: string;
+  subcategorias?: Categoria[];
 }
 
 export default function EditLoteScreen() {
@@ -46,8 +50,15 @@ export default function EditLoteScreen() {
   const [categoriasDisponibles, setCategoriasDisponibles] = useState<
     Categoria[]
   >([]);
-  const [categorias, setCategorias] = useState<string[]>([]);
+  const [categorias, setCategorias] = useState<number[]>([]);
+
   const [existingImages, setExistingImages] = useState<string[]>([]);
+
+  const [currentStep, setCurrentStep] = useState(1);
+
+  const [categoriaActiva, setCategoriaActiva] = useState<Categoria | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,11 +77,9 @@ export default function EditLoteScreen() {
             cantidad: String(data.cantidad),
           });
           setCategorias(
-            Array.isArray(data.categorias) && data.categorias.length > 0
-              ? data.categorias
-              : data.categoria
-                ? [data.categoria]
-                : [],
+            Array.isArray(data.categorias)
+              ? data.categorias.map((cat: any) => cat.id_categoria)
+              : [],
           );
           setExistingImages(Array.isArray(data.imagenes) ? data.imagenes : []);
         }
@@ -93,11 +102,11 @@ export default function EditLoteScreen() {
     }));
   };
 
-  const toggleCategoria = (categoria: string) => {
+  const toggleCategoria = (id_categoria: number) => {
     setCategorias((prev) =>
-      prev.includes(categoria)
-        ? prev.filter((item) => item !== categoria)
-        : [...prev, categoria],
+      prev.includes(id_categoria)
+        ? prev.filter((item) => item !== id_categoria)
+        : [...prev, id_categoria],
     );
   };
 
@@ -111,20 +120,17 @@ export default function EditLoteScreen() {
 
     try {
       const categoriasIds = categoriasDisponibles
-        .filter((cat) => categorias.includes(cat.nombre))
+        .filter((cat) => categorias.includes(cat.id_categoria))
         .map((cat) => cat.id_categoria);
 
-      await updateLote(
-        lote.id_lote,
-        {
-          titulo: form.titulo,
-          descripcion: form.descripcion,
-          precio: Number(form.precio),
-          cantidad: Number(form.cantidad),
-          id_categoria: categoriasIds[0],
-          categoriasIds,
-        },
-      );
+      await updateLote(lote.id_lote, {
+        titulo: form.titulo,
+        descripcion: form.descripcion,
+        precio: Number(form.precio),
+        cantidad: Number(form.cantidad),
+        id_categoria: categoriasIds[0],
+        categoriasIds,
+      });
 
       navigation.navigate("Home", {
         screen: "LoteDetail",
@@ -176,7 +182,10 @@ export default function EditLoteScreen() {
           <View style={styles.imageRow}>
             {existingImages.map((img, index) => (
               <View key={index} style={styles.imageContainer}>
-                <Image source={{ uri: getImageUrl(img) }} style={styles.image} />
+                <Image
+                  source={{ uri: getImageUrl(img) }}
+                  style={styles.image}
+                />
               </View>
             ))}
           </View>
@@ -233,7 +242,7 @@ export default function EditLoteScreen() {
             <Text style={styles.label}>Categorias</Text>
             <View style={styles.categoryWrap}>
               {categoriasDisponibles.map((cat) => {
-                const selected = categorias.includes(cat.nombre);
+                const selected = categorias.includes(cat.id_categoria);
 
                 return (
                   <TouchableOpacity
@@ -242,7 +251,7 @@ export default function EditLoteScreen() {
                       styles.categoryItem,
                       selected && styles.categorySelected,
                     ]}
-                    onPress={() => toggleCategoria(cat.nombre)}
+                    onPress={() => toggleCategoria(cat.id_categoria)}
                   >
                     <Text
                       style={[
