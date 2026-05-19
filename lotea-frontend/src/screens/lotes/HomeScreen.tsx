@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   ActivityIndicator,
+  Animated,
+  Easing,
   FlatList,
   Modal,
   Pressable,
@@ -23,13 +25,120 @@ import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
 import { getCategorias } from "../../services/categoriasService";
 import { useAuth } from "../../context/AuthContext";
+import { getCategoryIcon } from "../../utils/categoryIcons";
+
+interface Categoria {
+  id_categoria: number;
+  nombre: string;
+  slug?: string;
+  icono?: string;
+  subcategorias?: Categoria[];
+}
+
+const sortCategories = (items: Categoria[]) =>
+  [...items].sort((a, b) => {
+    if (a.nombre === "Otros") return 1;
+    if (b.nombre === "Otros") return -1;
+    return a.nombre.localeCompare(b.nombre);
+  });
+
+function FilterCategoryCard({
+  category,
+  selected,
+  onPress,
+  onOpenSubcategories,
+  isAllCategory,
+}: {
+  category: Categoria;
+  selected: boolean;
+  onPress: () => void;
+  onOpenSubcategories?: () => void;
+  isAllCategory?: boolean;
+}) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const Icon = isAllCategory ? undefined : getCategoryIcon(category.icono);
+  const hasSubcategories = !!onOpenSubcategories;
+
+  const pressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      speed: 18,
+      bounciness: 4,
+    }).start();
+  };
+
+  const pressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 18,
+      bounciness: 4,
+    }).start();
+  };
+
+  return (
+    <Animated.View style={[styles.categoryCardMotion, { transform: [{ scale }] }]}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={onPress}
+        onPressIn={pressIn}
+        onPressOut={pressOut}
+        style={[styles.filterCategoryCard, selected && styles.filterCategoryCardActive]}
+      >
+        <View
+          style={[
+            styles.filterCategoryIcon,
+            selected && styles.filterCategoryIconActive,
+          ]}
+        >
+          {Icon ? (
+            <Icon
+              size={25}
+              color={selected ? colors.primary : colors.text}
+              strokeWidth={1.8}
+            />
+          ) : (
+            <Ionicons
+              name="apps-outline"
+              size={24}
+              color={selected ? colors.primary : colors.text}
+            />
+          )}
+        </View>
+        <Text
+          numberOfLines={2}
+          style={[
+            styles.filterCategoryText,
+            selected && styles.filterCategoryTextActive,
+          ]}
+        >
+          {category.nombre}
+        </Text>
+      </TouchableOpacity>
+
+      {hasSubcategories && (
+        <TouchableOpacity
+          activeOpacity={0.86}
+          style={styles.subcategoryLink}
+          onPress={onOpenSubcategories}
+        >
+          <Text style={styles.subcategoryLinkText}>Subcategorias</Text>
+          <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+        </TouchableOpacity>
+      )}
+    </Animated.View>
+  );
+}
 
 export default function HomeScreen() {
   const { loading: loadingAuth, user } = useAuth();
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [categories, setCategories] = useState<string[]>(["Todas"]);
+  const [categoriasDisponibles, setCategoriasDisponibles] = useState<
+    Categoria[]
+  >([]);
   const [activeCategories, setActiveCategories] = useState<string[]>(["Todas"]);
   const [search, setSearch] = useState("");
   const [distanceFilterEnabled, setDistanceFilterEnabled] = useState(false);
@@ -37,6 +146,10 @@ export default function HomeScreen() {
   const [sortBy, setSortBy] = useState<"newest" | "nearest">("newest");
   const [favoritesVersion, setFavoritesVersion] = useState(0);
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const [activeFilterCategory, setActiveFilterCategory] =
+    useState<Categoria | null>(null);
+  const contentAnim = useRef(new Animated.Value(0)).current;
+  const sheetAnim = useRef(new Animated.Value(0)).current;
   const profileCity = (user as any)?.ciudad;
 
   const fetchLotes = useCallback(async () => {
@@ -67,8 +180,9 @@ export default function HomeScreen() {
 
       try {
         const cats = await getCategorias();
+        const normalizedCategories = Array.isArray(cats) ? cats : [];
 
-        setCategories(["Todas", ...cats.map((c: any) => c.nombre)]);
+        setCategoriasDisponibles(normalizedCategories);
       } catch (e) {
         console.error("Error cargando categorias", e);
       }
@@ -76,6 +190,29 @@ export default function HomeScreen() {
 
     loadData();
   }, [fetchLotes, loadingAuth, user]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    Animated.timing(contentAnim, {
+      toValue: 1,
+      duration: 420,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [contentAnim, loading]);
+
+  useEffect(() => {
+    if (!filtersVisible) return;
+
+    sheetAnim.setValue(0);
+    Animated.timing(sheetAnim, {
+      toValue: 1,
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [filtersVisible, sheetAnim]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -165,10 +302,6 @@ export default function HomeScreen() {
       .slice(0, 8);
   }, [filteredLotes]);
 
-  const featuredCategories = useMemo(() => {
-    return categories.filter((category) => category !== "Todas").slice(0, 5);
-  }, [categories]);
-
   const activeFiltersCount = useMemo(() => {
     let count = 0;
 
@@ -184,7 +317,65 @@ export default function HomeScreen() {
     ? "Todas las categorias"
     : activeCategories.join(", ");
 
+  const allFilterCategories = useMemo(() => {
+    if (activeFilterCategory) {
+      return [
+        activeFilterCategory,
+        ...sortCategories(activeFilterCategory.subcategorias || []),
+      ];
+    }
+
+    return [
+      {
+        id_categoria: 0,
+        nombre: "Todas",
+        icono: "boxes",
+      },
+      ...sortCategories(categoriasDisponibles),
+    ];
+  }, [activeFilterCategory, categoriasDisponibles]);
+
+  const contentAnimatedStyle = {
+    opacity: contentAnim,
+    transform: [
+      {
+        translateY: contentAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [14, 0],
+        }),
+      },
+    ],
+  };
+
+  const sheetAnimatedStyle = {
+    opacity: sheetAnim,
+    transform: [
+      {
+        translateY: sheetAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [28, 0],
+        }),
+      },
+    ],
+  };
+
   const handleFavoriteChange = () => setFavoritesVersion((prev) => prev + 1);
+
+  const openFilters = () => setFiltersVisible(true);
+
+  const closeFilters = () => {
+    Animated.timing(sheetAnim, {
+      toValue: 0,
+      duration: 180,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        setFiltersVisible(false);
+        setActiveFilterCategory(null);
+      }
+    });
+  };
 
   const clearFilters = () => {
     setActiveCategories(["Todas"]);
@@ -214,7 +405,7 @@ export default function HomeScreen() {
     if (data.length === 0) return null;
 
     return (
-      <View style={styles.marketSection}>
+      <Animated.View style={[styles.marketSection, contentAnimatedStyle]}>
         <View style={styles.sectionHeadingRow}>
           <View style={styles.sectionTitleWrap}>
             <View style={styles.sectionIcon}>
@@ -235,7 +426,7 @@ export default function HomeScreen() {
           contentContainerStyle={styles.carouselList}
           showsHorizontalScrollIndicator={false}
         />
-      </View>
+      </Animated.View>
     );
   };
 
@@ -262,13 +453,15 @@ export default function HomeScreen() {
         onRefresh={onRefresh}
         ListHeaderComponent={
           <>
-            <View style={styles.hero}>
+            <Animated.View style={[styles.hero, contentAnimatedStyle]}>
               <View style={styles.heroTopRow}>
                 <View>
-                  <Text style={styles.heroEyebrow}>Marketplace Lotea</Text>
-                  <Text style={styles.brand}>Compra lotes mejor.</Text>
+                  <View style={styles.heroBadge}>
+                    <Text style={styles.heroEyebrow}>Lotea</Text>
+                  </View>
+                  <Text style={styles.brand}>Encuentra lotes con potencial</Text>
                   <Text style={styles.heroSubtitle}>
-                    Encuentra oportunidades para revender cerca de ti.
+                    Oportunidades recientes, cercanas y listas para revender.
                   </Text>
                 </View>
               </View>
@@ -287,7 +480,7 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   activeOpacity={0.86}
                   style={styles.filterButton}
-                  onPress={() => setFiltersVisible(true)}
+                  onPress={openFilters}
                 >
                   <Ionicons
                     name="options-outline"
@@ -297,7 +490,24 @@ export default function HomeScreen() {
                   <Text style={styles.filterButtonText}>Filtros</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+
+              <View style={styles.heroMetaRow}>
+                <Text style={styles.heroMetaText} numberOfLines={1}>
+                  {sortBy === "nearest" ? "Cercanos" : "Recientes"} -{" "}
+                  {distanceFilterEnabled
+                    ? `${distanceValue} km`
+                    : "sin limite de distancia"}{" "}
+                  - {selectedCategoriesLabel}
+                </Text>
+                {activeFiltersCount > 0 && (
+                  <View style={styles.activeFiltersBadge}>
+                    <Text style={styles.activeFiltersText}>
+                      {activeFiltersCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </Animated.View>
 
             <MarketplaceSection
               title="Anadidos recientemente"
@@ -338,27 +548,27 @@ export default function HomeScreen() {
               icon="heart-outline"
             />
 
-            <View style={styles.feedHeader}>
+            <Animated.View style={[styles.feedHeader, contentAnimatedStyle]}>
               <View>
                 <Text style={styles.sectionTitle}>Todos los lotes</Text>
                 <Text style={styles.sectionSubtitle}>
                   {filteredLotes.length} resultados disponibles.
                 </Text>
               </View>
-            </View>
+            </Animated.View>
 
             <Modal
               visible={filtersVisible}
               transparent
-              animationType="slide"
-              onRequestClose={() => setFiltersVisible(false)}
+              animationType="fade"
+              onRequestClose={closeFilters}
             >
               <View style={styles.modalRoot}>
                 <Pressable
                   style={styles.modalOverlay}
-                  onPress={() => setFiltersVisible(false)}
+                  onPress={closeFilters}
                 />
-                <View style={styles.filterSheet}>
+                <Animated.View style={[styles.filterSheet, sheetAnimatedStyle]}>
                   <View style={styles.sheetHandle} />
 
                   <View style={styles.sheetHeader}>
@@ -371,7 +581,7 @@ export default function HomeScreen() {
                     <TouchableOpacity
                       activeOpacity={0.85}
                       style={styles.closeButton}
-                      onPress={() => setFiltersVisible(false)}
+                      onPress={closeFilters}
                     >
                       <Ionicons name="close" size={20} color={colors.text} />
                     </TouchableOpacity>
@@ -534,31 +744,63 @@ export default function HomeScreen() {
                     </View>
 
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterGroupTitle}>Categorias</Text>
-                      <View style={styles.sheetCategoriesGrid}>
-                        {categories.map((category) => {
-                          const isActive = activeCategories.includes(category);
+                      <View style={styles.filterGroupHeader}>
+                        <View>
+                          <View style={styles.categoryHeaderRow}>
+                            {activeFilterCategory && (
+                              <TouchableOpacity
+                                activeOpacity={0.86}
+                                style={styles.categoryBackButton}
+                                onPress={() => setActiveFilterCategory(null)}
+                              >
+                                <Ionicons
+                                  name="chevron-back"
+                                  size={16}
+                                  color={colors.primary}
+                                />
+                              </TouchableOpacity>
+                            )}
+                            <Text style={styles.filterGroupTitle}>
+                              {activeFilterCategory
+                                ? activeFilterCategory.nombre
+                                : "Categorias"}
+                            </Text>
+                          </View>
+                          <Text style={styles.filterGroupHint}>
+                            {activeFilterCategory
+                              ? "Selecciona la categoria padre o sus subcategorias."
+                              : "Selecciona categorias padre o entra en sus subcategorias."}
+                          </Text>
+                        </View>
+                        {!activeCategories.includes("Todas") && (
+                          <Text style={styles.selectedCountText}>
+                            {activeCategories.length}
+                          </Text>
+                        )}
+                      </View>
+                      <View style={styles.filterCategoriesGrid}>
+                        {allFilterCategories.map((category) => {
+                          const isAllCategory = category.nombre === "Todas";
+                          const isActive = activeCategories.includes(
+                            category.nombre,
+                          );
+                          const hasSubcategories =
+                            !activeFilterCategory &&
+                            !!category.subcategorias?.length;
 
                           return (
-                            <TouchableOpacity
-                              key={category}
-                              activeOpacity={0.85}
-                              style={[
-                                styles.sheetCategory,
-                                isActive && styles.sheetCategoryActive,
-                              ]}
-                              onPress={() => toggleCategory(category)}
-                            >
-                              <Text
-                                style={[
-                                  styles.sheetCategoryText,
-                                  isActive && styles.sheetCategoryTextActive,
-                                ]}
-                                numberOfLines={1}
-                              >
-                                {category}
-                              </Text>
-                            </TouchableOpacity>
+                            <FilterCategoryCard
+                              key={`${category.id_categoria}-${category.nombre}`}
+                              category={category}
+                              selected={isActive}
+                              isAllCategory={isAllCategory}
+                              onPress={() => toggleCategory(category.nombre)}
+                              onOpenSubcategories={
+                                hasSubcategories
+                                  ? () => setActiveFilterCategory(category)
+                                  : undefined
+                              }
+                            />
                           );
                         })}
                       </View>
@@ -591,14 +833,14 @@ export default function HomeScreen() {
                     <TouchableOpacity
                       activeOpacity={0.86}
                       style={styles.applyButton}
-                      onPress={() => setFiltersVisible(false)}
+                      onPress={closeFilters}
                     >
                       <Text style={styles.applyButtonText}>
                         Ver {filteredLotes.length} lotes
                       </Text>
                     </TouchableOpacity>
                   </View>
-                </View>
+                </Animated.View>
               </View>
             </Modal>
           </>
@@ -626,61 +868,45 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     paddingBottom: spacing.xxxl,
   },
   hero: {
-    backgroundColor: "#2563EB",
-    borderRadius: radii.xl,
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.lg,
     overflow: "hidden",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   heroTopRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     gap: spacing.md,
+  },
+  heroBadge: {
+    alignSelf: "flex-start",
+    borderRadius: radii.full,
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    marginBottom: spacing.sm,
   },
   heroEyebrow: {
     ...typography.overline,
-    color: colors.primarySoft,
-    marginBottom: 2,
+    color: colors.primary,
   },
   brand: {
     ...typography.title,
-    color: colors.white,
+    color: colors.text,
   },
   heroSubtitle: {
-    ...typography.caption,
-    color: "#DBEAFE",
-    marginTop: 2,
-  },
-  heroIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.full,
-    backgroundColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  filterDot: {
-    position: "absolute",
-    top: -3,
-    right: -3,
-    minWidth: 18,
-    height: 18,
-    borderRadius: radii.full,
-    backgroundColor: colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 4,
-  },
-  filterDotText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: "700",
+    ...typography.body,
+    color: colors.subtext,
+    marginTop: spacing.xs,
   },
   heroActions: {
     flexDirection: "row",
@@ -691,7 +917,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 52,
     borderRadius: radii.full,
-    backgroundColor: colors.white,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.md,
@@ -717,90 +945,41 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "700",
   },
-  discoveryBar: {
-    backgroundColor: colors.white,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+  heroMetaRow: {
+    marginTop: spacing.md,
     paddingTop: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  discoveryHeader: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  discoveryTitle: {
-    ...typography.bodyStrong,
-    color: colors.text,
-  },
-  discoveryAction: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: "700",
-  },
-  categoriesRow: {
     gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
   },
-  pill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-  },
-  pillActive: {
-    backgroundColor: "#DBEAFE",
-    borderColor: "#BFDBFE",
-  },
-  pillText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  pillTextActive: {
-    color: colors.primary,
-    fontWeight: "700",
-  },
-  morePill: {
-    minHeight: 38,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-    backgroundColor: "#EFF6FF",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  morePillText: {
+  heroMetaText: {
     ...typography.caption,
     color: colors.primary,
-    fontWeight: "700",
-  },
-  filterSummary: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-  },
-  filterSummaryText: {
-    ...typography.caption,
-    color: colors.subtext,
     flex: 1,
+    fontWeight: "700",
+  },
+  activeFiltersBadge: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: radii.full,
+    backgroundColor: colors.accentSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
+  activeFiltersText: {
+    ...typography.caption,
+    color: colors.accent,
+    fontWeight: "700",
   },
   marketSection: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
   },
   sectionHeadingRow: {
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   sectionTitleWrap: {
     flexDirection: "row",
@@ -808,8 +987,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   sectionIcon: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: radii.full,
     backgroundColor: "#EFF6FF",
     alignItems: "center",
@@ -820,33 +999,18 @@ const styles = StyleSheet.create({
   },
   carouselList: {
     gap: spacing.sm,
-    paddingRight: spacing.lg,
+    paddingRight: spacing.md,
   },
   carouselItem: {
-    width: 318,
+    width: 316,
   },
   feedHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.md,
+    marginTop: spacing.xs,
     marginBottom: spacing.md,
-  },
-  compactFilterButton: {
-    minHeight: 38,
-    borderRadius: radii.full,
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-    backgroundColor: "#EFF6FF",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    gap: spacing.xs,
-  },
-  compactFilterText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: "700",
   },
   modalRoot: {
     flex: 1,
@@ -902,7 +1066,7 @@ const styles = StyleSheet.create({
   sheetContent: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   filterGroup: {
     borderRadius: radii.lg,
@@ -912,9 +1076,42 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.md,
   },
+  filterGroupHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  categoryHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  categoryBackButton: {
+    width: 28,
+    height: 28,
+    borderRadius: radii.full,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   filterGroupTitle: {
     ...typography.bodyStrong,
     color: colors.text,
+  },
+  filterGroupHint: {
+    ...typography.caption,
+    color: colors.subtext,
+    marginTop: 2,
+  },
+  selectedCountText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "700",
+    backgroundColor: "#EFF6FF",
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
   },
   sheetSearchBar: {
     minHeight: 50,
@@ -1003,7 +1200,7 @@ const styles = StyleSheet.create({
   },
   sortButton: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 44,
     borderRadius: radii.full,
     borderWidth: 1,
     borderColor: colors.border,
@@ -1025,31 +1222,64 @@ const styles = StyleSheet.create({
   sortButtonTextActive: {
     color: colors.primary,
   },
-  sheetCategoriesGrid: {
+  filterCategoriesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
   },
-  sheetCategory: {
-    maxWidth: "48%",
-    minHeight: 38,
-    borderRadius: radii.full,
+  categoryCardMotion: {
+    width: "47.7%",
+  },
+  filterCategoryCard: {
+    minHeight: 108,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
+    backgroundColor: colors.white,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  filterCategoryCardActive: {
+    backgroundColor: "#DBEAFE",
+    borderColor: colors.primary,
+  },
+  filterCategoryIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radii.full,
     backgroundColor: "#F8FAFC",
-    paddingHorizontal: spacing.md,
     alignItems: "center",
     justifyContent: "center",
   },
-  sheetCategoryActive: {
-    backgroundColor: "#DBEAFE",
-    borderColor: "#BFDBFE",
+  filterCategoryIconActive: {
+    backgroundColor: colors.white,
   },
-  sheetCategoryText: {
-    ...typography.caption,
+  filterCategoryText: {
+    ...typography.bodyStrong,
     color: colors.text,
+    textAlign: "center",
   },
-  sheetCategoryTextActive: {
+  filterCategoryTextActive: {
+    color: colors.primary,
+  },
+  subcategoryLink: {
+    minHeight: 34,
+    marginTop: spacing.xs,
+    borderRadius: radii.full,
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xxs,
+    paddingHorizontal: spacing.sm,
+  },
+  subcategoryLinkText: {
+    ...typography.caption,
     color: colors.primary,
     fontWeight: "700",
   },
@@ -1116,11 +1346,11 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   sectionTitle: {
-    ...typography.heading,
+    ...typography.bodyStrong,
     color: colors.text,
   },
   sectionSubtitle: {
-    ...typography.body,
+    ...typography.caption,
     color: colors.subtext,
   },
   emptyBox: {
