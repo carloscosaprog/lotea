@@ -299,91 +299,6 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            <View style={styles.discoveryBar}>
-              <View style={styles.discoveryHeader}>
-                <Text style={styles.discoveryTitle}>Explorar</Text>
-                <TouchableOpacity onPress={() => setFiltersVisible(true)}>
-                  <Text style={styles.discoveryAction}>Ver filtros</Text>
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoriesRow}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  style={[
-                    styles.pill,
-                    activeCategories.includes("Todas") && styles.pillActive,
-                  ]}
-                  onPress={() => toggleCategory("Todas")}
-                >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      activeCategories.includes("Todas") &&
-                        styles.pillTextActive,
-                    ]}
-                  >
-                    Todas
-                  </Text>
-                </TouchableOpacity>
-
-                {featuredCategories.map((category) => {
-                  const isActive = activeCategories.includes(category);
-
-                  return (
-                    <TouchableOpacity
-                      key={category}
-                      activeOpacity={0.85}
-                      style={[styles.pill, isActive && styles.pillActive]}
-                      onPress={() => toggleCategory(category)}
-                    >
-                      <Text
-                        style={[
-                          styles.pillText,
-                          isActive && styles.pillTextActive,
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {category}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-
-                <TouchableOpacity
-                  activeOpacity={0.85}
-                  style={styles.morePill}
-                  onPress={() => setFiltersVisible(true)}
-                >
-                  <Ionicons
-                    name="grid-outline"
-                    size={14}
-                    color={colors.primary}
-                  />
-                  <Text style={styles.morePillText}>Mas</Text>
-                </TouchableOpacity>
-              </ScrollView>
-
-              <View style={styles.filterSummary}>
-                <Ionicons
-                  name={sortBy === "nearest" ? "navigate" : "time"}
-                  size={14}
-                  color={colors.primary}
-                />
-                <Text style={styles.filterSummaryText} numberOfLines={1}>
-                  {sortBy === "nearest" ? "Cercanos" : "Recientes"} -{" "}
-                  {distanceFilterEnabled
-                    ? `hasta ${distanceValue} km`
-                    : "sin limite de distancia"}{" "}
-                  - {selectedCategoriesLabel}
-                </Text>
-              </View>
-            </View>
-
             <MarketplaceSection
               title="Anadidos recientemente"
               subtitle="Nuevas oportunidades publicadas en Lotea."
@@ -430,18 +345,6 @@ export default function HomeScreen() {
                   {filteredLotes.length} resultados disponibles.
                 </Text>
               </View>
-              <TouchableOpacity
-                activeOpacity={0.86}
-                style={styles.compactFilterButton}
-                onPress={() => setFiltersVisible(true)}
-              >
-                <Ionicons
-                  name="options-outline"
-                  size={16}
-                  color={colors.primary}
-                />
-                <Text style={styles.compactFilterText}>Filtrar</Text>
-              </TouchableOpacity>
             </View>
 
             <Modal
@@ -727,7 +630,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxxl,
   },
   hero: {
-    backgroundColor: colors.text,
+    backgroundColor: "#2563EB",
     borderRadius: radii.xl,
     padding: spacing.lg,
     overflow: "hidden",
