@@ -325,7 +325,11 @@ function MarketplaceListCard({
 
         {locationLabel && (
           <View style={styles.feedLocationRow}>
-            <Ionicons name="location-outline" size={13} color={colors.subtext} />
+            <Ionicons
+              name="location-outline"
+              size={13}
+              color={colors.subtext}
+            />
             <Text style={styles.feedLocationText} numberOfLines={1}>
               {locationLabel}
             </Text>
@@ -757,17 +761,30 @@ export default function HomeScreen() {
                   </View>
 
                   <View style={styles.heroMetaRow}>
-                    <Text style={styles.heroMetaText} numberOfLines={1}>
-                      {sortBy === "nearest" ? "Cercanos" : "Recientes"} -{" "}
-                      {distanceFilterEnabled
-                        ? `${distanceValue} km`
-                        : "sin limite de distancia"}{" "}
-                      -{" "}
-                      {priceFilterEnabled
-                        ? `${minPriceValue}-${maxPriceValue} EUR`
-                        : "todos los precios"}{" "}
-                      - {selectedCategoriesLabel}
+                    <Text style={styles.heroMetaText} numberOfLines={2}>
+                      {activeFiltersCount === 0
+                        ? "Descubre oportunidades seleccionadas para ti"
+                        : [
+                            sortBy === "nearest"
+                              ? "Ordenados por cercania"
+                              : "Mostrando publicaciones recientes",
+
+                            distanceFilterEnabled
+                              ? `hasta ${distanceValue} km`
+                              : null,
+
+                            priceFilterEnabled
+                              ? `entre ${minPriceValue} y ${maxPriceValue} EUR`
+                              : null,
+
+                            !activeCategories.includes("Todas")
+                              ? `${activeCategories.length} categorias seleccionadas`
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" • ")}
                     </Text>
+
                     {activeFiltersCount > 0 && (
                       <View style={styles.activeFiltersBadge}>
                         <Text style={styles.activeFiltersText}>
@@ -775,29 +792,6 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                     )}
-                  </View>
-
-                  <View style={styles.heroStatsRow}>
-                    <View style={styles.heroStat}>
-                      <Text style={styles.heroStatValue}>
-                        {filteredLotes.length}
-                      </Text>
-                      <Text style={styles.heroStatLabel}>lotes activos</Text>
-                    </View>
-                    <View style={styles.heroStatDivider} />
-                    <View style={styles.heroStat}>
-                      <Text style={styles.heroStatValue}>
-                        {favoritos.length}
-                      </Text>
-                      <Text style={styles.heroStatLabel}>favoritos</Text>
-                    </View>
-                    <View style={styles.heroStatDivider} />
-                    <View style={styles.heroStat}>
-                      <Text style={styles.heroStatValue}>
-                        {distanceFilterEnabled ? `${distanceValue} km` : "100+"}
-                      </Text>
-                      <Text style={styles.heroStatLabel}>alcance</Text>
-                    </View>
                   </View>
                 </View>
               </ImageBackground>
@@ -1339,6 +1333,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   heroMetaRow: {
+    minHeight: 52,
     marginTop: spacing.md,
     padding: spacing.sm,
     borderRadius: radii.lg,
