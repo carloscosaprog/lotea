@@ -132,6 +132,10 @@ export default function CreateLoteScreen() {
       // limpiar categorias
       setCategoriasSeleccionadas([]);
 
+      // volver al paso 1
+      setCurrentStep(1);
+      setCategoriaActiva(null);
+
       setUploaderKey((prev) => prev + 1);
 
       //Alert.alert("Lote publicado correctamente");
@@ -487,7 +491,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: 140,
+    paddingBottom: 90,
     gap: spacing.xl,
   },
   headerRow: {
