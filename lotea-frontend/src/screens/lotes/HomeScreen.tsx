@@ -6,6 +6,7 @@ import {
   Animated,
   Easing,
   FlatList,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -13,6 +14,7 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
 
@@ -26,6 +28,9 @@ import { layoutStyles } from "../../styles/theme";
 import { getCategorias } from "../../services/categoriasService";
 import { useAuth } from "../../context/AuthContext";
 import { getCategoryIcon } from "../../utils/categoryIcons";
+import { getImageUrl } from "../../utils/getImageUrl";
+import { formatLoteLocation } from "../../utils/formatLocation";
+import { toggleFavorito } from "../../services/favoritosService";
 
 interface Categoria {
   id_categoria: number;
@@ -131,6 +136,108 @@ function FilterCategoryCard({
   );
 }
 
+function MarketplaceLotCard({
+  lote,
+  onFavoriteChange,
+}: {
+  lote: Lote;
+  onFavoriteChange?: () => void;
+}) {
+  const navigation = useNavigation<any>();
+  const [, forceUpdate] = useState(0);
+  const isFavorito = lote.isFavorito ?? false;
+  const totalFavoritos = lote.total_favoritos ?? 0;
+  const imageUri = getImageUrl(lote.imagenes?.[0]);
+  const locationLabel = formatLoteLocation(lote);
+  const categories = Array.isArray(lote.categorias)
+    ? lote.categorias.slice(0, 2)
+    : lote.categoria
+      ? [lote.categoria]
+      : [];
+
+  const handleToggleFavorito = async () => {
+    try {
+      const res = await toggleFavorito(lote.id_lote, isFavorito);
+
+      lote.isFavorito = res.favorito;
+      lote.total_favoritos = res.total_favoritos;
+
+      forceUpdate((prev) => prev + 1);
+      onFavoriteChange?.();
+    } catch (error) {
+      console.log("Error favorito:", error);
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.93}
+      style={styles.productCard}
+      onPress={() =>
+        navigation.navigate("Home", {
+          screen: "LoteDetail",
+          params: { id: lote.id_lote },
+        })
+      }
+    >
+      <View style={styles.productImageWrap}>
+        <Image source={{ uri: imageUri }} style={styles.productImage} />
+        <View style={styles.productImageShade} />
+
+        <TouchableOpacity
+          activeOpacity={0.88}
+          style={styles.productFavorite}
+          onPress={(event) => {
+            event.stopPropagation();
+            handleToggleFavorito();
+          }}
+        >
+          <Ionicons
+            name={isFavorito ? "heart" : "heart-outline"}
+            size={17}
+            color={isFavorito ? colors.danger : colors.text}
+          />
+          <Text style={styles.productFavoriteText}>{totalFavoritos}</Text>
+        </TouchableOpacity>
+
+        {locationLabel && (
+          <View style={styles.productLocationBadge}>
+            <Ionicons name="location-outline" size={12} color={colors.white} />
+            <Text style={styles.productLocationText} numberOfLines={1}>
+              {locationLabel}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.productInfo}>
+        <Text style={styles.productTitle} numberOfLines={2}>
+          {lote.titulo}
+        </Text>
+
+        <View style={styles.productMetaRow}>
+          <Text style={styles.productUnits} numberOfLines={1}>
+            {lote.cantidad} unidades
+          </Text>
+          <Text style={styles.productPrice}>{lote.precio} EUR</Text>
+        </View>
+
+        {categories.length > 0 && (
+          <View style={styles.productCategoryRow}>
+            {categories.map((category) => (
+              <View key={category} style={styles.productCategoryPill}>
+                <Text style={styles.productCategoryText} numberOfLines={1}>
+                  {category}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 export default function HomeScreen() {
   const { loading: loadingAuth, user } = useAuth();
   const [lotes, setLotes] = useState<Lote[]>([]);
@@ -143,6 +250,9 @@ export default function HomeScreen() {
   const [search, setSearch] = useState("");
   const [distanceFilterEnabled, setDistanceFilterEnabled] = useState(false);
   const [distanceValue, setDistanceValue] = useState(25);
+  const [priceFilterEnabled, setPriceFilterEnabled] = useState(false);
+  const [minPriceValue, setMinPriceValue] = useState(0);
+  const [maxPriceValue, setMaxPriceValue] = useState(0);
   const [sortBy, setSortBy] = useState<"newest" | "nearest">("newest");
   const [favoritesVersion, setFavoritesVersion] = useState(0);
   const [filtersVisible, setFiltersVisible] = useState(false);
@@ -214,6 +324,16 @@ export default function HomeScreen() {
     }).start();
   }, [filtersVisible, sheetAnim]);
 
+  const catalogMaxPrice = useMemo(() => {
+    return Math.max(0, ...lotes.map((lote) => Number(lote.precio) || 0));
+  }, [lotes]);
+
+  useEffect(() => {
+    if (catalogMaxPrice > 0 && maxPriceValue === 0) {
+      setMaxPriceValue(catalogMaxPrice);
+    }
+  }, [catalogMaxPrice, maxPriceValue]);
+
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchLotes();
@@ -257,9 +377,17 @@ export default function HomeScreen() {
           );
         });
 
-    if (!query) return lotesByCategory;
+    const lotesByPrice = priceFilterEnabled
+      ? lotesByCategory.filter((item) => {
+          const price = Number(item.precio) || 0;
 
-    return lotesByCategory.filter((item) =>
+          return price >= minPriceValue && price <= maxPriceValue;
+        })
+      : lotesByCategory;
+
+    if (!query) return lotesByPrice;
+
+    return lotesByPrice.filter((item) =>
       [
         item.titulo,
         item.descripcion,
@@ -271,7 +399,15 @@ export default function HomeScreen() {
         .toLowerCase()
         .includes(query),
     );
-  }, [activeCategories, lotes, search, favoritesVersion]);
+  }, [
+    activeCategories,
+    lotes,
+    search,
+    favoritesVersion,
+    maxPriceValue,
+    minPriceValue,
+    priceFilterEnabled,
+  ]);
 
   const recentlyAdded = useMemo(() => {
     return [...filteredLotes].sort((a, b) => b.id_lote - a.id_lote).slice(0, 8);
@@ -307,11 +443,12 @@ export default function HomeScreen() {
 
     if (!activeCategories.includes("Todas")) count += activeCategories.length;
     if (distanceFilterEnabled) count += 1;
+    if (priceFilterEnabled) count += 1;
     if (sortBy === "nearest") count += 1;
     if (search.trim().length > 0) count += 1;
 
     return count;
-  }, [activeCategories, distanceFilterEnabled, search, sortBy]);
+  }, [activeCategories, distanceFilterEnabled, priceFilterEnabled, search, sortBy]);
 
   const selectedCategoriesLabel = activeCategories.includes("Todas")
     ? "Todas las categorias"
@@ -353,7 +490,7 @@ export default function HomeScreen() {
       {
         translateY: sheetAnim.interpolate({
           inputRange: [0, 1],
-          outputRange: [28, 0],
+          outputRange: [360, 0],
         }),
       },
     ],
@@ -382,12 +519,15 @@ export default function HomeScreen() {
     setSearch("");
     setDistanceFilterEnabled(false);
     setDistanceValue(25);
+    setPriceFilterEnabled(false);
+    setMinPriceValue(0);
+    setMaxPriceValue(catalogMaxPrice);
     setSortBy("newest");
   };
 
   const renderHorizontalLote = ({ item }: { item: Lote }) => (
     <View style={styles.carouselItem}>
-      <LoteListItem lote={item} onFavoriteChange={handleFavoriteChange} />
+      <MarketplaceLotCard lote={item} onFavoriteChange={handleFavoriteChange} />
     </View>
   );
 
@@ -454,14 +594,19 @@ export default function HomeScreen() {
         ListHeaderComponent={
           <>
             <Animated.View style={[styles.hero, contentAnimatedStyle]}>
+              <View style={styles.heroWash} />
+              <View style={styles.heroOrbLarge} />
+              <View style={styles.heroOrbSmall} />
+
               <View style={styles.heroTopRow}>
                 <View>
                   <View style={styles.heroBadge}>
                     <Text style={styles.heroEyebrow}>Lotea</Text>
                   </View>
-                  <Text style={styles.brand}>Encuentra lotes con potencial</Text>
+                  <Text style={styles.brand}>Lotes con potencial real</Text>
                   <Text style={styles.heroSubtitle}>
-                    Oportunidades recientes, cercanas y listas para revender.
+                    Compra mejor, filtra rapido y descubre oportunidades listas
+                    para revender.
                   </Text>
                 </View>
               </View>
@@ -497,6 +642,10 @@ export default function HomeScreen() {
                   {distanceFilterEnabled
                     ? `${distanceValue} km`
                     : "sin limite de distancia"}{" "}
+                  -{" "}
+                  {priceFilterEnabled
+                    ? `${minPriceValue}-${maxPriceValue} EUR`
+                    : "todos los precios"}{" "}
                   - {selectedCategoriesLabel}
                 </Text>
                 {activeFiltersCount > 0 && (
@@ -506,6 +655,25 @@ export default function HomeScreen() {
                     </Text>
                   </View>
                 )}
+              </View>
+
+              <View style={styles.heroStatsRow}>
+                <View style={styles.heroStat}>
+                  <Text style={styles.heroStatValue}>{filteredLotes.length}</Text>
+                  <Text style={styles.heroStatLabel}>lotes activos</Text>
+                </View>
+                <View style={styles.heroStatDivider} />
+                <View style={styles.heroStat}>
+                  <Text style={styles.heroStatValue}>{favoritos.length}</Text>
+                  <Text style={styles.heroStatLabel}>favoritos</Text>
+                </View>
+                <View style={styles.heroStatDivider} />
+                <View style={styles.heroStat}>
+                  <Text style={styles.heroStatValue}>
+                    {distanceFilterEnabled ? `${distanceValue} km` : "100+"}
+                  </Text>
+                  <Text style={styles.heroStatLabel}>alcance</Text>
+                </View>
               </View>
             </Animated.View>
 
@@ -612,81 +780,88 @@ export default function HomeScreen() {
                     </View>
 
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterGroupTitle}>Ordenar por</Text>
-                      <View style={styles.sortRow}>
+                      <Text style={styles.filterGroupTitle}>Prioridad</Text>
+                      <View style={styles.sortList}>
                         <TouchableOpacity
-                          activeOpacity={0.86}
+                          activeOpacity={0.9}
                           style={[
-                            styles.sortButton,
-                            sortBy === "newest" && styles.sortButtonActive,
+                            styles.sortOption,
+                            sortBy === "newest" && styles.sortOptionActive,
                           ]}
                           onPress={() => setSortBy("newest")}
                         >
-                          <Ionicons
-                            name="time-outline"
-                            size={15}
-                            color={
-                              sortBy === "newest"
-                                ? colors.primary
-                                : colors.subtext
-                            }
-                          />
-                          <Text
-                            style={[
-                              styles.sortButtonText,
-                              sortBy === "newest" &&
-                                styles.sortButtonTextActive,
-                            ]}
-                          >
-                            Recientes
-                          </Text>
+                          <View style={styles.sortOptionIcon}>
+                            <Ionicons
+                              name="sparkles-outline"
+                              size={17}
+                              color={colors.primary}
+                            />
+                          </View>
+                          <View style={styles.sortOptionCopy}>
+                            <Text style={styles.sortOptionTitle}>
+                              Novedades primero
+                            </Text>
+                            <Text style={styles.sortOptionText}>
+                              Ideal para ver oportunidades recien publicadas.
+                            </Text>
+                          </View>
+                          {sortBy === "newest" && (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={20}
+                              color={colors.primary}
+                            />
+                          )}
                         </TouchableOpacity>
 
                         <TouchableOpacity
-                          activeOpacity={0.86}
+                          activeOpacity={0.9}
                           style={[
-                            styles.sortButton,
-                            sortBy === "nearest" && styles.sortButtonActive,
+                            styles.sortOption,
+                            sortBy === "nearest" && styles.sortOptionActive,
                           ]}
                           onPress={() => setSortBy("nearest")}
                         >
-                          <Ionicons
-                            name="navigate-outline"
-                            size={15}
-                            color={
-                              sortBy === "nearest"
-                                ? colors.primary
-                                : colors.subtext
-                            }
-                          />
-                          <Text
-                            style={[
-                              styles.sortButtonText,
-                              sortBy === "nearest" &&
-                                styles.sortButtonTextActive,
-                            ]}
-                          >
-                            Cercanos
-                          </Text>
+                          <View style={styles.sortOptionIcon}>
+                            <Ionicons
+                              name="navigate-outline"
+                              size={17}
+                              color={colors.primary}
+                            />
+                          </View>
+                          <View style={styles.sortOptionCopy}>
+                            <Text style={styles.sortOptionTitle}>
+                              Mejor por cercania
+                            </Text>
+                            <Text style={styles.sortOptionText}>
+                              Prioriza lotes con referencia de distancia.
+                            </Text>
+                          </View>
+                          {sortBy === "nearest" && (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={20}
+                              color={colors.primary}
+                            />
+                          )}
                         </TouchableOpacity>
                       </View>
                     </View>
 
                     <View style={styles.filterGroup}>
-                      <View style={styles.distanceHeader}>
-                        <View style={styles.distanceTitleWrap}>
-                          <Ionicons
-                            name="location-outline"
-                            size={18}
-                            color={colors.primary}
-                          />
-                          <View>
-                            <Text style={styles.distanceTitle}>
-                              Rango de distancia
-                            </Text>
-                            <Text style={styles.distanceSubtitle}>
-                              {profileCity ||
-                                "Configura tu ubicacion en Perfil"}
+                      <View style={styles.rangeHeader}>
+                        <View style={styles.rangeTitleWrap}>
+                          <View style={styles.rangeIcon}>
+                            <Ionicons
+                              name="location-outline"
+                              size={18}
+                              color={colors.primary}
+                            />
+                          </View>
+                          <View style={styles.rangeCopy}>
+                            <Text style={styles.rangeTitle}>Distancia</Text>
+                            <Text style={styles.rangeSubtitle}>
+                              {profileCity || "Configura tu ubicacion en Perfil"}
                             </Text>
                           </View>
                         </View>
@@ -694,8 +869,8 @@ export default function HomeScreen() {
                         <TouchableOpacity
                           activeOpacity={0.86}
                           style={[
-                            styles.switchButton,
-                            distanceFilterEnabled && styles.switchButtonActive,
+                            styles.rangeToggle,
+                            distanceFilterEnabled && styles.rangeToggleActive,
                           ]}
                           onPress={() => {
                             setDistanceFilterEnabled((current) => !current);
@@ -704,8 +879,9 @@ export default function HomeScreen() {
                         >
                           <Text
                             style={[
-                              styles.switchText,
-                              distanceFilterEnabled && styles.switchTextActive,
+                              styles.rangeToggleText,
+                              distanceFilterEnabled &&
+                                styles.rangeToggleTextActive,
                             ]}
                           >
                             {distanceFilterEnabled ? "Activo" : "Todos"}
@@ -719,11 +895,9 @@ export default function HomeScreen() {
                           !distanceFilterEnabled && styles.sliderWrapDisabled,
                         ]}
                       >
-                        <View style={styles.sliderValueRow}>
+                        <View style={styles.rangeValueCard}>
                           <Text style={styles.sliderLabel}>Radio maximo</Text>
-                          <Text style={styles.sliderValue}>
-                            {distanceValue} km
-                          </Text>
+                          <Text style={styles.sliderValue}>{distanceValue} km</Text>
                         </View>
                         <Slider
                           value={distanceValue}
@@ -739,6 +913,103 @@ export default function HomeScreen() {
                         <View style={styles.sliderScale}>
                           <Text style={styles.sliderScaleText}>1 km</Text>
                           <Text style={styles.sliderScaleText}>100 km</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={styles.filterGroup}>
+                      <View style={styles.rangeHeader}>
+                        <View style={styles.rangeTitleWrap}>
+                          <View style={styles.rangeIcon}>
+                            <Ionicons
+                              name="pricetag-outline"
+                              size={18}
+                              color={colors.primary}
+                            />
+                          </View>
+                          <View style={styles.rangeCopy}>
+                            <Text style={styles.rangeTitle}>Precio</Text>
+                            <Text style={styles.rangeSubtitle}>
+                              Ajusta el presupuesto para descubrir lotes viables.
+                            </Text>
+                          </View>
+                        </View>
+
+                        <TouchableOpacity
+                          activeOpacity={0.86}
+                          style={[
+                            styles.rangeToggle,
+                            priceFilterEnabled && styles.rangeToggleActive,
+                          ]}
+                          onPress={() =>
+                            setPriceFilterEnabled((current) => !current)
+                          }
+                        >
+                          <Text
+                            style={[
+                              styles.rangeToggleText,
+                              priceFilterEnabled &&
+                                styles.rangeToggleTextActive,
+                            ]}
+                          >
+                            {priceFilterEnabled ? "Activo" : "Todos"}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <View
+                        style={[
+                          styles.sliderWrap,
+                          !priceFilterEnabled && styles.sliderWrapDisabled,
+                        ]}
+                      >
+                        <View style={styles.priceRangeCards}>
+                          <View style={styles.rangeValueCard}>
+                            <Text style={styles.sliderLabel}>Minimo</Text>
+                            <Text style={styles.sliderValue}>
+                              {minPriceValue} EUR
+                            </Text>
+                          </View>
+                          <View style={styles.rangeValueCard}>
+                            <Text style={styles.sliderLabel}>Maximo</Text>
+                            <Text style={styles.sliderValue}>
+                              {maxPriceValue} EUR
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Slider
+                          value={minPriceValue}
+                          minimumValue={0}
+                          maximumValue={catalogMaxPrice || 1}
+                          step={1}
+                          minimumTrackTintColor={colors.primary}
+                          maximumTrackTintColor={colors.border}
+                          thumbTintColor={colors.primary}
+                          disabled={!priceFilterEnabled}
+                          onValueChange={(value) =>
+                            setMinPriceValue(Math.min(value, maxPriceValue))
+                          }
+                        />
+                        <Slider
+                          value={maxPriceValue}
+                          minimumValue={0}
+                          maximumValue={catalogMaxPrice || 1}
+                          step={1}
+                          minimumTrackTintColor={colors.primary}
+                          maximumTrackTintColor={colors.border}
+                          thumbTintColor={colors.primary}
+                          disabled={!priceFilterEnabled}
+                          onValueChange={(value) =>
+                            setMaxPriceValue(Math.max(value, minPriceValue))
+                          }
+                        />
+
+                        <View style={styles.sliderScale}>
+                          <Text style={styles.sliderScaleText}>0 EUR</Text>
+                          <Text style={styles.sliderScaleText}>
+                            {catalogMaxPrice || 0} EUR
+                          </Text>
                         </View>
                       </View>
                     </View>
@@ -806,20 +1077,6 @@ export default function HomeScreen() {
                       </View>
                     </View>
 
-                    <View style={styles.futureFilters}>
-                      <View style={styles.futureIcon}>
-                        <Ionicons name="add" size={16} color={colors.primary} />
-                      </View>
-                      <View style={styles.futureCopy}>
-                        <Text style={styles.futureTitle}>
-                          Mas filtros pronto
-                        </Text>
-                        <Text style={styles.futureText}>
-                          Precio, cantidad minima, vendedor y estado encajan
-                          aqui sin cambiar la estructura.
-                        </Text>
-                      </View>
-                    </View>
                   </ScrollView>
 
                   <View style={styles.sheetFooter}>
@@ -867,18 +1124,49 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   listContent: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.xxxl,
   },
   hero: {
-    backgroundColor: colors.white,
-    borderRadius: radii.lg,
+    backgroundColor: "#F8FBFF",
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "#D8E8FF",
     padding: spacing.lg,
     overflow: "hidden",
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 3,
+  },
+  heroWash: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 92,
+    backgroundColor: "#EAF3FF",
+  },
+  heroOrbLarge: {
+    position: "absolute",
+    width: 170,
+    height: 170,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(59,130,246,0.12)",
+    right: -52,
+    top: -62,
+  },
+  heroOrbSmall: {
+    position: "absolute",
+    width: 94,
+    height: 94,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(16,185,129,0.12)",
+    right: 32,
+    bottom: -42,
   },
   heroTopRow: {
     flexDirection: "row",
@@ -890,17 +1178,19 @@ const styles = StyleSheet.create({
   heroBadge: {
     alignSelf: "flex-start",
     borderRadius: radii.full,
-    backgroundColor: "#EFF6FF",
+    backgroundColor: colors.white,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xxs,
     marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
   },
   heroEyebrow: {
     ...typography.overline,
     color: colors.primary,
   },
   brand: {
-    ...typography.title,
+    ...typography.display,
     color: colors.text,
   },
   heroSubtitle: {
@@ -917,9 +1207,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 52,
     borderRadius: radii.full,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: colors.white,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: "#DBEAFE",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.md,
@@ -947,9 +1237,9 @@ const styles = StyleSheet.create({
   },
   heroMetaRow: {
     marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    padding: spacing.sm,
+    borderRadius: radii.lg,
+    backgroundColor: "rgba(255,255,255,0.72)",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -975,11 +1265,41 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontWeight: "700",
   },
+  heroStatsRow: {
+    marginTop: spacing.sm,
+    borderRadius: radii.lg,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: "#E0ECFF",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  heroStat: {
+    flex: 1,
+    alignItems: "center",
+    gap: 1,
+  },
+  heroStatValue: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  heroStatLabel: {
+    ...typography.caption,
+    color: colors.subtext,
+  },
+  heroStatDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: colors.border,
+  },
   marketSection: {
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.lg,
   },
   sectionHeadingRow: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   sectionTitleWrap: {
     flexDirection: "row",
@@ -1002,7 +1322,7 @@ const styles = StyleSheet.create({
     paddingRight: spacing.md,
   },
   carouselItem: {
-    width: 316,
+    width: 236,
   },
   feedHeader: {
     flexDirection: "row",
@@ -1021,12 +1341,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   filterSheet: {
-    maxHeight: "88%",
-    backgroundColor: colors.background,
+    maxHeight: "90%",
+    backgroundColor: "#F7FAFF",
     borderTopLeftRadius: radii.xl,
     borderTopRightRadius: radii.xl,
     paddingTop: spacing.sm,
     overflow: "hidden",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 26,
+    elevation: 8,
   },
   sheetHandle: {
     alignSelf: "center",
@@ -1065,13 +1390,12 @@ const styles = StyleSheet.create({
   },
   sheetContent: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
     gap: spacing.sm,
   },
   filterGroup: {
     borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 0,
     backgroundColor: colors.white,
     padding: spacing.md,
     gap: spacing.md,
@@ -1124,28 +1448,39 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.xs,
   },
-  distanceHeader: {
+  rangeHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     gap: spacing.md,
   },
-  distanceTitleWrap: {
+  rangeTitleWrap: {
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
   },
-  distanceTitle: {
+  rangeIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.full,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rangeCopy: {
+    flex: 1,
+  },
+  rangeTitle: {
     ...typography.bodyStrong,
     color: colors.text,
   },
-  distanceSubtitle: {
+  rangeSubtitle: {
     ...typography.caption,
     color: colors.subtext,
     marginTop: 2,
   },
-  switchButton: {
+  rangeToggle: {
     minHeight: 36,
     borderRadius: radii.full,
     borderWidth: 1,
@@ -1155,28 +1490,40 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#F8FAFC",
   },
-  switchButtonActive: {
+  rangeToggleActive: {
     backgroundColor: "#DBEAFE",
     borderColor: "#BFDBFE",
   },
-  switchText: {
+  rangeToggleText: {
     ...typography.caption,
     color: colors.subtext,
     fontWeight: "700",
   },
-  switchTextActive: {
+  rangeToggleTextActive: {
     color: colors.primary,
   },
   sliderWrap: {
     gap: spacing.xs,
+    borderRadius: radii.lg,
+    backgroundColor: "#F8FAFC",
+    padding: spacing.sm,
   },
   sliderWrapDisabled: {
     opacity: 0.42,
   },
-  sliderValueRow: {
+  rangeValueCard: {
+    flex: 1,
+    borderRadius: radii.md,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: 1,
+  },
+  priceRangeCards: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    gap: spacing.sm,
   },
   sliderLabel: {
     ...typography.caption,
@@ -1194,33 +1541,43 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.subtext,
   },
-  sortRow: {
-    flexDirection: "row",
+  sortList: {
     gap: spacing.sm,
   },
-  sortButton: {
-    flex: 1,
-    minHeight: 44,
-    borderRadius: radii.full,
+  sortOption: {
+    minHeight: 70,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.white,
+    backgroundColor: "#F8FAFC",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
+    padding: spacing.sm,
+    gap: spacing.sm,
   },
-  sortButtonActive: {
+  sortOptionActive: {
     backgroundColor: "#DBEAFE",
     borderColor: "#BFDBFE",
   },
-  sortButtonText: {
+  sortOptionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.full,
+    backgroundColor: colors.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sortOptionCopy: {
+    flex: 1,
+  },
+  sortOptionTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  sortOptionText: {
     ...typography.caption,
     color: colors.subtext,
-    fontWeight: "700",
-  },
-  sortButtonTextActive: {
-    color: colors.primary,
+    marginTop: 1,
   },
   filterCategoriesGrid: {
     flexDirection: "row",
@@ -1233,9 +1590,8 @@ const styles = StyleSheet.create({
   filterCategoryCard: {
     minHeight: 108,
     borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
+    borderWidth: 0,
+    backgroundColor: "#F8FAFC",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
     alignItems: "center",
@@ -1243,8 +1599,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   filterCategoryCardActive: {
-    backgroundColor: "#DBEAFE",
-    borderColor: colors.primary,
+    backgroundColor: "#EAF3FF",
   },
   filterCategoryIcon: {
     width: 44,
@@ -1282,35 +1637,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     fontWeight: "700",
-  },
-  futureFilters: {
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: "#BFDBFE",
-    backgroundColor: "#EFF6FF",
-    padding: spacing.md,
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  futureIcon: {
-    width: 30,
-    height: 30,
-    borderRadius: radii.full,
-    backgroundColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  futureCopy: {
-    flex: 1,
-  },
-  futureTitle: {
-    ...typography.bodyStrong,
-    color: colors.text,
-  },
-  futureText: {
-    ...typography.caption,
-    color: colors.subtext,
-    marginTop: 2,
   },
   sheetFooter: {
     flexDirection: "row",
@@ -1352,6 +1678,118 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     ...typography.caption,
     color: colors.subtext,
+  },
+  productCard: {
+    width: 236,
+    height: 292,
+    borderRadius: radii.lg,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: "#E0ECFF",
+    overflow: "hidden",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  productImageWrap: {
+    height: 154,
+    backgroundColor: "#E5E7EB",
+    position: "relative",
+  },
+  productImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  productImageShade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 58,
+    backgroundColor: "rgba(17,24,39,0.18)",
+  },
+  productFavorite: {
+    position: "absolute",
+    top: spacing.sm,
+    right: spacing.sm,
+    minWidth: 48,
+    height: 34,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+  },
+  productFavoriteText: {
+    fontSize: 12,
+    color: colors.text,
+    fontWeight: "700",
+  },
+  productLocationBadge: {
+    position: "absolute",
+    left: spacing.sm,
+    right: spacing.sm,
+    bottom: spacing.sm,
+    minHeight: 28,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(17,24,39,0.62)",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    gap: spacing.xxs,
+  },
+  productLocationText: {
+    ...typography.caption,
+    color: colors.white,
+    flex: 1,
+  },
+  productInfo: {
+    height: 138,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  productTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    minHeight: 44,
+  },
+  productMetaRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  productUnits: {
+    ...typography.caption,
+    color: colors.subtext,
+    flex: 1,
+  },
+  productPrice: {
+    ...typography.bodyStrong,
+    color: colors.accent,
+  },
+  productCategoryRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  productCategoryPill: {
+    flex: 1,
+    minHeight: 26,
+    borderRadius: radii.full,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
+  productCategoryText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "700",
   },
   emptyBox: {
     backgroundColor: colors.white,
