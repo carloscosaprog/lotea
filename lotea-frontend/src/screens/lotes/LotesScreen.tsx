@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { getLotes } from "../../services/lotesService";
 import type { Lote } from "../../types/Lote";
-import LoteCard from "../../components/lotes/LoteCard";
+import LoteCard from "../../components/lotes/LoteCardUserProfile";
 
 export default function LotesScreen() {
   const [lotes, setLotes] = useState<Lote[]>([]);

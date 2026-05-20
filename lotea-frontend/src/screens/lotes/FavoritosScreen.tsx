@@ -13,7 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { getFavoritos } from "../../services/favoritosService";
 import type { Lote } from "../../types/Lote";
-import LoteCard from "../../components/lotes/LoteCard";
+import LoteCard from "../../components/lotes/LoteCardUserProfile";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";

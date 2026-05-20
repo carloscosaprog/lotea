@@ -188,7 +188,6 @@ function MarketplaceLotCard({
     >
       <View style={styles.productImageWrap}>
         <Image source={{ uri: imageUri }} style={styles.productImage} />
-        <View style={styles.productImageShade} />
 
         <TouchableOpacity
           activeOpacity={0.88}
@@ -198,12 +197,14 @@ function MarketplaceLotCard({
             handleToggleFavorito();
           }}
         >
-          <Ionicons
-            name={isFavorito ? "heart" : "heart-outline"}
-            size={17}
-            color={isFavorito ? colors.danger : colors.text}
-          />
-          <Text style={styles.productFavoriteText}>{totalFavoritos}</Text>
+          <View style={styles.productFavoriteContent}>
+            <Ionicons
+              name={isFavorito ? "heart" : "heart-outline"}
+              size={16}
+              color={isFavorito ? "red" : "white"}
+            />
+            <Text style={styles.productFavoriteText}>{totalFavoritos}</Text>
+          </View>
         </TouchableOpacity>
 
         {locationLabel && (
@@ -288,6 +289,7 @@ function MarketplaceListCard({
     >
       <View style={styles.feedImageWrap}>
         <Image source={{ uri: imageUri }} style={styles.feedImage} />
+
         {category && (
           <View style={styles.feedCategoryBadge}>
             <Text style={styles.feedCategoryText} numberOfLines={1}>
@@ -296,27 +298,29 @@ function MarketplaceListCard({
           </View>
         )}
       </View>
+      <TouchableOpacity
+        activeOpacity={0.88}
+        style={styles.feedFavorite}
+        onPress={(event) => {
+          event.stopPropagation();
+          handleToggleFavorito();
+        }}
+      >
+        <View style={styles.feedFavoriteContent}>
+          <Ionicons
+            name={isFavorito ? "heart" : "heart-outline"}
+            size={16}
+            color={isFavorito ? "red" : "white"}
+          />
+          <Text style={styles.feedFavoriteText}>{totalFavoritos}</Text>
+        </View>
+      </TouchableOpacity>
 
       <View style={styles.feedInfo}>
         <View style={styles.feedTopRow}>
           <Text style={styles.feedTitle} numberOfLines={2}>
             {lote.titulo}
           </Text>
-          <TouchableOpacity
-            activeOpacity={0.86}
-            style={styles.feedFavorite}
-            onPress={(event) => {
-              event.stopPropagation();
-              handleToggleFavorito();
-            }}
-          >
-            <Ionicons
-              name={isFavorito ? "heart" : "heart-outline"}
-              size={17}
-              color={isFavorito ? colors.danger : colors.subtext}
-            />
-            <Text style={styles.feedFavoriteText}>{totalFavoritos}</Text>
-          </TouchableOpacity>
         </View>
 
         <Text style={styles.feedUnits} numberOfLines={1}>
@@ -1840,22 +1844,24 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   feedFavorite: {
-    minWidth: 46,
-    height: 32,
+    position: "absolute",
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.42)",
+    paddingHorizontal: 7,
+    paddingVertical: 5,
     borderRadius: radii.full,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: colors.border,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    paddingHorizontal: spacing.xs,
+    zIndex: 5,
   },
   feedFavoriteText: {
+    color: "white",
     fontSize: 12,
-    color: colors.text,
-    fontWeight: "700",
+    fontWeight: "600",
+  },
+  feedFavoriteContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   feedUnits: {
     ...typography.caption,
@@ -1916,32 +1922,25 @@ const styles = StyleSheet.create({
     height: "100%",
     resizeMode: "cover",
   },
-  productImageShade: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 58,
-    backgroundColor: "rgba(17,24,39,0.18)",
-  },
   productFavorite: {
     position: "absolute",
-    top: spacing.sm,
-    right: spacing.sm,
-    minWidth: 48,
-    height: 34,
+    top: 10,
+    left: 10,
+    backgroundColor: "rgba(0,0,0,0.42)",
+    paddingHorizontal: 7,
+    paddingVertical: 5,
     borderRadius: radii.full,
-    backgroundColor: "rgba(255,255,255,0.92)",
+    zIndex: 5,
+  },
+  productFavoriteContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
     gap: 4,
-    paddingHorizontal: spacing.xs,
   },
   productFavoriteText: {
+    color: "white",
     fontSize: 12,
-    color: colors.text,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   productLocationBadge: {
     position: "absolute",
@@ -1969,7 +1968,7 @@ const styles = StyleSheet.create({
   productTitle: {
     ...typography.bodyStrong,
     color: colors.text,
-    minHeight: 44,
+    minHeight: 15,
   },
   productMetaRow: {
     flexDirection: "row",
