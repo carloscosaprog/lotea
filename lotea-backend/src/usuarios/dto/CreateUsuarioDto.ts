@@ -6,8 +6,9 @@ import {
   Max,
   Min,
   MinLength,
-} from 'class-validator';
-import { Type } from 'class-transformer';
+} from "class-validator";
+
+import { Type } from "class-transformer";
 
 export class CreateUsuarioDto {
   @IsString()
@@ -17,7 +18,6 @@ export class CreateUsuarioDto {
   email: string;
 
   @IsString()
-  @MinLength(6)
   contrasena: string;
 
   @IsOptional()

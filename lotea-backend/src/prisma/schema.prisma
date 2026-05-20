@@ -32,32 +32,46 @@ model Usuario {
 }
 
 model Categoria {
-  id_categoria Int    @id @default(autoincrement())
-  nombre       String @unique @db.VarChar(100)
+  id_categoria Int     @id @default(autoincrement())
+  nombre       String  @db.VarChar(100)
+  slug         String  @unique @db.VarChar(120)
 
-  lotes        Lote[]
+  icono        String? @db.VarChar(100)
+  imagen       String? @db.VarChar(255)
+
+  id_padre     Int?
+
+  padre        Categoria? @relation("CategoriaJerarquia", fields: [id_padre], references: [id_categoria])
+  subcategorias Categoria[] @relation("CategoriaJerarquia")
+
   lotesCategorias Lote_Categoria[]
+
+  @@unique([nombre, id_padre])
+
+  @@index([id_padre])
 
   @@map("categoria")
 }
 
+
+
 model Lote {
-  id_lote          Int      @id @default(autoincrement())
-  titulo           String   @db.VarChar(150)
-  descripcion      String?
-  precio           Decimal  @db.Decimal(10, 2)
-  cantidad         Int
-  id_vendedor      Int
-  id_categoria     Int?
+  id_lote           Int      @id @default(autoincrement())
+  titulo            String   @db.VarChar(150)
+  descripcion       String?
+  precio            Decimal  @db.Decimal(10, 2)
+  cantidad          Int
+  id_vendedor       Int
   fecha_publicacion DateTime @default(now())
 
-  vendedor         Usuario    @relation("VendedorLotes", fields: [id_vendedor], references: [id_usuario], onDelete: Cascade)
-  categoria        Categoria? @relation(fields: [id_categoria], references: [id_categoria], onDelete: SetNull)
-  categorias       Lote_Categoria[]
-  imagenes         Imagen_Lote[]
-  favoritos        Favorito[]
-  detalles_pedido  Detalle_Pedido[]
-  grupos_compra    Grupo_Compra[]
+  vendedor          Usuario           @relation("VendedorLotes", fields: [id_vendedor], references: [id_usuario], onDelete: Cascade)
+
+  categorias        Lote_Categoria[]
+
+  imagenes          Imagen_Lote[]
+  favoritos         Favorito[]
+  detalles_pedido   Detalle_Pedido[]
+  grupos_compra     Grupo_Compra[]
   mensajes          Mensaje[]
 
   @@map("lote")

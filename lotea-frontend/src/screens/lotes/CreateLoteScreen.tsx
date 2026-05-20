@@ -19,10 +19,16 @@ import { colors } from "../../styles/colors";
 import { componentStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { getCategoryIcon } from "../../utils/categoryIcons";
+import { Image } from "react-native";
+import { useRef } from "react";
 
 interface Categoria {
   id_categoria: number;
   nombre: string;
+  slug: string;
+  icono?: string;
+  subcategorias?: Categoria[];
 }
 
 export default function CreateLoteScreen() {
@@ -40,7 +46,14 @@ export default function CreateLoteScreen() {
   const [categoriasDisponibles, setCategoriasDisponibles] = useState<
     Categoria[]
   >([]);
-  const [categorias, setCategorias] = useState<string[]>([]);
+  const [categoriasSeleccionadas, setCategoriasSeleccionadas] = useState<
+    number[]
+  >([]);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [categoriaActiva, setCategoriaActiva] = useState<Categoria | null>(
+    null,
+  );
+  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -55,6 +68,13 @@ export default function CreateLoteScreen() {
     fetchCategorias();
   }, []);
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo({
+      y: 0,
+      animated: true,
+    });
+  }, [currentStep, categoriaActiva]);
+
   const handleChange = (name: string, value: string) => {
     setForm((prev) => ({
       ...prev,
@@ -62,11 +82,11 @@ export default function CreateLoteScreen() {
     }));
   };
 
-  const toggleCategoria = (categoria: string) => {
-    setCategorias((prev) =>
-      prev.includes(categoria)
-        ? prev.filter((item) => item !== categoria)
-        : [...prev, categoria],
+  const toggleCategoria = (id_categoria: number) => {
+    setCategoriasSeleccionadas((prev) =>
+      prev.includes(id_categoria)
+        ? prev.filter((id) => id !== id_categoria)
+        : [...prev, id_categoria],
     );
   };
 
@@ -75,7 +95,7 @@ export default function CreateLoteScreen() {
       !form.titulo ||
       !form.precio ||
       !form.cantidad ||
-      categorias.length === 0
+      categoriasSeleccionadas.length === 0
     ) {
       Alert.alert("Completa todos los campos obligatorios");
       return;
@@ -87,18 +107,13 @@ export default function CreateLoteScreen() {
     }
 
     try {
-      const categoriasIds = categoriasDisponibles
-        .filter((cat) => categorias.includes(cat.nombre))
-        .map((cat) => cat.id_categoria);
-
       await createLote(
         {
           titulo: form.titulo,
           descripcion: form.descripcion,
           precio: Number(form.precio),
           cantidad: Number(form.cantidad),
-          id_categoria: categoriasIds[0],
-          categoriasIds,
+          categoriasIds: categoriasSeleccionadas,
         },
         images,
       );
@@ -115,7 +130,7 @@ export default function CreateLoteScreen() {
       setImages([]);
 
       // limpiar categorias
-      setCategorias([]);
+      setCategoriasSeleccionadas([]);
 
       setUploaderKey((prev) => prev + 1);
 
@@ -129,115 +144,333 @@ export default function CreateLoteScreen() {
       Alert.alert("Error al crear lote");
     }
   };
+  const categoriasSeleccionadasData = categoriasDisponibles
+    .flatMap((categoriaPadre) => {
+      const subcategorias = categoriaPadre.subcategorias || [];
+
+      return [categoriaPadre, ...subcategorias];
+    })
+    .filter((cat) => categoriasSeleccionadas.includes(cat.id_categoria));
 
   return (
     <View style={styles.screen}>
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         contentInset={{ bottom: 120 }}
       >
         <View style={styles.headerRow}>
-          <View style={styles.headerSpacer} />
+          {currentStep > 1 ? (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => setCurrentStep((prev) => prev - 1)}
+            >
+              <Text style={styles.backArrow}>←</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.headerSpacer} />
+          )}
 
-          <Text style={styles.screenTitle}>Publicar lote</Text>
+          <Text style={styles.screenTitle}>
+            {currentStep === 1 && "Detalles"}
+            {currentStep === 2 && "Categorias"}
+            {currentStep === 3 && "Resumen"}
+          </Text>
 
-          <View style={styles.headerSpacer} />
+          <Text style={styles.stepCounter}>{currentStep}/3</Text>
         </View>
 
-        <Card>
-          <ImageUploader key={uploaderKey} onChange={setImages} />
-        </Card>
+        {currentStep === 1 && (
+          <Card>
+            <ImageUploader key={uploaderKey} onChange={setImages} />
+          </Card>
+        )}
 
         <Card contentStyle={styles.formCardContent}>
           <View style={styles.formSection}>
-            <Text style={styles.label}>Titulo</Text>
-            <TextInput
-              placeholder="Titulo del lote"
-              placeholderTextColor={colors.subtext}
-              style={componentStyles.input}
-              value={form.titulo}
-              onChangeText={(text) => handleChange("titulo", text)}
-            />
+            {currentStep === 1 && (
+              <>
+                <Text style={styles.label}>Titulo</Text>
 
-            <Text style={styles.label}>Descripcion</Text>
-            <TextInput
-              placeholder="Describe el contenido del lote"
-              placeholderTextColor={colors.subtext}
-              style={[componentStyles.input, styles.multilineInput]}
-              multiline
-              textAlignVertical="top"
-              value={form.descripcion}
-              onChangeText={(text) => handleChange("descripcion", text)}
-            />
-
-            <View style={styles.inlineFields}>
-              <View style={styles.inlineField}>
-                <Text style={styles.label}>Precio</Text>
                 <TextInput
-                  placeholder="EUR"
+                  placeholder="Titulo del lote"
                   placeholderTextColor={colors.subtext}
-                  keyboardType="numeric"
                   style={componentStyles.input}
-                  value={form.precio}
-                  onChangeText={(text) => handleChange("precio", text)}
+                  value={form.titulo}
+                  onChangeText={(text) => handleChange("titulo", text)}
                 />
-              </View>
 
-              <View style={styles.inlineField}>
-                <Text style={styles.label}>Unidades disponibles</Text>
+                <Text style={styles.label}>Descripcion</Text>
+
                 <TextInput
-                  placeholder="Cantidad"
+                  placeholder="Describe el contenido del lote"
                   placeholderTextColor={colors.subtext}
-                  keyboardType="numeric"
-                  style={componentStyles.input}
-                  value={form.cantidad}
-                  onChangeText={(text) => handleChange("cantidad", text)}
+                  style={[componentStyles.input, styles.multilineInput]}
+                  multiline
+                  textAlignVertical="top"
+                  value={form.descripcion}
+                  onChangeText={(text) => handleChange("descripcion", text)}
                 />
-              </View>
-            </View>
 
-            <Text style={styles.label}>Categorias</Text>
-            <View style={styles.categoryWrap}>
-              {categoriasDisponibles.map((cat) => {
-                const selected = categorias.includes(cat.nombre);
+                <View style={styles.inlineFields}>
+                  <View style={styles.inlineField}>
+                    <Text style={styles.label}>Precio</Text>
 
-                return (
+                    <TextInput
+                      placeholder="EUR"
+                      placeholderTextColor={colors.subtext}
+                      keyboardType="numeric"
+                      style={componentStyles.input}
+                      value={form.precio}
+                      onChangeText={(text) => handleChange("precio", text)}
+                    />
+                  </View>
+
+                  <View style={styles.inlineField}>
+                    <Text style={styles.label}>Unidades disponibles</Text>
+
+                    <TextInput
+                      placeholder="Cantidad"
+                      placeholderTextColor={colors.subtext}
+                      keyboardType="numeric"
+                      style={componentStyles.input}
+                      value={form.cantidad}
+                      onChangeText={(text) => handleChange("cantidad", text)}
+                    />
+                  </View>
+                </View>
+
+                <Button
+                  title="Continuar"
+                  onPress={() => {
+                    if (!form.titulo || !form.precio || !form.cantidad) {
+                      Alert.alert("Completa todos los campos obligatorios");
+                      return;
+                    }
+
+                    if (images.length === 0) {
+                      Alert.alert("Debes anadir al menos una imagen");
+                      return;
+                    }
+
+                    setCurrentStep(2);
+                  }}
+                  style={styles.ctaButton}
+                />
+              </>
+            )}
+
+            {currentStep === 2 && (
+              <>
+                <Text style={styles.stepTitle}>
+                  {categoriaActiva
+                    ? `Selecciona una subcategoria`
+                    : "Selecciona una categoria"}
+                </Text>
+
+                {categoriaActiva && (
                   <TouchableOpacity
-                    key={cat.id_categoria}
-                    activeOpacity={0.85}
-                    style={[
-                      styles.categoryItem,
-                      selected && styles.categorySelected,
-                    ]}
-                    onPress={() => toggleCategoria(cat.nombre)}
+                    style={styles.backButton}
+                    onPress={() => setCategoriaActiva(null)}
                   >
-                    <Text
-                      style={[
-                        styles.categoryText,
-                        selected && styles.categoryTextSelected,
-                      ]}
-                    >
-                      {cat.nombre}
-                    </Text>
+                    <Text style={styles.backButtonText}>← Volver</Text>
                   </TouchableOpacity>
-                );
-              })}
-            </View>
+                )}
+
+                <View style={styles.categoriesGrid}>
+                  {!categoriaActiva &&
+                    [...categoriasDisponibles]
+                      .sort((a, b) => {
+                        if (a.nombre === "Otros") return 1;
+                        if (b.nombre === "Otros") return -1;
+                        return 0;
+                      })
+                      .map((categoriaPadre) => {
+                        const hasSubcategorias =
+                          categoriaPadre.subcategorias &&
+                          categoriaPadre.subcategorias.length > 0;
+
+                        return (
+                          <TouchableOpacity
+                            key={categoriaPadre.id_categoria}
+                            activeOpacity={0.9}
+                            style={[
+                              styles.categoryCard,
+                              categoriasSeleccionadas.includes(
+                                categoriaPadre.id_categoria,
+                              ) && styles.categoryCardSelected,
+                            ]}
+                            onPress={() => {
+                              if (hasSubcategorias) {
+                                setCategoriaActiva(categoriaPadre);
+                              } else {
+                                toggleCategoria(categoriaPadre.id_categoria);
+                              }
+                            }}
+                          >
+                            {(() => {
+                              const Icon = getCategoryIcon(
+                                categoriaPadre.icono,
+                              );
+
+                              return (
+                                <Icon
+                                  size={32}
+                                  color={colors.text}
+                                  strokeWidth={1.8}
+                                />
+                              );
+                            })()}
+
+                            <Text
+                              style={[
+                                styles.categoryCardText,
+                                categoriasSeleccionadas.includes(
+                                  categoriaPadre.id_categoria,
+                                ) && styles.categoryCardTextSelected,
+                              ]}
+                            >
+                              {categoriaPadre.nombre}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+
+                  {categoriaActiva &&
+                    categoriaActiva.subcategorias?.map((subcategoria) => {
+                      const selected = categoriasSeleccionadas.includes(
+                        subcategoria.id_categoria,
+                      );
+
+                      return (
+                        <TouchableOpacity
+                          key={subcategoria.id_categoria}
+                          activeOpacity={0.9}
+                          style={[
+                            styles.categoryCard,
+                            selected && styles.categoryCardSelected,
+                          ]}
+                          onPress={() =>
+                            toggleCategoria(subcategoria.id_categoria)
+                          }
+                        >
+                          {(() => {
+                            const Icon = getCategoryIcon(subcategoria.icono);
+
+                            return (
+                              <Icon
+                                size={32}
+                                color={selected ? colors.primary : colors.text}
+                                strokeWidth={1.8}
+                              />
+                            );
+                          })()}
+
+                          <Text
+                            style={[
+                              styles.categoryCardText,
+                              selected && styles.categoryCardTextSelected,
+                            ]}
+                          >
+                            {subcategoria.nombre}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                </View>
+
+                <Button
+                  title="Continuar"
+                  onPress={() => {
+                    if (categoriasSeleccionadas.length === 0) {
+                      Alert.alert("Selecciona al menos una categoria");
+                      return;
+                    }
+
+                    setCurrentStep(3);
+                  }}
+                  style={styles.ctaButton}
+                />
+              </>
+            )}
+
+            {currentStep === 3 && (
+              <>
+                <Text style={styles.stepTitle}>Resumen del lote</Text>
+
+                <ScrollView
+                  ref={scrollRef}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.previewImagesRow}
+                >
+                  {images.map((img, index) => (
+                    <Image
+                      key={index}
+                      source={{ uri: img.uri }}
+                      style={styles.previewImage}
+                    />
+                  ))}
+                </ScrollView>
+
+                <View style={styles.summarySection}>
+                  <Text style={styles.summaryTitle}>{form.titulo}</Text>
+
+                  {!!form.descripcion && (
+                    <Text style={styles.summaryDescription}>
+                      {form.descripcion}
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.summaryPriceBox}>
+                  <Text style={styles.summaryPrice}>{form.precio} €</Text>
+
+                  <Text style={styles.summaryStock}>
+                    {form.cantidad} unidades disponibles
+                  </Text>
+                </View>
+
+                <View style={styles.summarySection}>
+                  <Text style={styles.summaryLabel}>
+                    Categorias seleccionadas
+                  </Text>
+
+                  <View style={styles.selectedCategoriesWrap}>
+                    {categoriasSeleccionadasData.map((cat) => (
+                      <View
+                        key={cat.id_categoria}
+                        style={styles.selectedCategory}
+                      >
+                        <Text style={styles.selectedCategoryText}>
+                          {cat.nombre}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <Button
+                  title="Publicar lote"
+                  onPress={handleSubmit}
+                  style={styles.ctaButton}
+                />
+              </>
+            )}
           </View>
         </Card>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Text style={styles.ctaHelper}>
-          Revisa las fotos y los datos antes de publicar tu lote.
-        </Text>
-        <Button
-          title="Publicar lote"
-          onPress={handleSubmit}
-          style={styles.ctaButton}
-        />
+        {currentStep === 2 && (
+          <>
+            <Text style={styles.ctaHelper}>
+              Selecciona las categorias que mejor describen el lote.
+            </Text>
+          </>
+        )}
       </View>
     </View>
   );
@@ -266,6 +499,16 @@ const styles = StyleSheet.create({
     ...typography.heading,
     color: colors.text,
   },
+  backArrow: {
+    fontSize: 28,
+    color: colors.text,
+    fontWeight: "600",
+  },
+
+  stepCounter: {
+    ...typography.bodyStrong,
+    color: colors.subtext,
+  },
   headerSpacer: {
     width: 22,
     height: 22,
@@ -291,6 +534,14 @@ const styles = StyleSheet.create({
   inlineField: {
     flex: 1,
     gap: spacing.xs,
+  },
+  parentCategory: {
+    gap: spacing.sm,
+  },
+
+  parentCategoryTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
   },
   categoryWrap: {
     flexDirection: "row",
@@ -339,5 +590,124 @@ const styles = StyleSheet.create({
   ctaButton: {
     minHeight: 58,
     borderRadius: radii.lg,
+  },
+  stepTitle: {
+    ...typography.heading,
+    color: colors.text,
+  },
+
+  backButton: {
+    alignSelf: "flex-start",
+  },
+
+  backButtonText: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+  },
+
+  categoriesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.md,
+  },
+
+  categoryCard: {
+    width: "47%",
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radii.lg,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.md,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+
+  categoryCardSelected: {
+    borderColor: colors.primary,
+    backgroundColor: "#DBEAFE",
+  },
+
+  categoryEmoji: {
+    fontSize: 34,
+  },
+
+  categoryCardText: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    textAlign: "center",
+  },
+
+  categoryCardTextSelected: {
+    color: colors.primary,
+  },
+  previewImagesRow: {
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+
+  previewImage: {
+    width: 140,
+    height: 140,
+    borderRadius: radii.lg,
+  },
+
+  summarySection: {
+    gap: spacing.sm,
+  },
+
+  summaryTitle: {
+    ...typography.heading,
+    color: colors.text,
+  },
+
+  summaryDescription: {
+    ...typography.body,
+    color: colors.subtext,
+  },
+
+  summaryPriceBox: {
+    backgroundColor: colors.white,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.xs,
+  },
+
+  summaryPrice: {
+    fontSize: 34,
+    fontWeight: "700",
+    color: colors.text,
+  },
+
+  summaryStock: {
+    ...typography.body,
+    color: colors.subtext,
+  },
+
+  summaryLabel: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+
+  selectedCategoriesWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+
+  selectedCategory: {
+    backgroundColor: "#DBEAFE",
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+
+  selectedCategoryText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "700",
   },
 });

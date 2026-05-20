@@ -20,12 +20,16 @@ export class LotesService {
   constructor(private readonly prisma: PrismaService) {}
 
   private readonly loteInclude = {
-    categoria: true,
     categorias: {
       include: {
-        categoria: true,
+        categoria: {
+          include: {
+            padre: true,
+          },
+        },
       },
     },
+
     vendedor: {
       select: {
         id_usuario: true,
@@ -36,6 +40,7 @@ export class LotesService {
         direccion: true,
       },
     },
+
     imagenes: true,
 
     _count: {
@@ -112,34 +117,18 @@ export class LotesService {
     };
   }
 
-  private getSelectedCategoryIds(dto: {
-    id_categoria?: number | null;
-    categoriasIds?: number[] | null;
-  }) {
-    const categoryIds = dto.categoriasIds?.length
-      ? dto.categoriasIds
-      : dto.id_categoria
-        ? [dto.id_categoria]
-        : [];
-
-    return Array.from(new Set(categoryIds));
-  }
-
   async create(
     dto: CreateLoteDto,
     id_vendedor: number,
     files: Express.Multer.File[] = [],
   ) {
     const { categoriasIds, ...loteData } = dto;
-    const selectedCategoryIds = this.getSelectedCategoryIds({
-      id_categoria: loteData.id_categoria,
-      categoriasIds,
-    });
+
+    const selectedCategoryIds = Array.from(new Set(categoriasIds));
 
     const lote = await this.prisma.lote.create({
       data: {
         ...loteData,
-        id_categoria: selectedCategoryIds[0] ?? loteData.id_categoria,
         id_vendedor,
         categorias: {
           create: selectedCategoryIds.map((id_categoria) => ({
@@ -203,7 +192,9 @@ export class LotesService {
     const lotesWithLocation = lotes
       .map((lote) => this.addLocationData(lote, origin))
       .filter((lote) =>
-        origin && maxDistance ? (lote.distancia_km ?? Infinity) <= maxDistance : true,
+        origin && maxDistance
+          ? (lote.distancia_km ?? Infinity) <= maxDistance
+          : true,
       );
 
     if (origin && query.sortBy === "nearest") {
@@ -237,10 +228,9 @@ export class LotesService {
     }
 
     const { categoriasIds, ...loteData } = dto;
-    const selectedCategoryIds = this.getSelectedCategoryIds({
-      id_categoria: loteData.id_categoria,
-      categoriasIds,
-    });
+    const selectedCategoryIds = categoriasIds
+      ? Array.from(new Set(categoriasIds))
+      : [];
 
     return this.prisma.lote.update({
       where: { id_lote: id },
@@ -248,7 +238,6 @@ export class LotesService {
         ...loteData,
         ...(selectedCategoryIds.length > 0
           ? {
-              id_categoria: selectedCategoryIds[0],
               categorias: {
                 deleteMany: {},
                 create: selectedCategoryIds.map((id_categoria) => ({

@@ -1,4 +1,4 @@
-import { Transform, Type } from 'class-transformer';
+import { Transform, Type } from "class-transformer";
 import {
   IsArray,
   IsInt,
@@ -6,10 +6,11 @@ import {
   IsOptional,
   IsString,
   Min,
-} from 'class-validator';
+  ArrayMinSize,
+} from "class-validator";
 
 const parseCategoriasIds = (value: unknown): number[] | undefined => {
-  if (value === undefined || value === null || value === '') {
+  if (value === undefined || value === null || value === "") {
     return undefined;
   }
 
@@ -17,12 +18,12 @@ const parseCategoriasIds = (value: unknown): number[] | undefined => {
 
   return rawValues
     .flatMap((item) => {
-      if (typeof item === 'string') {
+      if (typeof item === "string") {
         const trimmed = item.trim();
 
         if (!trimmed) return [];
 
-        if (trimmed.startsWith('[')) {
+        if (trimmed.startsWith("[")) {
           try {
             const parsed = JSON.parse(trimmed);
             return Array.isArray(parsed) ? parsed : [parsed];
@@ -31,7 +32,7 @@ const parseCategoriasIds = (value: unknown): number[] | undefined => {
           }
         }
 
-        return trimmed.split(',');
+        return trimmed.split(",");
       }
 
       return [item];
@@ -58,14 +59,9 @@ export class CreateLoteDto {
   @Type(() => Number)
   cantidad: number;
 
-  @IsOptional()
-  @IsInt()
-  @Type(() => Number)
-  id_categoria?: number;
-
-  @IsOptional()
   @Transform(({ value }) => parseCategoriasIds(value))
   @IsArray()
+  @ArrayMinSize(1)
   @IsInt({ each: true })
-  categoriasIds?: number[];
+  categoriasIds: number[];
 }

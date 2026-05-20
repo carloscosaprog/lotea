@@ -23,6 +23,7 @@ export interface Lote {
 
   categoria?: string;
   categorias: string[];
+  categoriasIds?: number[];
 
   imagen?: string;
   imagenes: string[];
@@ -47,4 +48,11 @@ export type LoteUpdate = {
   cantidad?: number;
   id_categoria?: number;
   categoriasIds?: number[];
+};
+
+export type ImagenLote = {
+  id_imagen: number;
+  id_lote: number;
+  url: string;
+  es_principal?: boolean;
 };

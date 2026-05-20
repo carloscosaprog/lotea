@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { API_URL } from "../config/api";
-import type { Lote, LoteCreate, LoteUpdate } from "../types/Lote";
+import type { ImagenLote, Lote, LoteCreate, LoteUpdate } from "../types/Lote";
 
 const LOTES_URL = `${API_URL}/lotes`;
 
@@ -49,6 +49,17 @@ export const normalizeLote = (raw: any): Lote => {
     : categoria
       ? [categoria]
       : [];
+  const categoriasIds = Array.isArray(lote.categorias)
+    ? lote.categorias
+        .map((cat: any) =>
+          typeof cat === "number"
+            ? cat
+            : cat?.id_categoria ??
+              cat?.categoria?.id_categoria ??
+              cat?.categoriaId,
+        )
+        .filter((id: any): id is number => typeof id === "number")
+    : [];
 
   const vendedor =
     lote.vendedor && typeof lote.vendedor === "object"
@@ -101,6 +112,7 @@ export const normalizeLote = (raw: any): Lote => {
     longitud,
     categoria,
     categorias,
+    categoriasIds,
     imagenes,
     isFavorito,
 
@@ -253,6 +265,64 @@ export const updateLote = async (
   const data = await response.json();
 
   return normalizeLote(data);
+};
+
+export const getImagenesByLote = async (
+  id: number,
+): Promise<ImagenLote[]> => {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${API_URL}/imagenes-lote/lote/${id}`, {
+    headers,
+  });
+
+  if (!response.ok) return [];
+
+  const data = await response.json();
+
+  return Array.isArray(data) ? data : [];
+};
+
+export const uploadLoteImages = async (
+  id: number,
+  files: any[],
+): Promise<ImagenLote[]> => {
+  const headers = await getAuthHeaders();
+  const formData = new FormData();
+
+  files.forEach((file, index) => {
+    const image = buildImageFile(file, index);
+    if (image) {
+      formData.append("imagenesFiles", image as any);
+    }
+  });
+
+  const response = await fetch(`${API_URL}/imagenes-lote/lote/${id}/upload`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.log("ERROR BACKEND:", text);
+    throw new Error("Error al subir imagenes");
+  }
+
+  const data = await response.json();
+
+  return Array.isArray(data) ? data : [];
+};
+
+export const deleteLoteImage = async (id: number): Promise<boolean> => {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(`${API_URL}/imagenes-lote/${id}`, {
+    method: "DELETE",
+    headers,
+  });
+
+  return response.ok;
 };
 
 export const deleteLote = async (id: number): Promise<boolean> => {
