@@ -22,11 +22,11 @@ import {
   getLoteById,
   deleteLote,
   getLotesByUser,
+  getLotes,
 } from "../../services/lotesService";
 import { getUserById } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import type { Lote } from "../../types/Lote";
-import LoteCard from "../../components/lotes/LoteCard";
 import Avatar from "../../components/ui/Avatar";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
@@ -37,9 +37,114 @@ import { typography } from "../../styles/typography";
 import { API_URL } from "../../config/api";
 import { getImageUrl } from "../../utils/getImageUrl";
 import { formatLoteLocation } from "../../utils/formatLocation";
+import { toggleFavorito } from "../../services/favoritosService";
 
 const screenWidth = Dimensions.get("window").width;
 const APPROXIMATION_RADIUS_METERS = 900;
+
+const getLoteCategories = (lote: Lote) =>
+  Array.isArray(lote.categorias)
+    ? lote.categorias.map((c: any) => (typeof c === "string" ? c : c.nombre))
+    : lote.categoria
+      ? [
+          typeof lote.categoria === "string"
+            ? lote.categoria
+            : typeof lote.categoria === "object"
+              ? (lote.categoria as any).nombre
+              : "",
+        ]
+      : [];
+
+function RelatedLoteCard({ lote }: { lote: Lote }) {
+  const navigation = useNavigation<any>();
+  const [, forceUpdate] = useState(0);
+  const isFavorito = lote.isFavorito ?? false;
+  const totalFavoritos = lote.total_favoritos ?? 0;
+  const imageUri = getImageUrl(lote.imagenes?.[0]);
+  const locationLabel = formatLoteLocation(lote);
+  const categories = getLoteCategories(lote).filter(Boolean).slice(0, 2);
+
+  const handleToggleFavorito = async () => {
+    try {
+      const res = await toggleFavorito(lote.id_lote, isFavorito);
+
+      lote.isFavorito = res.favorito;
+      lote.total_favoritos = res.total_favoritos;
+
+      forceUpdate((prev) => prev + 1);
+    } catch (error) {
+      console.log("Error favorito:", error);
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.93}
+      style={styles.relatedCard}
+      onPress={() =>
+        navigation.navigate("Home", {
+          screen: "LoteDetail",
+          params: { id: lote.id_lote },
+        })
+      }
+    >
+      <View style={styles.relatedImageWrap}>
+        <Image source={{ uri: imageUri }} style={styles.relatedImage} />
+        <View style={styles.relatedImageShade} />
+
+        <TouchableOpacity
+          activeOpacity={0.88}
+          style={styles.relatedFavorite}
+          onPress={(event) => {
+            event.stopPropagation();
+            handleToggleFavorito();
+          }}
+        >
+          <Ionicons
+            name={isFavorito ? "heart" : "heart-outline"}
+            size={17}
+            color={isFavorito ? colors.danger : colors.text}
+          />
+          <Text style={styles.relatedFavoriteText}>{totalFavoritos}</Text>
+        </TouchableOpacity>
+
+        {locationLabel && (
+          <View style={styles.relatedLocationBadge}>
+            <Ionicons name="location-outline" size={12} color={colors.white} />
+            <Text style={styles.relatedLocationText} numberOfLines={1}>
+              {locationLabel}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.relatedInfo}>
+        <Text style={styles.relatedTitle} numberOfLines={2}>
+          {lote.titulo}
+        </Text>
+
+        <View style={styles.relatedMetaRow}>
+          <Text style={styles.relatedUnits} numberOfLines={1}>
+            {lote.cantidad} unidades
+          </Text>
+          <Text style={styles.relatedPrice}>{lote.precio} EUR</Text>
+        </View>
+
+        {categories.length > 0 && (
+          <View style={styles.relatedCategoryRow}>
+            {categories.map((category) => (
+              <View key={category} style={styles.relatedCategoryPill}>
+                <Text style={styles.relatedCategoryText} numberOfLines={1}>
+                  {category}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 export default function LoteDetailScreen() {
   const route = useRoute<any>();
@@ -53,6 +158,7 @@ export default function LoteDetailScreen() {
   const [imagenActual, setImagenActual] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const [lotesUsuario, setLotesUsuario] = useState<Lote[]>([]);
+  const [lotesSimilares, setLotesSimilares] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
   const [contacting, setContacting] = useState(false);
 
@@ -110,11 +216,44 @@ export default function LoteDetailScreen() {
       if (lote?.id_vendedor) {
         const data = await getLotesByUser(lote.id_vendedor);
         const filtrados = data.filter((l: Lote) => l.id_lote !== lote.id_lote);
-        setLotesUsuario(filtrados.slice(0, 4));
+        setLotesUsuario(filtrados.slice(0, 8));
       }
     };
 
     fetchUserLotes();
+  }, [lote]);
+
+  useEffect(() => {
+    const fetchSimilarLotes = async () => {
+      if (!lote) return;
+
+      try {
+        const currentCategories = getLoteCategories(lote).filter(Boolean);
+
+        if (currentCategories.length === 0) {
+          setLotesSimilares([]);
+          return;
+        }
+
+        const data = await getLotes();
+        const similares = data
+          .filter((item) => item.id_lote !== lote.id_lote)
+          .filter((item) => {
+            const itemCategories = getLoteCategories(item).filter(Boolean);
+
+            return itemCategories.some((category) =>
+              currentCategories.includes(category),
+            );
+          })
+          .slice(0, 8);
+
+        setLotesSimilares(similares);
+      } catch (error) {
+        console.log("Error cargando lotes similares", error);
+      }
+    };
+
+    fetchSimilarLotes();
   }, [lote]);
 
   const handleDelete = async () => {
@@ -187,17 +326,7 @@ export default function LoteDetailScreen() {
   }
 
   const imagenes = Array.isArray(lote.imagenes) ? lote.imagenes : [];
-  const categorias = Array.isArray(lote.categorias)
-    ? lote.categorias.map((c: any) => (typeof c === "string" ? c : c.nombre))
-    : lote.categoria
-      ? [
-          typeof lote.categoria === "string"
-            ? lote.categoria
-            : typeof lote.categoria === "object"
-              ? (lote.categoria as any).nombre
-              : "",
-        ]
-      : [];
+  const categorias = getLoteCategories(lote);
   const nombreVendedor =
     typeof vendedor?.nombre === "string"
       ? vendedor.nombre
@@ -399,9 +528,16 @@ export default function LoteDetailScreen() {
 
       {lotesUsuario.length > 0 && (
         <View style={styles.moreSection}>
-          <View style={layoutStyles.pageHeader}>
-            <Text style={layoutStyles.headerEyebrow}>Mas de este vendedor</Text>
-            <Text style={styles.sectionTitle}>Otros lotes relacionados</Text>
+          <View style={styles.marketSectionHeader}>
+            <View style={styles.sectionIcon}>
+              <Ionicons name="storefront-outline" size={16} color={colors.primary} />
+            </View>
+            <View style={styles.sectionHeaderCopy}>
+              <Text style={styles.sectionTitle}>Mas de este vendedor</Text>
+              <Text style={styles.sectionSubtitle}>
+                Otras oportunidades publicadas por {nombreVendedor}.
+              </Text>
+            </View>
           </View>
 
           <FlatList
@@ -409,8 +545,37 @@ export default function LoteDetailScreen() {
             horizontal
             keyExtractor={(item) => item.id_lote.toString()}
             renderItem={({ item }) => (
-              <View style={{ width: 220 }}>
-                <LoteCard lote={item} />
+              <View style={styles.relatedItem}>
+                <RelatedLoteCard lote={item} />
+              </View>
+            )}
+            contentContainerStyle={styles.moreList}
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+      )}
+
+      {lotesSimilares.length > 0 && (
+        <View style={styles.moreSection}>
+          <View style={styles.marketSectionHeader}>
+            <View style={styles.sectionIcon}>
+              <Ionicons name="albums-outline" size={16} color={colors.primary} />
+            </View>
+            <View style={styles.sectionHeaderCopy}>
+              <Text style={styles.sectionTitle}>Mas como este</Text>
+              <Text style={styles.sectionSubtitle}>
+                Lotes con categorias parecidas a este producto.
+              </Text>
+            </View>
+          </View>
+
+          <FlatList
+            data={lotesSimilares}
+            horizontal
+            keyExtractor={(item) => item.id_lote.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.relatedItem}>
+                <RelatedLoteCard lote={item} />
               </View>
             )}
             contentContainerStyle={styles.moreList}
@@ -649,14 +814,151 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   moreSection: {
-    gap: spacing.md,
+    gap: spacing.sm,
+  },
+  marketSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  sectionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sectionHeaderCopy: {
+    flex: 1,
   },
   sectionTitle: {
-    ...typography.title,
+    ...typography.bodyStrong,
     color: colors.text,
+  },
+  sectionSubtitle: {
+    ...typography.caption,
+    color: colors.subtext,
   },
   moreList: {
     gap: spacing.sm,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.sm,
+  },
+  relatedItem: {
+    width: 236,
+  },
+  relatedCard: {
+    width: 236,
+    height: 292,
+    borderRadius: radii.lg,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: "#E0ECFF",
+    overflow: "hidden",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  relatedImageWrap: {
+    height: 154,
+    backgroundColor: "#E5E7EB",
+    position: "relative",
+  },
+  relatedImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  relatedImageShade: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 58,
+    backgroundColor: "rgba(17,24,39,0.18)",
+  },
+  relatedFavorite: {
+    position: "absolute",
+    top: spacing.sm,
+    right: spacing.sm,
+    minWidth: 48,
+    height: 34,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+  },
+  relatedFavoriteText: {
+    fontSize: 12,
+    color: colors.text,
+    fontWeight: "700",
+  },
+  relatedLocationBadge: {
+    position: "absolute",
+    left: spacing.sm,
+    right: spacing.sm,
+    bottom: spacing.sm,
+    minHeight: 28,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(17,24,39,0.62)",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    gap: spacing.xxs,
+  },
+  relatedLocationText: {
+    ...typography.caption,
+    color: colors.white,
+    flex: 1,
+  },
+  relatedInfo: {
+    height: 138,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  relatedTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    minHeight: 44,
+  },
+  relatedMetaRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  relatedUnits: {
+    ...typography.caption,
+    color: colors.subtext,
+    flex: 1,
+  },
+  relatedPrice: {
+    ...typography.bodyStrong,
+    color: colors.accent,
+  },
+  relatedCategoryRow: {
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  relatedCategoryPill: {
+    flex: 1,
+    minHeight: 26,
+    borderRadius: radii.full,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
+  relatedCategoryText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "700",
   },
   buyButton: {
     minHeight: 58,

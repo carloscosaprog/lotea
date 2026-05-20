@@ -13,6 +13,7 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  ImageBackground,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,7 +21,6 @@ import Slider from "@react-native-community/slider";
 
 import { getLotes } from "../../services/lotesService";
 import type { Lote } from "../../types/Lote";
-import LoteListItem from "../../components/lotes/LoteListItem";
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -32,6 +32,7 @@ import { getImageUrl } from "../../utils/getImageUrl";
 import { formatLoteLocation } from "../../utils/formatLocation";
 import { toggleFavorito } from "../../services/favoritosService";
 
+const homeFluidBackground = require("../../assets/backgrounds/home-fluid-bg.png");
 interface Categoria {
   id_categoria: number;
   nombre: string;
@@ -83,13 +84,18 @@ function FilterCategoryCard({
   };
 
   return (
-    <Animated.View style={[styles.categoryCardMotion, { transform: [{ scale }] }]}>
+    <Animated.View
+      style={[styles.categoryCardMotion, { transform: [{ scale }] }]}
+    >
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={onPress}
         onPressIn={pressIn}
         onPressOut={pressOut}
-        style={[styles.filterCategoryCard, selected && styles.filterCategoryCardActive]}
+        style={[
+          styles.filterCategoryCard,
+          selected && styles.filterCategoryCardActive,
+        ]}
       >
         <View
           style={[
@@ -233,6 +239,105 @@ function MarketplaceLotCard({
             ))}
           </View>
         )}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function MarketplaceListCard({
+  lote,
+  onFavoriteChange,
+}: {
+  lote: Lote;
+  onFavoriteChange?: () => void;
+}) {
+  const navigation = useNavigation<any>();
+  const [, forceUpdate] = useState(0);
+  const isFavorito = lote.isFavorito ?? false;
+  const totalFavoritos = lote.total_favoritos ?? 0;
+  const imageUri = getImageUrl(lote.imagenes?.[0]);
+  const locationLabel = formatLoteLocation(lote);
+  const category = Array.isArray(lote.categorias)
+    ? lote.categorias[0]
+    : lote.categoria;
+
+  const handleToggleFavorito = async () => {
+    try {
+      const res = await toggleFavorito(lote.id_lote, isFavorito);
+
+      lote.isFavorito = res.favorito;
+      lote.total_favoritos = res.total_favoritos;
+
+      forceUpdate((prev) => prev + 1);
+      onFavoriteChange?.();
+    } catch (error) {
+      console.log("Error favorito:", error);
+    }
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.93}
+      style={styles.feedCard}
+      onPress={() =>
+        navigation.navigate("Home", {
+          screen: "LoteDetail",
+          params: { id: lote.id_lote },
+        })
+      }
+    >
+      <View style={styles.feedImageWrap}>
+        <Image source={{ uri: imageUri }} style={styles.feedImage} />
+        {category && (
+          <View style={styles.feedCategoryBadge}>
+            <Text style={styles.feedCategoryText} numberOfLines={1}>
+              {category}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.feedInfo}>
+        <View style={styles.feedTopRow}>
+          <Text style={styles.feedTitle} numberOfLines={2}>
+            {lote.titulo}
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.86}
+            style={styles.feedFavorite}
+            onPress={(event) => {
+              event.stopPropagation();
+              handleToggleFavorito();
+            }}
+          >
+            <Ionicons
+              name={isFavorito ? "heart" : "heart-outline"}
+              size={17}
+              color={isFavorito ? colors.danger : colors.subtext}
+            />
+            <Text style={styles.feedFavoriteText}>{totalFavoritos}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.feedUnits} numberOfLines={1}>
+          {lote.cantidad} unidades disponibles
+        </Text>
+
+        {locationLabel && (
+          <View style={styles.feedLocationRow}>
+            <Ionicons name="location-outline" size={13} color={colors.subtext} />
+            <Text style={styles.feedLocationText} numberOfLines={1}>
+              {locationLabel}
+            </Text>
+          </View>
+        )}
+
+        <View style={styles.feedBottomRow}>
+          <Text style={styles.feedPrice}>{lote.precio} EUR</Text>
+          <View style={styles.feedArrow}>
+            <Ionicons name="chevron-forward" size={16} color={colors.primary} />
+          </View>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -448,7 +553,13 @@ export default function HomeScreen() {
     if (search.trim().length > 0) count += 1;
 
     return count;
-  }, [activeCategories, distanceFilterEnabled, priceFilterEnabled, search, sortBy]);
+  }, [
+    activeCategories,
+    distanceFilterEnabled,
+    priceFilterEnabled,
+    search,
+    sortBy,
+  ]);
 
   const selectedCategoriesLabel = activeCategories.includes("Todas")
     ? "Todas las categorias"
@@ -585,7 +696,10 @@ export default function HomeScreen() {
         data={filteredLotes}
         keyExtractor={(item) => item.id_lote.toString()}
         renderItem={({ item }) => (
-          <LoteListItem lote={item} onFavoriteChange={handleFavoriteChange} />
+          <MarketplaceListCard
+            lote={item}
+            onFavoriteChange={handleFavoriteChange}
+          />
         )}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
@@ -593,88 +707,100 @@ export default function HomeScreen() {
         onRefresh={onRefresh}
         ListHeaderComponent={
           <>
-            <Animated.View style={[styles.hero, contentAnimatedStyle]}>
-              <View style={styles.heroWash} />
-              <View style={styles.heroOrbLarge} />
-              <View style={styles.heroOrbSmall} />
-
-              <View style={styles.heroTopRow}>
-                <View>
-                  <View style={styles.heroBadge}>
-                    <Text style={styles.heroEyebrow}>Lotea</Text>
+            <Animated.View style={contentAnimatedStyle}>
+              <ImageBackground
+                source={homeFluidBackground}
+                style={styles.hero}
+                imageStyle={styles.heroBackgroundImage}
+              >
+                <View style={styles.heroOverlay}>
+                  <View style={styles.heroTopRow}>
+                    <View>
+                      <View style={styles.heroBadge}>
+                        <Text style={styles.heroEyebrow}>Lotea</Text>
+                      </View>
+                      <Text style={styles.brand}>Lotes con potencial real</Text>
+                      <Text style={styles.heroSubtitle}>
+                        Compra mejor, filtra rapido y descubre oportunidades
+                        listas para revender.
+                      </Text>
+                    </View>
                   </View>
-                  <Text style={styles.brand}>Lotes con potencial real</Text>
-                  <Text style={styles.heroSubtitle}>
-                    Compra mejor, filtra rapido y descubre oportunidades listas
-                    para revender.
-                  </Text>
-                </View>
-              </View>
 
-              <View style={styles.heroActions}>
-                <View style={styles.searchBar}>
-                  <Ionicons name="search" size={18} color={colors.subtext} />
-                  <TextInput
-                    value={search}
-                    onChangeText={setSearch}
-                    placeholder="Buscar lotes..."
-                    placeholderTextColor={colors.subtext}
-                    style={styles.searchInput}
-                  />
-                </View>
-                <TouchableOpacity
-                  activeOpacity={0.86}
-                  style={styles.filterButton}
-                  onPress={openFilters}
-                >
-                  <Ionicons
-                    name="options-outline"
-                    size={18}
-                    color={colors.white}
-                  />
-                  <Text style={styles.filterButtonText}>Filtros</Text>
-                </TouchableOpacity>
-              </View>
+                  <View style={styles.heroActions}>
+                    <View style={styles.searchBar}>
+                      <Ionicons
+                        name="search"
+                        size={18}
+                        color={colors.subtext}
+                      />
+                      <TextInput
+                        value={search}
+                        onChangeText={setSearch}
+                        placeholder="Buscar lotes..."
+                        placeholderTextColor={colors.subtext}
+                        style={styles.searchInput}
+                      />
+                    </View>
+                    <TouchableOpacity
+                      activeOpacity={0.86}
+                      style={styles.filterButton}
+                      onPress={openFilters}
+                    >
+                      <Ionicons
+                        name="options-outline"
+                        size={18}
+                        color={colors.white}
+                      />
+                      <Text style={styles.filterButtonText}>Filtros</Text>
+                    </TouchableOpacity>
+                  </View>
 
-              <View style={styles.heroMetaRow}>
-                <Text style={styles.heroMetaText} numberOfLines={1}>
-                  {sortBy === "nearest" ? "Cercanos" : "Recientes"} -{" "}
-                  {distanceFilterEnabled
-                    ? `${distanceValue} km`
-                    : "sin limite de distancia"}{" "}
-                  -{" "}
-                  {priceFilterEnabled
-                    ? `${minPriceValue}-${maxPriceValue} EUR`
-                    : "todos los precios"}{" "}
-                  - {selectedCategoriesLabel}
-                </Text>
-                {activeFiltersCount > 0 && (
-                  <View style={styles.activeFiltersBadge}>
-                    <Text style={styles.activeFiltersText}>
-                      {activeFiltersCount}
+                  <View style={styles.heroMetaRow}>
+                    <Text style={styles.heroMetaText} numberOfLines={1}>
+                      {sortBy === "nearest" ? "Cercanos" : "Recientes"} -{" "}
+                      {distanceFilterEnabled
+                        ? `${distanceValue} km`
+                        : "sin limite de distancia"}{" "}
+                      -{" "}
+                      {priceFilterEnabled
+                        ? `${minPriceValue}-${maxPriceValue} EUR`
+                        : "todos los precios"}{" "}
+                      - {selectedCategoriesLabel}
                     </Text>
+                    {activeFiltersCount > 0 && (
+                      <View style={styles.activeFiltersBadge}>
+                        <Text style={styles.activeFiltersText}>
+                          {activeFiltersCount}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                )}
-              </View>
 
-              <View style={styles.heroStatsRow}>
-                <View style={styles.heroStat}>
-                  <Text style={styles.heroStatValue}>{filteredLotes.length}</Text>
-                  <Text style={styles.heroStatLabel}>lotes activos</Text>
+                  <View style={styles.heroStatsRow}>
+                    <View style={styles.heroStat}>
+                      <Text style={styles.heroStatValue}>
+                        {filteredLotes.length}
+                      </Text>
+                      <Text style={styles.heroStatLabel}>lotes activos</Text>
+                    </View>
+                    <View style={styles.heroStatDivider} />
+                    <View style={styles.heroStat}>
+                      <Text style={styles.heroStatValue}>
+                        {favoritos.length}
+                      </Text>
+                      <Text style={styles.heroStatLabel}>favoritos</Text>
+                    </View>
+                    <View style={styles.heroStatDivider} />
+                    <View style={styles.heroStat}>
+                      <Text style={styles.heroStatValue}>
+                        {distanceFilterEnabled ? `${distanceValue} km` : "100+"}
+                      </Text>
+                      <Text style={styles.heroStatLabel}>alcance</Text>
+                    </View>
+                  </View>
                 </View>
-                <View style={styles.heroStatDivider} />
-                <View style={styles.heroStat}>
-                  <Text style={styles.heroStatValue}>{favoritos.length}</Text>
-                  <Text style={styles.heroStatLabel}>favoritos</Text>
-                </View>
-                <View style={styles.heroStatDivider} />
-                <View style={styles.heroStat}>
-                  <Text style={styles.heroStatValue}>
-                    {distanceFilterEnabled ? `${distanceValue} km` : "100+"}
-                  </Text>
-                  <Text style={styles.heroStatLabel}>alcance</Text>
-                </View>
-              </View>
+              </ImageBackground>
             </Animated.View>
 
             <MarketplaceSection
@@ -732,10 +858,7 @@ export default function HomeScreen() {
               onRequestClose={closeFilters}
             >
               <View style={styles.modalRoot}>
-                <Pressable
-                  style={styles.modalOverlay}
-                  onPress={closeFilters}
-                />
+                <Pressable style={styles.modalOverlay} onPress={closeFilters} />
                 <Animated.View style={[styles.filterSheet, sheetAnimatedStyle]}>
                   <View style={styles.sheetHandle} />
 
@@ -861,7 +984,8 @@ export default function HomeScreen() {
                           <View style={styles.rangeCopy}>
                             <Text style={styles.rangeTitle}>Distancia</Text>
                             <Text style={styles.rangeSubtitle}>
-                              {profileCity || "Configura tu ubicacion en Perfil"}
+                              {profileCity ||
+                                "Configura tu ubicacion en Perfil"}
                             </Text>
                           </View>
                         </View>
@@ -897,7 +1021,9 @@ export default function HomeScreen() {
                       >
                         <View style={styles.rangeValueCard}>
                           <Text style={styles.sliderLabel}>Radio maximo</Text>
-                          <Text style={styles.sliderValue}>{distanceValue} km</Text>
+                          <Text style={styles.sliderValue}>
+                            {distanceValue} km
+                          </Text>
                         </View>
                         <Slider
                           value={distanceValue}
@@ -930,7 +1056,8 @@ export default function HomeScreen() {
                           <View style={styles.rangeCopy}>
                             <Text style={styles.rangeTitle}>Precio</Text>
                             <Text style={styles.rangeSubtitle}>
-                              Ajusta el presupuesto para descubrir lotes viables.
+                              Ajusta el presupuesto para descubrir lotes
+                              viables.
                             </Text>
                           </View>
                         </View>
@@ -1076,7 +1203,6 @@ export default function HomeScreen() {
                         })}
                       </View>
                     </View>
-
                   </ScrollView>
 
                   <View style={styles.sheetFooter}>
@@ -1129,44 +1255,21 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxxl,
   },
   hero: {
-    backgroundColor: "#F8FBFF",
-    borderRadius: radii.xl,
-    borderWidth: 1,
-    borderColor: "#D8E8FF",
-    padding: spacing.lg,
+    borderRadius: 32,
     overflow: "hidden",
     marginBottom: spacing.lg,
     shadowColor: "#0F172A",
     shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.12,
     shadowRadius: 24,
-    elevation: 3,
+    elevation: 5,
   },
-  heroWash: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
-    height: 92,
-    backgroundColor: "#EAF3FF",
+  heroBackgroundImage: {
+    resizeMode: "cover",
   },
-  heroOrbLarge: {
-    position: "absolute",
-    width: 170,
-    height: 170,
-    borderRadius: radii.full,
-    backgroundColor: "rgba(59,130,246,0.12)",
-    right: -52,
-    top: -62,
-  },
-  heroOrbSmall: {
-    position: "absolute",
-    width: 94,
-    height: 94,
-    borderRadius: radii.full,
-    backgroundColor: "rgba(16,185,129,0.12)",
-    right: 32,
-    bottom: -42,
+  heroOverlay: {
+    padding: spacing.lg,
+    backgroundColor: "rgba(255,255,255,0.72)",
   },
   heroTopRow: {
     flexDirection: "row",
@@ -1296,7 +1399,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   marketSection: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   sectionHeadingRow: {
     marginBottom: spacing.sm,
@@ -1320,6 +1423,8 @@ const styles = StyleSheet.create({
   carouselList: {
     gap: spacing.sm,
     paddingRight: spacing.md,
+    paddingBottom: spacing.sm,
+    paddingTop: spacing.xs,
   },
   carouselItem: {
     width: 236,
@@ -1678,6 +1783,119 @@ const styles = StyleSheet.create({
   sectionSubtitle: {
     ...typography.caption,
     color: colors.subtext,
+  },
+  feedCard: {
+    height: 164,
+    borderRadius: radii.lg,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: "#E0ECFF",
+    flexDirection: "row",
+    padding: spacing.sm,
+    gap: spacing.sm,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  feedImageWrap: {
+    width: 128,
+    height: "100%",
+    borderRadius: radii.md,
+    backgroundColor: "#E5E7EB",
+    overflow: "hidden",
+    position: "relative",
+  },
+  feedImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  feedCategoryBadge: {
+    position: "absolute",
+    left: spacing.xs,
+    right: spacing.xs,
+    bottom: spacing.xs,
+    minHeight: 26,
+    borderRadius: radii.full,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+  },
+  feedCategoryText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: "700",
+  },
+  feedInfo: {
+    flex: 1,
+    paddingVertical: spacing.xs,
+  },
+  feedTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs,
+  },
+  feedTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    flex: 1,
+    minHeight: 44,
+  },
+  feedFavorite: {
+    minWidth: 46,
+    height: 32,
+    borderRadius: radii.full,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+  },
+  feedFavoriteText: {
+    fontSize: 12,
+    color: colors.text,
+    fontWeight: "700",
+  },
+  feedUnits: {
+    ...typography.caption,
+    color: colors.subtext,
+    marginTop: 2,
+  },
+  feedLocationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    marginTop: spacing.xs,
+  },
+  feedLocationText: {
+    ...typography.caption,
+    color: colors.subtext,
+    flex: 1,
+  },
+  feedBottomRow: {
+    marginTop: "auto",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  feedPrice: {
+    ...typography.heading,
+    color: colors.accent,
+  },
+  feedArrow: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.full,
+    backgroundColor: "#EFF6FF",
+    alignItems: "center",
+    justifyContent: "center",
   },
   productCard: {
     width: 236,
