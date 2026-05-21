@@ -50,6 +50,13 @@ export default function CreateLoteScreen() {
     number[]
   >([]);
   const [currentStep, setCurrentStep] = useState(1);
+  const [errors, setErrors] = useState({
+    titulo: false,
+    precio: false,
+    cantidad: false,
+    imagenes: false,
+    categorias: false,
+  });
   const [categoriaActiva, setCategoriaActiva] = useState<Categoria | null>(
     null,
   );
@@ -80,6 +87,13 @@ export default function CreateLoteScreen() {
       ...prev,
       [name]: value,
     }));
+
+    if (value.trim()) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: false,
+      }));
+    }
   };
 
   const toggleCategoria = (id_categoria: number) => {
@@ -88,6 +102,11 @@ export default function CreateLoteScreen() {
         ? prev.filter((id) => id !== id_categoria)
         : [...prev, id_categoria],
     );
+
+    setErrors((prev) => ({
+      ...prev,
+      categorias: false,
+    }));
   };
 
   const handleSubmit = async () => {
@@ -188,7 +207,26 @@ export default function CreateLoteScreen() {
 
         {currentStep === 1 && (
           <Card>
-            <ImageUploader key={uploaderKey} onChange={setImages} />
+            <ImageUploader
+              key={uploaderKey}
+              onChange={(files) => {
+                setImages(files);
+
+                if (files.length > 0) {
+                  setErrors((prev) => ({
+                    ...prev,
+                    imagenes: false,
+                  }));
+                }
+              }}
+              hasError={errors.imagenes}
+            />
+
+            {errors.imagenes && (
+              <Text style={styles.imageErrorText}>
+                Debes añadir al menos una imagen
+              </Text>
+            )}
           </Card>
         )}
 
@@ -201,10 +239,16 @@ export default function CreateLoteScreen() {
                 <TextInput
                   placeholder="Titulo del lote"
                   placeholderTextColor={colors.subtext}
-                  style={componentStyles.input}
+                  style={[
+                    componentStyles.input,
+                    errors.titulo && styles.inputError,
+                  ]}
                   value={form.titulo}
                   onChangeText={(text) => handleChange("titulo", text)}
                 />
+                {errors.titulo && (
+                  <Text style={styles.errorText}>Introduce un titulo</Text>
+                )}
 
                 <Text style={styles.label}>Descripcion</Text>
 
@@ -226,10 +270,16 @@ export default function CreateLoteScreen() {
                       placeholder="EUR"
                       placeholderTextColor={colors.subtext}
                       keyboardType="numeric"
-                      style={componentStyles.input}
+                      style={[
+                        componentStyles.input,
+                        errors.precio && styles.inputError,
+                      ]}
                       value={form.precio}
                       onChangeText={(text) => handleChange("precio", text)}
                     />
+                    {errors.precio && (
+                      <Text style={styles.errorText}>Introduce un precio</Text>
+                    )}
                   </View>
 
                   <View style={styles.inlineField}>
@@ -239,23 +289,47 @@ export default function CreateLoteScreen() {
                       placeholder="Cantidad"
                       placeholderTextColor={colors.subtext}
                       keyboardType="numeric"
-                      style={componentStyles.input}
+                      style={[
+                        componentStyles.input,
+                        errors.cantidad && styles.inputError,
+                      ]}
                       value={form.cantidad}
                       onChangeText={(text) => handleChange("cantidad", text)}
                     />
+                    {errors.cantidad && (
+                      <Text style={styles.errorText}>
+                        Indica las unidades disponibles
+                      </Text>
+                    )}
                   </View>
                 </View>
-
+                {(errors.titulo ||
+                  errors.precio ||
+                  errors.cantidad ||
+                  errors.imagenes) && (
+                  <Text style={styles.errorBanner}>
+                    Completa los campos marcados en rojo
+                  </Text>
+                )}
                 <Button
                   title="Continuar"
                   onPress={() => {
-                    if (!form.titulo || !form.precio || !form.cantidad) {
-                      Alert.alert("Completa todos los campos obligatorios");
-                      return;
-                    }
+                    const newErrors = {
+                      titulo: !form.titulo.trim(),
+                      precio: !form.precio.trim(),
+                      cantidad: !form.cantidad.trim(),
+                      imagenes: images.length === 0,
+                      categorias: false,
+                    };
 
-                    if (images.length === 0) {
-                      Alert.alert("Debes anadir al menos una imagen");
+                    setErrors(newErrors);
+
+                    if (
+                      newErrors.titulo ||
+                      newErrors.precio ||
+                      newErrors.cantidad ||
+                      newErrors.imagenes
+                    ) {
                       return;
                     }
 
@@ -384,12 +458,20 @@ export default function CreateLoteScreen() {
                       );
                     })}
                 </View>
-
+                {errors.categorias && (
+                  <Text style={styles.errorBanner}>
+                    Selecciona al menos una categoría
+                  </Text>
+                )}
                 <Button
                   title="Continuar"
                   onPress={() => {
                     if (categoriasSeleccionadas.length === 0) {
-                      Alert.alert("Selecciona al menos una categoria");
+                      setErrors((prev) => ({
+                        ...prev,
+                        categorias: true,
+                      }));
+
                       return;
                     }
 
@@ -713,5 +795,29 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     fontWeight: "700",
+  },
+  inputError: {
+    borderColor: "#EF4444",
+  },
+
+  errorText: {
+    color: "#EF4444",
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  imageErrorText: {
+    color: "#EF4444",
+    fontSize: 13,
+    fontWeight: "600",
+    marginTop: spacing.sm,
+  },
+
+  errorBanner: {
+    color: "#EF4444",
+    fontSize: 14,
+    fontWeight: "700",
+    textAlign: "center",
+    marginTop: spacing.sm,
   },
 });
