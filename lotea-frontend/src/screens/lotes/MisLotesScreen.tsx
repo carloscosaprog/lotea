@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { getMisLotes, deleteLote } from "../../services/lotesService";
 import type { Lote } from "../../types/Lote";
-import Button from "../../components/ui/Button";
+import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
@@ -111,10 +111,10 @@ export default function MisLotesScreen() {
             <Text style={styles.emptyText}>
               Publica tu primer lote para empezar a vender dentro de LOTEA.
             </Text>
-            <Button
+            <PrimaryActionButton
               title="Crear mi primer lote"
               onPress={() => navigation.navigate("Vender")}
-              style={styles.emptyButton}
+              style={{ marginTop: spacing.lg }}
             />
           </Card>
         }
