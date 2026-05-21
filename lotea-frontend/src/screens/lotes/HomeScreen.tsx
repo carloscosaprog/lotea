@@ -366,7 +366,6 @@ export default function HomeScreen() {
   const [priceFilterEnabled, setPriceFilterEnabled] = useState(false);
   const [minPriceValue, setMinPriceValue] = useState(0);
   const [maxPriceValue, setMaxPriceValue] = useState(0);
-  const [sortBy, setSortBy] = useState<"newest" | "nearest">("newest");
   const [favoritesVersion, setFavoritesVersion] = useState(0);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [activeFilterCategory, setActiveFilterCategory] =
@@ -379,7 +378,6 @@ export default function HomeScreen() {
     try {
       const data = await getLotes({
         maxDistance: distanceFilterEnabled ? distanceValue : undefined,
-        sortBy,
       });
       setLotes(data);
     } catch (error) {
@@ -387,7 +385,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [distanceFilterEnabled, distanceValue, sortBy]);
+  }, [distanceFilterEnabled, distanceValue]);
 
   useEffect(() => {
     if (loadingAuth) {
@@ -557,17 +555,10 @@ export default function HomeScreen() {
     if (!activeCategories.includes("Todas")) count += activeCategories.length;
     if (distanceFilterEnabled) count += 1;
     if (priceFilterEnabled) count += 1;
-    if (sortBy === "nearest") count += 1;
     if (search.trim().length > 0) count += 1;
 
     return count;
-  }, [
-    activeCategories,
-    distanceFilterEnabled,
-    priceFilterEnabled,
-    search,
-    sortBy,
-  ]);
+  }, [activeCategories, distanceFilterEnabled, priceFilterEnabled, search]);
 
   const selectedCategoriesLabel = activeCategories.includes("Todas")
     ? "Todas las categorias"
@@ -641,7 +632,6 @@ export default function HomeScreen() {
     setPriceFilterEnabled(false);
     setMinPriceValue(0);
     setMaxPriceValue(catalogMaxPrice);
-    setSortBy("newest");
   };
 
   const renderHorizontalLote = ({ item }: { item: Lote }) => (
@@ -756,9 +746,9 @@ export default function HomeScreen() {
                       onPress={openFilters}
                     >
                       <Ionicons
-                        name="options-outline"
+                        name="options"
                         size={18}
-                        color={colors.white}
+                        color={colors.primary}
                       />
                       <Text style={styles.filterButtonText}>Filtros</Text>
                     </TouchableOpacity>
@@ -769,10 +759,6 @@ export default function HomeScreen() {
                       {activeFiltersCount === 0
                         ? "Descubre oportunidades seleccionadas para ti"
                         : [
-                            sortBy === "nearest"
-                              ? "Ordenados por cercania"
-                              : "Mostrando publicaciones recientes",
-
                             distanceFilterEnabled
                               ? `hasta ${distanceValue} km`
                               : null,
@@ -901,75 +887,6 @@ export default function HomeScreen() {
                     </View>
 
                     <View style={styles.filterGroup}>
-                      <Text style={styles.filterGroupTitle}>Prioridad</Text>
-                      <View style={styles.sortList}>
-                        <TouchableOpacity
-                          activeOpacity={0.9}
-                          style={[
-                            styles.sortOption,
-                            sortBy === "newest" && styles.sortOptionActive,
-                          ]}
-                          onPress={() => setSortBy("newest")}
-                        >
-                          <View style={styles.sortOptionIcon}>
-                            <Ionicons
-                              name="sparkles-outline"
-                              size={17}
-                              color={colors.primary}
-                            />
-                          </View>
-                          <View style={styles.sortOptionCopy}>
-                            <Text style={styles.sortOptionTitle}>
-                              Novedades primero
-                            </Text>
-                            <Text style={styles.sortOptionText}>
-                              Ideal para ver oportunidades recien publicadas.
-                            </Text>
-                          </View>
-                          {sortBy === "newest" && (
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={20}
-                              color={colors.primary}
-                            />
-                          )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          activeOpacity={0.9}
-                          style={[
-                            styles.sortOption,
-                            sortBy === "nearest" && styles.sortOptionActive,
-                          ]}
-                          onPress={() => setSortBy("nearest")}
-                        >
-                          <View style={styles.sortOptionIcon}>
-                            <Ionicons
-                              name="navigate-outline"
-                              size={17}
-                              color={colors.primary}
-                            />
-                          </View>
-                          <View style={styles.sortOptionCopy}>
-                            <Text style={styles.sortOptionTitle}>
-                              Mejor por cercania
-                            </Text>
-                            <Text style={styles.sortOptionText}>
-                              Prioriza lotes con referencia de distancia.
-                            </Text>
-                          </View>
-                          {sortBy === "nearest" && (
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={20}
-                              color={colors.primary}
-                            />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    <View style={styles.filterGroup}>
                       <View style={styles.rangeHeader}>
                         <View style={styles.rangeTitleWrap}>
                           <View style={styles.rangeIcon}>
@@ -996,7 +913,6 @@ export default function HomeScreen() {
                           ]}
                           onPress={() => {
                             setDistanceFilterEnabled((current) => !current);
-                            setSortBy("nearest");
                           }}
                         >
                           <Text
@@ -1324,16 +1240,26 @@ const styles = StyleSheet.create({
   filterButton: {
     minHeight: 52,
     borderRadius: radii.full,
-    backgroundColor: colors.primary,
+    backgroundColor: "#F0F7FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.md,
+
+    paddingHorizontal: spacing.lg,
     gap: spacing.xs,
+
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
   filterButtonText: {
-    ...typography.caption,
-    color: colors.white,
+    ...typography.bodyStrong,
+    color: colors.primary,
     fontWeight: "700",
   },
   heroMetaRow: {
