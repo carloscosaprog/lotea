@@ -26,10 +26,44 @@ export default function RegisterScreen() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({
+    nombre: "",
+    email: "",
+    password: "",
+  });
 
   const navigation = useNavigation<any>();
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const handleRegister = async () => {
+    const newErrors = {
+      nombre: "",
+      email: "",
+      password: "",
+    };
+
+    if (!nombre.trim()) {
+      newErrors.nombre = "Introduce tu nombre";
+    }
+
+    if (!email.trim()) {
+      newErrors.email = "Introduce tu correo electrónico";
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "Introduce un correo electrónico válido";
+    }
+
+    if (!password.trim()) {
+      newErrors.password = "Introduce una contraseña";
+    }
+
+    setErrors(newErrors);
+
+    if (newErrors.nombre || newErrors.email || newErrors.password) {
+      return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/usuarios/register`, {
         method: "POST",
@@ -89,28 +123,73 @@ export default function RegisterScreen() {
               <TextInput
                 placeholder="Nombre"
                 placeholderTextColor={colors.subtext}
-                style={componentStyles.input}
+                style={[
+                  componentStyles.input,
+                  errors.nombre && styles.inputError,
+                ]}
                 value={nombre}
-                onChangeText={setNombre}
+                onChangeText={(text) => {
+                  setNombre(text);
+
+                  if (errors.nombre) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      nombre: "",
+                    }));
+                  }
+                }}
               />
+              {errors.nombre ? (
+                <Text style={styles.errorText}>{errors.nombre}</Text>
+              ) : null}
 
               <TextInput
                 placeholder="Correo electronico"
                 placeholderTextColor={colors.subtext}
-                style={componentStyles.input}
+                style={[
+                  componentStyles.input,
+                  errors.email && styles.inputError,
+                ]}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+
+                  if (errors.email) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      email: "",
+                    }));
+                  }
+                }}
                 autoCapitalize="none"
               />
+              {errors.email ? (
+                <Text style={styles.errorText}>{errors.email}</Text>
+              ) : null}
 
               <TextInput
                 placeholder="Contraseña"
                 placeholderTextColor={colors.subtext}
                 secureTextEntry
-                style={componentStyles.input}
+                style={[
+                  componentStyles.input,
+                  errors.password && styles.inputError,
+                ]}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+
+                  if (errors.password) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      password: "",
+                    }));
+                  }
+                }}
               />
+              {errors.password ? (
+                <Text style={styles.errorText}>{errors.password}</Text>
+              ) : null}
 
               <Button
                 title="Crear cuenta"
@@ -192,5 +271,14 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.primary,
     textAlign: "center",
+  },
+  inputError: {
+    borderColor: colors.danger,
+  },
+
+  errorText: {
+    ...typography.caption,
+    color: colors.danger,
+    marginTop: -6,
   },
 });
