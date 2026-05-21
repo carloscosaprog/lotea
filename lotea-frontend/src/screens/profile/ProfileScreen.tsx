@@ -282,22 +282,20 @@ export default function ProfileScreen() {
       </Card>
 
       <Card>
-        <View style={styles.accountSection}>
-          <View style={styles.accountIcon}>
-            <Ionicons
-              name="sparkles-outline"
-              size={20}
-              color={colors.primary}
-            />
-          </View>
-          <View style={styles.accountCopy}>
-            <Text style={styles.accountTitle}>Tu perfil publico</Text>
-            <Text style={styles.accountText}>
-              Mantén tu nombre y tu avatar actualizados desde Editar.
-            </Text>
-          </View>
-          <Button title="Cerrar sesion" variant="danger" onPress={logout} />
+        <View style={styles.accountCopy}>
+          <Text style={styles.accountTitle}>Cerrar sesión</Text>
+
+          <Text style={styles.accountText}>
+            Finaliza la sesión de este dispositivo.
+          </Text>
         </View>
+        <Button
+          title="Cerrar sesión"
+          variant="danger"
+          onPress={logout}
+          style={styles.logoutButton}
+          textStyle={styles.logoutButtonText}
+        />
       </Card>
 
       <Modal visible={avatarOpen} transparent animationType="fade">
@@ -410,29 +408,32 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   accountSection: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: spacing.md,
   },
   accountIcon: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: radii.full,
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#FEE2E2",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#FECACA",
   },
   accountCopy: {
     flex: 1,
     gap: 2,
   },
   accountTitle: {
-    ...typography.bodyStrong,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "800",
     color: colors.text,
   },
   accountText: {
-    ...typography.caption,
+    ...typography.body,
     color: colors.subtext,
+    marginTop: 2,
   },
   avatarModal: {
     flex: 1,
@@ -492,5 +493,25 @@ const styles = StyleSheet.create({
     color: colors.subtext,
     textAlign: "center",
     marginTop: spacing.xs,
+  },
+  logoutButton: {
+    marginTop: spacing.sm,
+
+    minHeight: 52,
+    borderRadius: 14,
+
+    backgroundColor: "#FEE2E2",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+
+    shadowColor: "#EF4444",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  logoutButtonText: {
+    color: "#DC2626",
+    fontWeight: "800",
   },
 });
