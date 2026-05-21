@@ -47,11 +47,14 @@ export default function LoginScreen() {
       });
 
       const data = await response.json();
+
       // console.log("LOGIN RESPONSE:", data); // mostrar el login
 
       // Se adapta el manejo de errores al formato típico de NestJS (message)
       if (!response.ok) {
-        throw new Error(data.message || data.error || "Error en login");
+        throw new Error(
+          "El correo electrónico o la contraseña son incorrectos",
+        );
       }
 
       await login(data.user, data.access_token);
@@ -101,7 +104,13 @@ export default function LoginScreen() {
                   error ? styles.inputError : null,
                 ]}
                 value={identifier}
-                onChangeText={setIdentifier}
+                onChangeText={(text) => {
+                  setIdentifier(text);
+
+                  if (error) {
+                    setError("");
+                  }
+                }}
                 autoCapitalize="none"
               />
 
@@ -114,7 +123,13 @@ export default function LoginScreen() {
                   error ? styles.inputError : null,
                 ]}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+
+                  if (error) {
+                    setError("");
+                  }
+                }}
               />
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
