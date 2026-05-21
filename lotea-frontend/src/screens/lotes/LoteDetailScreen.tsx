@@ -90,7 +90,6 @@ function RelatedLoteCard({ lote }: { lote: Lote }) {
     >
       <View style={styles.relatedImageWrap}>
         <Image source={{ uri: imageUri }} style={styles.relatedImage} />
-        <View style={styles.relatedImageShade} />
 
         <TouchableOpacity
           activeOpacity={0.88}
@@ -100,12 +99,14 @@ function RelatedLoteCard({ lote }: { lote: Lote }) {
             handleToggleFavorito();
           }}
         >
-          <Ionicons
-            name={isFavorito ? "heart" : "heart-outline"}
-            size={17}
-            color={isFavorito ? colors.danger : colors.text}
-          />
-          <Text style={styles.relatedFavoriteText}>{totalFavoritos}</Text>
+          <View style={styles.relatedFavoriteContent}>
+            <Ionicons
+              name={isFavorito ? "heart" : "heart-outline"}
+              size={16}
+              color={isFavorito ? "red" : "white"}
+            />
+            <Text style={styles.relatedFavoriteText}>{totalFavoritos}</Text>
+          </View>
         </TouchableOpacity>
 
         {locationLabel && (
@@ -1126,37 +1127,26 @@ const styles = StyleSheet.create({
     height: "100%",
     resizeMode: "cover",
   },
-  relatedImageShade: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 60,
-    backgroundColor: "rgba(17,24,39,0.20)",
-  },
+
   relatedFavorite: {
     position: "absolute",
-    top: spacing.md,
-    right: spacing.md,
-    minWidth: 48,
-    height: 36,
+    top: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.42)",
+    paddingHorizontal: 7,
+    paddingVertical: 5,
     borderRadius: radii.full,
-    backgroundColor: "rgba(255,255,255,0.95)",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-    paddingHorizontal: spacing.xs,
-    shadowColor: "#0F172A",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3,
+    zIndex: 5,
   },
   relatedFavoriteText: {
     fontSize: 12,
-    color: colors.text,
-    fontWeight: "700",
+    color: colors.white,
+    fontWeight: "600",
+  },
+  relatedFavoriteContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   relatedLocationBadge: {
     position: "absolute",
