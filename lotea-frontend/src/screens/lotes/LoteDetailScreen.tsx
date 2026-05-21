@@ -383,7 +383,7 @@ export default function LoteDetailScreen() {
             <View style={styles.actionButtonContent}>
               <Ionicons
                 name="pencil-outline"
-                size={18}
+                size={26}
                 color={colors.primary}
               />
               <Text style={styles.actionButtonText}>Editar</Text>
@@ -395,7 +395,7 @@ export default function LoteDetailScreen() {
             activeOpacity={0.85}
           >
             <View style={styles.actionButtonContent}>
-              <Ionicons name="trash-outline" size={18} color={colors.white} />
+              <Ionicons name="trash-outline" size={24} color={colors.white} />
               <Text style={[styles.actionButtonText, { color: colors.white }]}>
                 Eliminar
               </Text>
@@ -630,7 +630,7 @@ export default function LoteDetailScreen() {
           activeOpacity={0.85}
         >
           <View style={styles.buyButtonContent}>
-            <Ionicons name="bag-check-outline" size={20} color={colors.white} />
+            <Ionicons name="bag-check-outline" size={24} color={colors.white} />
             <Text style={styles.buyButtonText}>Comprar lote</Text>
           </View>
         </TouchableOpacity>
@@ -643,7 +643,11 @@ export default function LoteDetailScreen() {
             activeOpacity={0.85}
           >
             <View style={styles.contactButtonContent}>
-              <Ionicons name="chatbox-outline" size={20} color={colors.white} />
+              <Ionicons
+                name="chatbox-outline"
+                size={24}
+                color={colors.primary}
+              />
               <Text style={styles.contactButtonText}>
                 {contacting ? "Abriendo chat..." : "Contactar con vendedor"}
               </Text>
@@ -757,7 +761,8 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.primary,
     fontWeight: "800",
-    fontSize: 15,
+    paddingTop: 2,
+    fontSize: 20,
   },
   editButton: {
     backgroundColor: "#EFF6FF",
@@ -1230,12 +1235,17 @@ const styles = StyleSheet.create({
   buyButton: {
     minHeight: 68,
     borderRadius: radii.lg,
-    backgroundColor: colors.primary,
+
+    backgroundColor: "#3B82F6",
+    borderWidth: 1,
+    borderColor: "#60A5FA",
+
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.3,
+
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
     shadowRadius: 20,
     elevation: 8,
   },
@@ -1243,25 +1253,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: spacing.md,
+    gap: spacing.xs,
   },
   buyButtonText: {
     ...typography.bodyStrong,
     color: colors.white,
     fontWeight: "900",
-    fontSize: 16,
+    fontSize: 18,
+    lineHeight: 24,
+    paddingTop: 5,
   },
   contactButton: {
     minHeight: 68,
     borderRadius: radii.lg,
-    backgroundColor: "#6B7280",
+
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#0F172A",
+
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowRadius: 14,
+    elevation: 4,
   },
   contactButtonContent: {
     flexDirection: "row",
@@ -1271,9 +1288,10 @@ const styles = StyleSheet.create({
   },
   contactButtonText: {
     ...typography.bodyStrong,
-    color: colors.white,
+    color: colors.primary,
     fontWeight: "800",
-    fontSize: 15,
+    fontSize: 17,
+    lineHeight: 23,
   },
   modal: {
     flex: 1,
