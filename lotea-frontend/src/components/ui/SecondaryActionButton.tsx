@@ -4,6 +4,7 @@ import {
   StyleSheet,
   StyleProp,
   ViewStyle,
+  TextStyle,
 } from "react-native";
 
 import { colors } from "../../styles/colors";
@@ -15,6 +16,7 @@ interface Props {
   onPress: () => void;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
 }
 
 export default function SecondaryActionButton({
@@ -22,6 +24,7 @@ export default function SecondaryActionButton({
   onPress,
   disabled,
   style,
+  textStyle,
 }: Props) {
   return (
     <TouchableOpacity
@@ -30,7 +33,7 @@ export default function SecondaryActionButton({
       disabled={disabled}
       activeOpacity={0.85}
     >
-      <Text style={styles.text}>{title}</Text>
+      <Text style={[styles.text, textStyle]}>{title}</Text>
     </TouchableOpacity>
   );
 }

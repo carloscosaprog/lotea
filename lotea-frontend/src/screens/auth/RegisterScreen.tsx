@@ -11,10 +11,11 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  ImageBackground,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-import Button from "../../components/ui/Button";
+import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
@@ -101,14 +102,18 @@ export default function RegisterScreen() {
           contentContainerStyle={styles.screenContent}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.hero}>
+          <ImageBackground
+            source={require("../../assets/backgrounds/login-hero-fluid.png")}
+            style={styles.hero}
+            imageStyle={styles.heroImage}
+          >
             <View style={styles.heroGlowLarge} />
             <View style={styles.heroGlowSmall} />
             <Text style={styles.brand}>LOTEA</Text>
             <Text style={styles.heroSubtitle}>
               Crea tu cuenta para publicar, vender y gestionar lotes.
             </Text>
-          </View>
+          </ImageBackground>
 
           <Card style={styles.formCard}>
             <View style={styles.formSection}>
@@ -191,10 +196,10 @@ export default function RegisterScreen() {
                 <Text style={styles.errorText}>{errors.password}</Text>
               ) : null}
 
-              <Button
+              <PrimaryActionButton
                 title="Crear cuenta"
-                variant="accent"
                 onPress={handleRegister}
+                style={styles.registerButton}
               />
 
               <TouchableOpacity
@@ -229,6 +234,19 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     padding: spacing.xl,
     overflow: "hidden",
+  },
+  heroImage: {
+    borderRadius: radii.xl,
+  },
+  registerButton: {
+    backgroundColor: colors.accent,
+    borderColor: "#10B981",
+
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    elevation: 8,
   },
   heroGlowLarge: {
     position: "absolute",
