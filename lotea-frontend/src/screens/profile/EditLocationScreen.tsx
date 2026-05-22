@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Keyboard,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -195,10 +196,18 @@ export default function EditLocationScreen() {
         return;
       }
 
-      await applyCoordinates(firstResult.latitude, firstResult.longitude, query);
+      await applyCoordinates(
+        firstResult.latitude,
+        firstResult.longitude,
+        query,
+      );
     } catch (error) {
       console.log("Error buscando ubicacion", error);
-      Alert.alert("Error", "No se pudo buscar esa ubicacion");
+
+      Alert.alert(
+        "Permiso necesario",
+        "Para buscar una ubicación o usar tu GPS debes conceder permisos de ubicación.",
+      );
     } finally {
       setSearching(false);
     }
@@ -219,10 +228,29 @@ export default function EditLocationScreen() {
       if (!permission.granted) {
         setPermissionDenied(true);
         setHasLocationPermission(false);
-        Alert.alert(
-          "Permiso necesario",
-          "Activa la ubicacion para usar tu posicion actual.",
-        );
+
+        if (!permission.canAskAgain) {
+          Alert.alert(
+            "Permiso bloqueado",
+            "Debes activar el permiso de ubicación desde los ajustes de la aplicación.",
+            [
+              {
+                text: "Cancelar",
+                style: "cancel",
+              },
+              {
+                text: "Abrir ajustes",
+                onPress: () => Linking.openSettings(),
+              },
+            ],
+          );
+        } else {
+          Alert.alert(
+            "Permiso necesario",
+            "Debes conceder permiso de ubicación para usar tu posición actual.",
+          );
+        }
+
         return;
       }
 
@@ -320,7 +348,11 @@ export default function EditLocationScreen() {
                 activeOpacity={0.8}
                 onPress={() => setSearchText("")}
               >
-                <Ionicons name="close-circle" size={18} color={colors.subtext} />
+                <Ionicons
+                  name="close-circle"
+                  size={18}
+                  color={colors.subtext}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -466,10 +498,7 @@ export default function EditLocationScreen() {
                 size={15}
                 color={colors.accent}
               />
-              <Text style={styles.approxBadgeText}>
-                Guardado aproximado: {selectedLocation.latitud.toFixed(3)},{" "}
-                {selectedLocation.longitud.toFixed(3)}
-              </Text>
+              <Text style={styles.approxBadgeText}>Guardado aproximado</Text>
             </View>
           )}
 
