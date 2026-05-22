@@ -429,7 +429,7 @@ export default function HomeScreen() {
     sheetAnim.setValue(0);
     Animated.timing(sheetAnim, {
       toValue: 1,
-      duration: 260,
+      duration: 300,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     }).start();
@@ -853,13 +853,6 @@ export default function HomeScreen() {
                         Afina tu busqueda sin llenar el Home de controles.
                       </Text>
                     </View>
-                    <TouchableOpacity
-                      activeOpacity={0.85}
-                      style={styles.closeButton}
-                      onPress={closeFilters}
-                    >
-                      <Ionicons name="close" size={20} color={colors.text} />
-                    </TouchableOpacity>
                   </View>
 
                   <ScrollView
@@ -1772,7 +1765,7 @@ const styles = StyleSheet.create({
   feedFavorite: {
     position: "absolute",
     top: 10,
-    right: 10,
+    left: 10,
     backgroundColor: "rgba(0,0,0,0.42)",
     paddingHorizontal: 7,
     paddingVertical: 5,
