@@ -13,10 +13,19 @@ import { useRoute, useNavigation } from "@react-navigation/native";
 
 import { getLotesByUser } from "../../services/lotesService";
 import { getUserById } from "../../services/authService";
+import {
+  getCalificacionesByVendedor,
+  getResumenCalificaciones,
+} from "../../services/calificacionesService";
 import LoteCard from "../../components/lotes/LoteCardUserProfile";
 import Avatar from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
+import RatingStars from "../../components/ui/RatingStars";
 import type { Lote } from "../../types/Lote";
+import type {
+  Calificacion,
+  ResumenCalificaciones,
+} from "../../types/Calificacion";
 import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
@@ -30,19 +39,41 @@ export default function UserProfileScreen() {
 
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [calificaciones, setCalificaciones] = useState<Calificacion[]>([]);
+  const [resumenCalificaciones, setResumenCalificaciones] =
+    useState<ResumenCalificaciones>({
+      media: 0,
+      total: 0,
+      distribucion: {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0,
+      },
+    });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         if (id) {
-          const [lotesData, userData] = await Promise.all([
+          const [
+            lotesData,
+            userData,
+            calificacionesData,
+            resumenCalificacionesData,
+          ] = await Promise.all([
             getLotesByUser(Number(id)),
             getUserById(Number(id)),
+            getCalificacionesByVendedor(Number(id)),
+            getResumenCalificaciones(Number(id)),
           ]);
 
           setLotes(lotesData);
           setUser(userData);
+          setCalificaciones(calificacionesData);
+          setResumenCalificaciones(resumenCalificacionesData);
         }
       } catch (error) {
         console.log("Error cargando datos:", error);
@@ -67,8 +98,11 @@ export default function UserProfileScreen() {
     (sum, lote) => sum + Number(lote.cantidad || 0),
     0,
   );
-  const avatarUri = user?.avatar ? getImageUrl(user.avatar) : null;
   const homeFluidBackground = require("../../assets/backgrounds/home-fluid-bg.png");
+  const maxDistribucion = Math.max(
+    1,
+    ...Object.values(resumenCalificaciones.distribucion),
+  );
 
   return (
     <View style={layoutStyles.screen}>
@@ -112,6 +146,13 @@ export default function UserProfileScreen() {
                       <Text style={styles.email}>
                         {user.email || "Sin email"}
                       </Text>
+
+                      <RatingStars
+                        value={resumenCalificaciones.media}
+                        total={resumenCalificaciones.total}
+                        showValue
+                        style={styles.heroRating}
+                      />
                     </View>
                   </View>
 
@@ -133,6 +174,111 @@ export default function UserProfileScreen() {
                 </View>
               </ImageBackground>
             )}
+
+            <View style={styles.reviewsSection}>
+              <View style={layoutStyles.pageHeader}>
+                <Text style={layoutStyles.headerEyebrow}>Reputacion</Text>
+                <Text style={styles.sectionTitle}>Calificaciones</Text>
+                <Text style={layoutStyles.headerSubtitle}>
+                  Opiniones verificadas de compradores con pedidos entregados.
+                </Text>
+              </View>
+
+              <Card contentStyle={styles.summaryCardContent}>
+                <View style={styles.summaryTop}>
+                  <View>
+                    <Text style={styles.summaryValue}>
+                      {resumenCalificaciones.media.toFixed(1)}
+                    </Text>
+                    <RatingStars value={resumenCalificaciones.media} />
+                  </View>
+
+                  <Text style={styles.summaryTotal}>
+                    {resumenCalificaciones.total}{" "}
+                    {resumenCalificaciones.total === 1
+                      ? "valoracion"
+                      : "valoraciones"}
+                  </Text>
+                </View>
+
+                <View style={styles.distributionList}>
+                  {[5, 4, 3, 2, 1].map((star) => {
+                    const count =
+                      resumenCalificaciones.distribucion[
+                        star as 1 | 2 | 3 | 4 | 5
+                      ];
+
+                    return (
+                      <View key={star} style={styles.distributionRow}>
+                        <Text style={styles.distributionLabel}>
+                          {star} estrellas
+                        </Text>
+                        <View style={styles.distributionTrack}>
+                          <View
+                            style={[
+                              styles.distributionFill,
+                              {
+                                width: `${(count / maxDistribucion) * 100}%`,
+                              },
+                            ]}
+                          />
+                        </View>
+                        <Text style={styles.distributionCount}>{count}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </Card>
+
+              {calificaciones.length > 0 ? (
+                calificaciones.map((calificacion) => (
+                  <Card
+                    key={calificacion.id_calificacion}
+                    contentStyle={styles.reviewCardContent}
+                  >
+                    <View style={styles.reviewTopRow}>
+                      <View style={styles.reviewBuyer}>
+                        <Avatar
+                          uri={
+                            calificacion.comprador?.avatar
+                              ? getImageUrl(calificacion.comprador.avatar)
+                              : null
+                          }
+                          name={calificacion.comprador?.nombre}
+                          size={42}
+                        />
+                        <View style={styles.reviewBuyerCopy}>
+                          <Text style={styles.reviewBuyerName}>
+                            {calificacion.comprador?.nombre ?? "Comprador"}
+                          </Text>
+                          <Text style={styles.reviewDate}>
+                            {new Date(
+                              calificacion.fecha_creacion,
+                            ).toLocaleDateString()}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <RatingStars value={calificacion.puntuacion} />
+                    </View>
+
+                    <Text style={styles.reviewComment}>
+                      {calificacion.comentario ||
+                        "El comprador no anadio comentario."}
+                    </Text>
+                  </Card>
+                ))
+              ) : (
+                <Card contentStyle={styles.reviewCardContent}>
+                  <Text style={styles.emptyTitle}>
+                    Este vendedor aun no tiene calificaciones
+                  </Text>
+                  <Text style={styles.emptyText}>
+                    Las opiniones apareceran aqui tras pedidos entregados.
+                  </Text>
+                </Card>
+              )}
+            </View>
 
             <View style={layoutStyles.pageHeader}>
               <Text style={layoutStyles.headerEyebrow}>
@@ -226,6 +372,9 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.subtext,
   },
+  heroRating: {
+    marginTop: spacing.xs,
+  },
   heroSubtitle: {
     ...typography.body,
     color: colors.subtext,
@@ -282,6 +431,88 @@ const styles = StyleSheet.create({
     ...typography.title,
     color: colors.text,
     marginTop: spacing.sm,
+  },
+  reviewsSection: {
+    gap: spacing.md,
+  },
+  summaryCardContent: {
+    gap: spacing.md,
+  },
+  summaryTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  summaryValue: {
+    ...typography.display,
+    color: colors.text,
+    fontWeight: "800",
+  },
+  summaryTotal: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+  },
+  distributionList: {
+    gap: spacing.sm,
+  },
+  distributionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  distributionLabel: {
+    ...typography.caption,
+    color: colors.subtext,
+    width: 78,
+  },
+  distributionTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: radii.full,
+    backgroundColor: "#E5E7EB",
+    overflow: "hidden",
+  },
+  distributionFill: {
+    height: "100%",
+    borderRadius: radii.full,
+    backgroundColor: colors.warning,
+  },
+  distributionCount: {
+    ...typography.caption,
+    color: colors.text,
+    width: 24,
+    textAlign: "right",
+  },
+  reviewCardContent: {
+    gap: spacing.md,
+  },
+  reviewTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+  },
+  reviewBuyer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  reviewBuyerCopy: {
+    flex: 1,
+  },
+  reviewBuyerName: {
+    ...typography.bodyStrong,
+    color: colors.text,
+  },
+  reviewDate: {
+    ...typography.caption,
+    color: colors.subtext,
+  },
+  reviewComment: {
+    ...typography.body,
+    color: colors.subtext,
   },
   emptyCard: {
     marginHorizontal: spacing.lg,

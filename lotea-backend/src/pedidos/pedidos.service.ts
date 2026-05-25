@@ -42,6 +42,7 @@ export class PedidosService {
         },
       },
     },
+    calificacion: true,
   };
 
   private readonly estadosSimulacion = [

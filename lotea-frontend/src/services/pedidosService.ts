@@ -2,6 +2,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { API_URL } from "../config/api";
+import { normalizeCalificacion } from "./calificacionesService";
 import { normalizeLote } from "./lotesService";
 import type { CreatePedidoPayload, Pedido } from "../types/Pedido";
 
@@ -15,6 +16,9 @@ const normalizePedido = (raw: any): Pedido => ({
         lote: normalizeLote(detalle.lote),
       }))
     : [],
+  calificacion: raw?.calificacion
+    ? normalizeCalificacion(raw.calificacion)
+    : null,
 });
 
 const authHeaders = async () => {

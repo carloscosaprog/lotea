@@ -1,4 +1,5 @@
 import type { Lote } from "./Lote";
+import type { Calificacion } from "./Calificacion";
 
 export type EstadoPedido =
   | "pendiente_pago"
@@ -40,6 +41,7 @@ export type Pedido = {
     avatar?: string | null;
   } | null;
   detalles: DetallePedido[];
+  calificacion?: Calificacion | null;
 };
 
 export type CreatePedidoPayload = {

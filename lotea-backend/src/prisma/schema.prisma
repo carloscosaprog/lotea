@@ -28,6 +28,8 @@ model Usuario {
   mensajes_enviados   Mensaje[]        @relation("Emisor")
   mensajes_recibidos  Mensaje[]        @relation("Receptor")
   notificaciones    Notificacion[]
+  calificaciones_comprador Calificacion[] @relation("CompradorCalificaciones")
+  calificaciones_vendedor  Calificacion[] @relation("VendedorCalificaciones")
 
   @@map("usuario")
 }
@@ -125,8 +127,27 @@ model Pedido {
 
   usuario    Usuario          @relation(fields: [id_usuario], references: [id_usuario], onDelete: Cascade)
   detalles   Detalle_Pedido[]
+  calificacion Calificacion?
 
   @@map("pedido")
+}
+
+model Calificacion {
+  id_calificacion Int      @id @default(autoincrement())
+  id_pedido       Int      @unique
+  id_comprador    Int
+  id_vendedor     Int
+  puntuacion      Int
+  comentario      String?
+  fecha_creacion  DateTime @default(now())
+
+  pedido     Pedido  @relation(fields: [id_pedido], references: [id_pedido], onDelete: Cascade)
+  comprador  Usuario @relation("CompradorCalificaciones", fields: [id_comprador], references: [id_usuario], onDelete: Restrict)
+  vendedor   Usuario @relation("VendedorCalificaciones", fields: [id_vendedor], references: [id_usuario], onDelete: Restrict)
+
+  @@index([id_vendedor, fecha_creacion])
+  @@index([id_comprador])
+  @@map("calificacion")
 }
 
 model Detalle_Pedido {
