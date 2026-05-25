@@ -30,6 +30,15 @@ export interface Lote {
 
   total_favoritos?: number;
   isFavorito?: boolean;
+  vendido?: boolean;
+  total_vendido?: number;
+  compradores?: Array<{
+    id_usuario: number;
+    nombre: string;
+    email?: string;
+    cantidad: number;
+    total: number;
+  }>;
 }
 
 export type LoteCreate = {
