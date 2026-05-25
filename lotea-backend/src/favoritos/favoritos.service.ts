@@ -45,10 +45,28 @@ export class FavoritosService {
   findByUsuario(id_usuario: number) {
     return this.prisma.favorito.findMany({
       where: { id_usuario },
+
       include: {
         lote: {
           include: {
             imagenes: true,
+
+            vendedor: {
+              select: {
+                id_usuario: true,
+                nombre: true,
+                ciudad: true,
+                direccion: true,
+                latitud: true,
+                longitud: true,
+              },
+            },
+
+            categorias: {
+              include: {
+                categoria: true,
+              },
+            },
 
             _count: {
               select: {

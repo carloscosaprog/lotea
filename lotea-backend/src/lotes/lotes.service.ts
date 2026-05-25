@@ -183,14 +183,34 @@ export class LotesService {
 
     const lotes = await this.prisma.lote.findMany({
       where,
-      include: this.loteInclude,
+
+      include: {
+        ...this.loteInclude,
+
+        favoritos: id_usuario
+          ? {
+              where: {
+                id_usuario,
+              },
+
+              select: {
+                id_favorito: true,
+              },
+            }
+          : false,
+      },
+
       orderBy: {
         fecha_publicacion: "desc",
       },
     });
 
     const lotesWithLocation = lotes
-      .map((lote) => this.addLocationData(lote, origin))
+      .map((lote) => ({
+        ...this.addLocationData(lote, origin),
+
+        isFavorito: id_usuario ? lote.favoritos.length > 0 : false,
+      }))
       .filter((lote) =>
         origin && maxDistance
           ? (lote.distancia_km ?? Infinity) <= maxDistance
