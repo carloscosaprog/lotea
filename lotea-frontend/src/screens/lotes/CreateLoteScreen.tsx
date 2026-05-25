@@ -230,7 +230,13 @@ export default function CreateLoteScreen() {
           </Card>
         )}
 
-        <Card contentStyle={styles.formCardContent}>
+        <Card
+          contentStyle={[
+            styles.formCardContent,
+            currentStep === 2 && styles.step2CardContent,
+            currentStep === 3 && styles.step3CardContent,
+          ]}
+        >
           <View style={styles.formSection}>
             {currentStep === 1 && (
               <>
@@ -600,7 +606,13 @@ const styles = StyleSheet.create({
     height: 22,
   },
   formCardContent: {
-    paddingBottom: 100, // se puede ir aumentando el valor para hacer el card mas grande
+    paddingBottom: 90, // se puede ir aumentando el valor para hacer el card mas grande
+  },
+  step2CardContent: {
+    paddingBottom: 24,
+  },
+  step3CardContent: {
+    paddingBottom: 24,
   },
   formSection: {
     gap: spacing.md,
