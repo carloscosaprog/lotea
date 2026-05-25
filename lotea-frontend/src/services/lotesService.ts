@@ -66,6 +66,14 @@ export const normalizeLote = (raw: any): Lote => {
       ? {
           id_usuario: lote.vendedor.id_usuario,
           nombre: lote.vendedor.nombre ?? "Usuario",
+          email:
+            typeof lote.vendedor.email === "string"
+              ? lote.vendedor.email
+              : undefined,
+          avatar:
+            typeof lote.vendedor.avatar === "string"
+              ? lote.vendedor.avatar
+              : null,
           latitud:
             typeof lote.vendedor.latitud === "number"
               ? lote.vendedor.latitud

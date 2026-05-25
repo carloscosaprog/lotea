@@ -12,6 +12,7 @@ import { PedidosModule } from './pedidos/pedidos.module';
 import { GruposCompraModule } from './grupos-compra/grupos-compra.module';
 import { SolicitudesLoteModule } from './solicitudes-lote/solicitudes-lote.module';
 import { MensajesModule } from './mensajes/mensajes.module';
+import { CalificacionesModule } from './calificaciones/calificaciones.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MensajesModule } from './mensajes/mensajes.module';
     GruposCompraModule,
     SolicitudesLoteModule,
     MensajesModule,
+    CalificacionesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
