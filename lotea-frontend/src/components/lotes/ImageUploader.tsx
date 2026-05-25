@@ -17,9 +17,10 @@ import { typography } from "../../styles/typography";
 
 interface Props {
   onChange: (files: any[]) => void;
+  hasError?: boolean;
 }
 
-export default function ImageUploader({ onChange }: Props) {
+export default function ImageUploader({ onChange, hasError = false }: Props) {
   const [images, setImages] = useState<any[]>([]);
 
   const pickImages = async () => {
@@ -46,12 +47,21 @@ export default function ImageUploader({ onChange }: Props) {
 
   return (
     <View style={styles.wrapper}>
-      <Pressable style={styles.uploadBox} onPress={pickImages}>
+      <Pressable
+        style={[styles.uploadBox, hasError && styles.uploadBoxError]}
+        onPress={pickImages}
+      >
         <View style={styles.uploadIcon}>
-          <Ionicons name="cloud-upload-outline" size={28} color={colors.primary} />
+          <Ionicons
+            name="cloud-upload-outline"
+            size={28}
+            color={colors.primary}
+          />
         </View>
         <Text style={styles.uploadTitle}>Subir imagenes</Text>
-        <Text style={styles.uploadSubtitle}>Agrega fotos del lote, hasta 10</Text>
+        <Text style={styles.uploadSubtitle}>
+          Agrega fotos del lote, hasta 10
+        </Text>
       </Pressable>
 
       <FlatList
@@ -91,6 +101,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: radii.lg,
     borderStyle: "dashed",
+  },
+  uploadBoxError: {
+    borderColor: "#EF4444",
+    backgroundColor: "#FEF2F2",
   },
   uploadIcon: {
     width: 68,

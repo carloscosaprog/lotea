@@ -81,9 +81,16 @@ export default function LoteCard({ lote }: Props) {
             </View>
           </TouchableOpacity>
 
-          {totalImagenes > 1 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>1/{totalImagenes}</Text>
+          {locationLabel && (
+            <View style={styles.locationBadge}>
+              <Ionicons
+                name="location-outline"
+                size={12}
+                color={colors.white}
+              />
+              <Text style={styles.locationBadgeText} numberOfLines={1}>
+                {locationLabel}
+              </Text>
             </View>
           )}
         </View>
@@ -125,20 +132,34 @@ export default function LoteCard({ lote }: Props) {
 const styles = StyleSheet.create({
   wrapper: {
     flex: 1,
+    maxWidth: "48%",
   },
   card: {
     marginBottom: spacing.sm,
-    height: 324,
+    width: 350,
+    height: 350,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: "#E0ECFF",
+    overflow: "hidden",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
   },
   content: {
     padding: 0,
   },
   imageContainer: {
+    height: 154,
+    backgroundColor: "#E5E7EB",
     position: "relative",
   },
   image: {
     width: "100%",
-    height: 140,
+    height: "100%",
+    resizeMode: "cover",
   },
   likeButton: {
     position: "absolute",
@@ -159,32 +180,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
-  badge: {
+  locationBadge: {
     position: "absolute",
-    top: spacing.sm,
+    left: spacing.sm,
     right: spacing.sm,
-    backgroundColor: "rgba(17, 24, 39, 0.72)",
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 5,
+    bottom: spacing.sm,
+    minHeight: 28,
     borderRadius: radii.full,
+    backgroundColor: "rgba(17,24,39,0.62)",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    gap: spacing.xxs,
   },
-  badgeText: {
+
+  locationBadgeText: {
+    ...typography.caption,
     color: colors.white,
-    fontSize: 10,
-    fontWeight: "700",
+    flex: 1,
   },
   info: {
+    height: 138,
     padding: spacing.md,
+    gap: spacing.sm,
   },
   title: {
     ...typography.bodyStrong,
     color: colors.text,
-    minHeight: 44,
+    minHeight: 10,
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: "800",
   },
   subtitle: {
     ...typography.caption,
     color: colors.subtext,
-    marginTop: 4,
+    marginTop: 2,
+    fontSize: 13,
+    fontWeight: "600",
   },
   locationRow: {
     flexDirection: "row",
@@ -196,12 +229,17 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.subtext,
     flex: 1,
+    fontSize: 13,
+    fontWeight: "600",
   },
   categoryWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.xs,
     marginTop: spacing.xs,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "#EFF6FF",
   },
   categoryPill: {
     paddingHorizontal: spacing.xs,
@@ -215,8 +253,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   price: {
-    ...typography.heading,
-    color: colors.text,
-    marginTop: spacing.sm,
+    ...typography.bodyStrong,
+    color: colors.accent,
   },
 });

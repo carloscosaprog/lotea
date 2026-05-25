@@ -131,7 +131,10 @@ export default function EditProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.topBar}>
-          <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.goBack()}
+          >
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.topBarTitle}>Editar perfil</Text>
@@ -139,7 +142,6 @@ export default function EditProfileScreen() {
         </View>
 
         <Card style={styles.heroCard} contentStyle={styles.heroContent}>
-          <View style={styles.heroGlow} />
           <TouchableOpacity activeOpacity={0.9} onPress={pickAvatar}>
             {avatarUri ? (
               <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
@@ -233,15 +235,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     overflow: "hidden",
   },
-  heroGlow: {
-    position: "absolute",
-    top: -40,
-    right: -34,
-    width: 180,
-    height: 180,
-    borderRadius: radii.full,
-    backgroundColor: "rgba(255,255,255,0.18)",
-  },
+
   avatarImage: {
     width: 112,
     height: 112,

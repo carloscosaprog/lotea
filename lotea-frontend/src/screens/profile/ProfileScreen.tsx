@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  Pressable,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -38,30 +39,28 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
-    const loadProfile = async () => {
-      try {
-        const [profileData, lotesData, conversationsData] = await Promise.all([
-          getProfile(),
-          getMisLotes(),
-          getConversations(),
-        ]);
-        setUser(profileData);
-        setMyLotes(lotesData);
-        setUnreadMessages(
-          conversationsData.reduce(
-            (total, conversation) => total + (conversation.unreadCount ?? 0),
-            0,
-          ),
-        );
-      } catch (error) {
-        console.error(error);
-        Alert.alert("Error al cargar perfil");
-      } finally {
-        setLoading(false);
-      }
-    };
+      const loadProfile = async () => {
+        try {
+          const [profileData, lotesData, conversationsData] = await Promise.all(
+            [getProfile(), getMisLotes(), getConversations()],
+          );
+          setUser(profileData);
+          setMyLotes(lotesData);
+          setUnreadMessages(
+            conversationsData.reduce(
+              (total, conversation) => total + (conversation.unreadCount ?? 0),
+              0,
+            ),
+          );
+        } catch (error) {
+          console.error(error);
+          Alert.alert("Error al cargar perfil");
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    loadProfile();
+      loadProfile();
     }, []),
   );
 
@@ -97,32 +96,30 @@ export default function ProfileScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.topBar}>
-        <View style={{ width: 22 }} />
         <Text style={styles.topBarTitle}>Perfil</Text>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate("EditProfile")}
-        >
-          <Text style={styles.topBarAction}>Editar</Text>
-        </TouchableOpacity>
       </View>
-
       <Card>
-        <View style={styles.profileRow}>
-          <TouchableOpacity
-            onPress={() => avatarUri && setAvatarOpen(true)}
-            activeOpacity={0.9}
-          >
-            <Avatar uri={avatarUri} name={user.nombre} size={64} />
-          </TouchableOpacity>
+        <Pressable
+          onPress={() => navigation.navigate("EditProfile")}
+          style={({ pressed }) => [
+            styles.profilePressable,
+            pressed && styles.profilePressablePressed,
+          ]}
+          android_ripple={{ color: "rgba(59,130,246,0.08)" }}
+        >
+          <View style={styles.profileRow}>
+            <TouchableOpacity onPress={() => avatarUri && setAvatarOpen(true)}>
+              <Avatar uri={avatarUri} name={user.nombre} size={64} />
+            </TouchableOpacity>
 
-          <View style={styles.profileCopy}>
-            <Text style={styles.name}>{user.nombre}</Text>
-            <Text style={styles.email}>{user.email}</Text>
+            <View style={styles.profileCopy}>
+              <Text style={styles.name}>{user.nombre}</Text>
+              <Text style={styles.email}>{user.email}</Text>
+            </View>
+
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </View>
-
-          <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
-        </View>
+        </Pressable>
       </Card>
 
       <View style={styles.statsRow}>
@@ -143,61 +140,73 @@ export default function ProfileScreen() {
       </View>
 
       {/* MIS LOTES */}
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={() => navigation.navigate("MisLotes")}
-      >
-        <Card>
+      <Card>
+        <Pressable
+          onPress={() => navigation.navigate("MisLotes")}
+          style={({ pressed }) => [
+            styles.actionPressable,
+            pressed && styles.actionPressablePressed,
+          ]}
+          android_ripple={{ color: "rgba(59,130,246,0.08)" }}
+        >
           <View style={styles.quickAction}>
             <View style={styles.quickActionLeft}>
               <View style={styles.quickIcon}>
                 <Ionicons
                   name="cube-outline"
-                  size={18}
+                  size={20}
                   color={colors.primary}
                 />
               </View>
               <Text style={styles.quickActionText}>Mis lotes</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </View>
-        </Card>
-      </TouchableOpacity>
+        </Pressable>
+      </Card>
 
       {/* MIS PEDIDOS */}
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={() => navigation.navigate("MisPedidos")}
-      >
-        <Card>
+      <Card>
+        <Pressable
+          onPress={() => navigation.navigate("MisPedidos")}
+          style={({ pressed }) => [
+            styles.actionPressable,
+            pressed && styles.actionPressablePressed,
+          ]}
+          android_ripple={{ color: "rgba(59,130,246,0.08)" }}
+        >
           <View style={styles.quickAction}>
             <View style={styles.quickActionLeft}>
               <View style={styles.quickIcon}>
                 <Ionicons
                   name="receipt-outline"
-                  size={18}
+                  size={20}
                   color={colors.primary}
                 />
               </View>
               <Text style={styles.quickActionText}>Mis pedidos</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </View>
-        </Card>
-      </TouchableOpacity>
+        </Pressable>
+      </Card>
 
       {/* MI UBICACION */}
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={() => navigation.navigate("EditLocation")}
-      >
-        <Card>
+      <Card>
+        <Pressable
+          onPress={() => navigation.navigate("EditLocation")}
+          style={({ pressed }) => [
+            styles.actionPressable,
+            pressed && styles.actionPressablePressed,
+          ]}
+          android_ripple={{ color: "rgba(59,130,246,0.08)" }}
+        >
           <View style={styles.quickAction}>
             <View style={styles.quickActionLeft}>
               <View style={styles.quickIcon}>
                 <Ionicons
                   name="location-outline"
-                  size={18}
+                  size={20}
                   color={colors.primary}
                 />
               </View>
@@ -208,45 +217,53 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </View>
-        </Card>
-      </TouchableOpacity>
+        </Pressable>
+      </Card>
 
       {/* MIS FAVORITOS */}
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={() => navigation.navigate("Favoritos")}
-      >
-        <Card>
+      <Card>
+        <Pressable
+          onPress={() => navigation.navigate("Favoritos")}
+          style={({ pressed }) => [
+            styles.actionPressable,
+            pressed && styles.actionPressablePressed,
+          ]}
+          android_ripple={{ color: "rgba(59,130,246,0.08)" }}
+        >
           <View style={styles.quickAction}>
             <View style={styles.quickActionLeft}>
               <View style={styles.quickIcon}>
                 <Ionicons
                   name="heart-outline"
-                  size={18}
+                  size={20}
                   color={colors.primary}
                 />
               </View>
               <Text style={styles.quickActionText}>Mis favoritos</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </View>
-        </Card>
-      </TouchableOpacity>
+        </Pressable>
+      </Card>
 
       {/* MIS CONVERSACIONES */}
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={() => navigation.navigate("Conversations")}
-      >
-        <Card>
+      <Card>
+        <Pressable
+          onPress={() => navigation.navigate("Conversations")}
+          style={({ pressed }) => [
+            styles.actionPressable,
+            pressed && styles.actionPressablePressed,
+          ]}
+          android_ripple={{ color: "rgba(59,130,246,0.08)" }}
+        >
           <View style={styles.quickAction}>
             <View style={styles.quickActionLeft}>
               <View style={styles.quickIcon}>
                 <Ionicons
                   name="chatbubble-ellipses-outline"
-                  size={18}
+                  size={20}
                   color={colors.primary}
                 />
               </View>
@@ -259,24 +276,26 @@ export default function ProfileScreen() {
                 </View>
               )}
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </View>
-        </Card>
-      </TouchableOpacity>
+        </Pressable>
+      </Card>
 
       <Card>
-        <View style={styles.accountSection}>
-          <View style={styles.accountIcon}>
-            <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
-          </View>
-          <View style={styles.accountCopy}>
-            <Text style={styles.accountTitle}>Tu perfil publico</Text>
-            <Text style={styles.accountText}>
-              Mantén tu nombre y tu avatar actualizados desde Editar.
-            </Text>
-          </View>
-          <Button title="Cerrar sesion" variant="danger" onPress={logout} />
+        <View style={styles.accountCopy}>
+          <Text style={styles.accountTitle}>Cerrar sesión</Text>
+
+          <Text style={styles.accountText}>
+            Finaliza la sesión de este dispositivo.
+          </Text>
         </View>
+        <Button
+          title="Cerrar sesión"
+          variant="danger"
+          onPress={logout}
+          style={styles.logoutButton}
+          textStyle={styles.logoutButtonText}
+        />
       </Card>
 
       <Modal visible={avatarOpen} transparent animationType="fade">
@@ -300,18 +319,14 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   topBar: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
   },
   topBarTitle: {
     ...typography.heading,
     color: colors.text,
   },
-  topBarAction: {
-    ...typography.bodyStrong,
-    color: colors.primary,
-  },
+
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -338,7 +353,8 @@ const styles = StyleSheet.create({
   },
   statContent: {
     paddingVertical: spacing.md,
-    alignItems: "flex-start",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 2,
   },
   statValue: {
@@ -360,15 +376,17 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   quickIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radii.md,
+    width: 48,
+    height: 48,
+    borderRadius: radii.lg,
     backgroundColor: "#DBEAFE",
     alignItems: "center",
     justifyContent: "center",
   },
   quickActionText: {
-    ...typography.bodyStrong,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: "600",
     color: colors.text,
   },
   quickActionHint: {
@@ -391,29 +409,32 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   accountSection: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: spacing.md,
   },
   accountIcon: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: radii.full,
-    backgroundColor: "#DBEAFE",
+    backgroundColor: "#FEE2E2",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#FECACA",
   },
   accountCopy: {
     flex: 1,
     gap: 2,
   },
   accountTitle: {
-    ...typography.bodyStrong,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "800",
     color: colors.text,
   },
   accountText: {
-    ...typography.caption,
+    ...typography.body,
     color: colors.subtext,
+    marginTop: 2,
   },
   avatarModal: {
     flex: 1,
@@ -450,10 +471,48 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: "center",
   },
+  profilePressable: {
+    borderRadius: radii.xl,
+    padding: spacing.md,
+  },
+
+  profilePressablePressed: {
+    backgroundColor: "rgba(59,130,246,0.06)",
+    transform: [{ scale: 0.992 }],
+  },
+
+  actionPressable: {
+    borderRadius: radii.xl,
+  },
+
+  actionPressablePressed: {
+    backgroundColor: "rgba(59,130,246,0.06)",
+    transform: [{ scale: 0.992 }],
+  },
   feedbackText: {
     ...typography.body,
     color: colors.subtext,
     textAlign: "center",
     marginTop: spacing.xs,
+  },
+  logoutButton: {
+    marginTop: spacing.sm,
+
+    minHeight: 52,
+    borderRadius: 14,
+
+    backgroundColor: "#FEE2E2",
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+
+    shadowColor: "#EF4444",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  logoutButtonText: {
+    color: "#DC2626",
+    fontWeight: "800",
   },
 });

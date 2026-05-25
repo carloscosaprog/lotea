@@ -14,7 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import { getMisLotes, deleteLote } from "../../services/lotesService";
 import type { Lote } from "../../types/Lote";
-import Button from "../../components/ui/Button";
+import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
@@ -111,15 +111,15 @@ export default function MisLotesScreen() {
             <Text style={styles.emptyText}>
               Publica tu primer lote para empezar a vender dentro de LOTEA.
             </Text>
-            <Button
+            <PrimaryActionButton
               title="Crear mi primer lote"
               onPress={() => navigation.navigate("Vender")}
-              style={styles.emptyButton}
+              style={{ marginTop: spacing.lg }}
             />
           </Card>
         }
         renderItem={({ item }) => (
-          <Card contentStyle={styles.cardContent}>
+          <Card contentStyle={styles.cardContent} style={styles.marketCard}>
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.info}
@@ -145,23 +145,39 @@ export default function MisLotesScreen() {
             </TouchableOpacity>
 
             <View style={styles.actionsRow}>
-              <Button
-                title="Editar"
-                variant="secondary"
-                style={styles.actionButton}
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[styles.actionButton, styles.editButton]}
                 onPress={() =>
                   navigation.navigate("Perfil", {
                     screen: "EditLote",
                     params: { id: item.id_lote },
                   })
                 }
-              />
-              <Button
-                title="Eliminar"
-                variant="danger"
-                style={styles.actionButton}
+              >
+                <View style={styles.actionButtonContent}>
+                  <Ionicons
+                    name="pencil-outline"
+                    size={18}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.editButtonText}>Editar</Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[styles.actionButton, styles.deleteButton]}
                 onPress={() => handleDelete(item.id_lote)}
-              />
+              >
+                <View style={styles.actionButtonContent}>
+                  <Ionicons
+                    name="trash-outline"
+                    size={18}
+                    color={colors.white}
+                  />
+                  <Text style={styles.deleteButtonText}>Eliminar</Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </Card>
         )}
@@ -204,17 +220,18 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     marginHorizontal: spacing.lg,
-    gap: spacing.md,
+    gap: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   info: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: spacing.lg,
     alignItems: "center",
   },
   image: {
-    width: 88,
-    height: 88,
-    borderRadius: radii.md,
+    width: 110,
+    height: 110,
+    borderRadius: radii.lg,
     backgroundColor: "#E5E7EB",
   },
   copy: {
@@ -224,6 +241,9 @@ const styles = StyleSheet.create({
   titleItem: {
     ...typography.bodyStrong,
     color: colors.text,
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: "800",
   },
   subtitle: {
     ...typography.caption,
@@ -232,13 +252,60 @@ const styles = StyleSheet.create({
   price: {
     ...typography.heading,
     color: colors.accent,
+    fontWeight: "900",
+    fontSize: 20,
   },
   actionsRow: {
     flexDirection: "row",
     gap: spacing.sm,
+
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: "#EFF6FF",
   },
   actionButton: {
     flex: 1,
+    minHeight: 52,
+    borderRadius: radii.md,
+
+    justifyContent: "center",
+    alignItems: "center",
+
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  actionButtonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+
+  editButton: {
+    backgroundColor: "#EFF6FF",
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+  },
+
+  deleteButton: {
+    backgroundColor: colors.danger,
+  },
+
+  editButtonText: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+    fontWeight: "800",
+    fontSize: 15,
+  },
+
+  deleteButtonText: {
+    ...typography.bodyStrong,
+    color: colors.white,
+    fontWeight: "800",
+    fontSize: 15,
   },
   emptyTitle: {
     ...typography.heading,
@@ -251,5 +318,14 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     marginTop: spacing.lg,
+  },
+  marketCard: {
+    borderWidth: 1,
+    borderColor: "#E0ECFF",
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 3,
   },
 });

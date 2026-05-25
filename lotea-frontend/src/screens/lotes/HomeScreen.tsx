@@ -8,6 +8,7 @@ import {
   FlatList,
   Image,
   Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -188,7 +189,6 @@ function MarketplaceLotCard({
     >
       <View style={styles.productImageWrap}>
         <Image source={{ uri: imageUri }} style={styles.productImage} />
-        <View style={styles.productImageShade} />
 
         <TouchableOpacity
           activeOpacity={0.88}
@@ -198,12 +198,14 @@ function MarketplaceLotCard({
             handleToggleFavorito();
           }}
         >
-          <Ionicons
-            name={isFavorito ? "heart" : "heart-outline"}
-            size={17}
-            color={isFavorito ? colors.danger : colors.text}
-          />
-          <Text style={styles.productFavoriteText}>{totalFavoritos}</Text>
+          <View style={styles.productFavoriteContent}>
+            <Ionicons
+              name={isFavorito ? "heart" : "heart-outline"}
+              size={16}
+              color={isFavorito ? "red" : "white"}
+            />
+            <Text style={styles.productFavoriteText}>{totalFavoritos}</Text>
+          </View>
         </TouchableOpacity>
 
         {locationLabel && (
@@ -288,6 +290,7 @@ function MarketplaceListCard({
     >
       <View style={styles.feedImageWrap}>
         <Image source={{ uri: imageUri }} style={styles.feedImage} />
+
         {category && (
           <View style={styles.feedCategoryBadge}>
             <Text style={styles.feedCategoryText} numberOfLines={1}>
@@ -296,27 +299,29 @@ function MarketplaceListCard({
           </View>
         )}
       </View>
+      <TouchableOpacity
+        activeOpacity={0.88}
+        style={styles.feedFavorite}
+        onPress={(event) => {
+          event.stopPropagation();
+          handleToggleFavorito();
+        }}
+      >
+        <View style={styles.feedFavoriteContent}>
+          <Ionicons
+            name={isFavorito ? "heart" : "heart-outline"}
+            size={16}
+            color={isFavorito ? "red" : "white"}
+          />
+          <Text style={styles.feedFavoriteText}>{totalFavoritos}</Text>
+        </View>
+      </TouchableOpacity>
 
       <View style={styles.feedInfo}>
         <View style={styles.feedTopRow}>
           <Text style={styles.feedTitle} numberOfLines={2}>
             {lote.titulo}
           </Text>
-          <TouchableOpacity
-            activeOpacity={0.86}
-            style={styles.feedFavorite}
-            onPress={(event) => {
-              event.stopPropagation();
-              handleToggleFavorito();
-            }}
-          >
-            <Ionicons
-              name={isFavorito ? "heart" : "heart-outline"}
-              size={17}
-              color={isFavorito ? colors.danger : colors.subtext}
-            />
-            <Text style={styles.feedFavoriteText}>{totalFavoritos}</Text>
-          </TouchableOpacity>
         </View>
 
         <Text style={styles.feedUnits} numberOfLines={1}>
@@ -325,7 +330,11 @@ function MarketplaceListCard({
 
         {locationLabel && (
           <View style={styles.feedLocationRow}>
-            <Ionicons name="location-outline" size={13} color={colors.subtext} />
+            <Ionicons
+              name="location-outline"
+              size={13}
+              color={colors.subtext}
+            />
             <Text style={styles.feedLocationText} numberOfLines={1}>
               {locationLabel}
             </Text>
@@ -358,20 +367,72 @@ export default function HomeScreen() {
   const [priceFilterEnabled, setPriceFilterEnabled] = useState(false);
   const [minPriceValue, setMinPriceValue] = useState(0);
   const [maxPriceValue, setMaxPriceValue] = useState(0);
-  const [sortBy, setSortBy] = useState<"newest" | "nearest">("newest");
   const [favoritesVersion, setFavoritesVersion] = useState(0);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [activeFilterCategory, setActiveFilterCategory] =
     useState<Categoria | null>(null);
   const contentAnim = useRef(new Animated.Value(0)).current;
   const sheetAnim = useRef(new Animated.Value(0)).current;
+  const dragY = useRef(new Animated.Value(0)).current;
   const profileCity = (user as any)?.ciudad;
+
+  const closeFilters = (fromDrag = false) => {
+    const targetDrag = fromDrag ? 520 : 0;
+
+    Animated.parallel([
+      Animated.timing(sheetAnim, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dragY, {
+        toValue: targetDrag,
+        duration: fromDrag ? 180 : 0,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setFiltersVisible(false);
+        setActiveFilterCategory(null);
+        dragY.setValue(0);
+      }
+    });
+  };
+
+  const sheetPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dy) > 6 && Math.abs(gestureState.dx) < 10,
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          dragY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const shouldClose = gestureState.dy > 120 || gestureState.vy > 1.1;
+
+        if (shouldClose) {
+          closeFilters(true);
+          return;
+        }
+
+        Animated.spring(dragY, {
+          toValue: 0,
+          useNativeDriver: true,
+          speed: 18,
+          bounciness: 6,
+        }).start();
+      },
+    }),
+  ).current;
 
   const fetchLotes = useCallback(async () => {
     try {
       const data = await getLotes({
         maxDistance: distanceFilterEnabled ? distanceValue : undefined,
-        sortBy,
       });
       setLotes(data);
     } catch (error) {
@@ -379,7 +440,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, [distanceFilterEnabled, distanceValue, sortBy]);
+  }, [distanceFilterEnabled, distanceValue]);
 
   useEffect(() => {
     if (loadingAuth) {
@@ -421,13 +482,15 @@ export default function HomeScreen() {
     if (!filtersVisible) return;
 
     sheetAnim.setValue(0);
-    Animated.timing(sheetAnim, {
+    dragY.setValue(0);
+    Animated.spring(sheetAnim, {
       toValue: 1,
-      duration: 260,
-      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
+      damping: 22,
+      stiffness: 180,
+      mass: 0.9,
     }).start();
-  }, [filtersVisible, sheetAnim]);
+  }, [filtersVisible, sheetAnim, dragY]);
 
   const catalogMaxPrice = useMemo(() => {
     return Math.max(0, ...lotes.map((lote) => Number(lote.precio) || 0));
@@ -549,17 +612,10 @@ export default function HomeScreen() {
     if (!activeCategories.includes("Todas")) count += activeCategories.length;
     if (distanceFilterEnabled) count += 1;
     if (priceFilterEnabled) count += 1;
-    if (sortBy === "nearest") count += 1;
     if (search.trim().length > 0) count += 1;
 
     return count;
-  }, [
-    activeCategories,
-    distanceFilterEnabled,
-    priceFilterEnabled,
-    search,
-    sortBy,
-  ]);
+  }, [activeCategories, distanceFilterEnabled, priceFilterEnabled, search]);
 
   const selectedCategoriesLabel = activeCategories.includes("Todas")
     ? "Todas las categorias"
@@ -599,10 +655,13 @@ export default function HomeScreen() {
     opacity: sheetAnim,
     transform: [
       {
-        translateY: sheetAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [360, 0],
-        }),
+        translateY: Animated.add(
+          sheetAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [520, 0],
+          }),
+          dragY,
+        ),
       },
     ],
   };
@@ -610,20 +669,6 @@ export default function HomeScreen() {
   const handleFavoriteChange = () => setFavoritesVersion((prev) => prev + 1);
 
   const openFilters = () => setFiltersVisible(true);
-
-  const closeFilters = () => {
-    Animated.timing(sheetAnim, {
-      toValue: 0,
-      duration: 180,
-      easing: Easing.in(Easing.cubic),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) {
-        setFiltersVisible(false);
-        setActiveFilterCategory(null);
-      }
-    });
-  };
 
   const clearFilters = () => {
     setActiveCategories(["Todas"]);
@@ -633,7 +678,6 @@ export default function HomeScreen() {
     setPriceFilterEnabled(false);
     setMinPriceValue(0);
     setMaxPriceValue(catalogMaxPrice);
-    setSortBy("newest");
   };
 
   const renderHorizontalLote = ({ item }: { item: Lote }) => (
@@ -748,26 +792,35 @@ export default function HomeScreen() {
                       onPress={openFilters}
                     >
                       <Ionicons
-                        name="options-outline"
+                        name="options"
                         size={18}
-                        color={colors.white}
+                        color={colors.primary}
                       />
                       <Text style={styles.filterButtonText}>Filtros</Text>
                     </TouchableOpacity>
                   </View>
 
                   <View style={styles.heroMetaRow}>
-                    <Text style={styles.heroMetaText} numberOfLines={1}>
-                      {sortBy === "nearest" ? "Cercanos" : "Recientes"} -{" "}
-                      {distanceFilterEnabled
-                        ? `${distanceValue} km`
-                        : "sin limite de distancia"}{" "}
-                      -{" "}
-                      {priceFilterEnabled
-                        ? `${minPriceValue}-${maxPriceValue} EUR`
-                        : "todos los precios"}{" "}
-                      - {selectedCategoriesLabel}
+                    <Text style={styles.heroMetaText} numberOfLines={2}>
+                      {activeFiltersCount === 0
+                        ? "Descubre oportunidades seleccionadas para ti"
+                        : [
+                            distanceFilterEnabled
+                              ? `hasta ${distanceValue} km`
+                              : null,
+
+                            priceFilterEnabled
+                              ? `entre ${minPriceValue} y ${maxPriceValue} EUR`
+                              : null,
+
+                            !activeCategories.includes("Todas")
+                              ? `${activeCategories.length} categorias seleccionadas`
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" • ")}
                     </Text>
+
                     {activeFiltersCount > 0 && (
                       <View style={styles.activeFiltersBadge}>
                         <Text style={styles.activeFiltersText}>
@@ -775,29 +828,6 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                     )}
-                  </View>
-
-                  <View style={styles.heroStatsRow}>
-                    <View style={styles.heroStat}>
-                      <Text style={styles.heroStatValue}>
-                        {filteredLotes.length}
-                      </Text>
-                      <Text style={styles.heroStatLabel}>lotes activos</Text>
-                    </View>
-                    <View style={styles.heroStatDivider} />
-                    <View style={styles.heroStat}>
-                      <Text style={styles.heroStatValue}>
-                        {favoritos.length}
-                      </Text>
-                      <Text style={styles.heroStatLabel}>favoritos</Text>
-                    </View>
-                    <View style={styles.heroStatDivider} />
-                    <View style={styles.heroStat}>
-                      <Text style={styles.heroStatValue}>
-                        {distanceFilterEnabled ? `${distanceValue} km` : "100+"}
-                      </Text>
-                      <Text style={styles.heroStatLabel}>alcance</Text>
-                    </View>
                   </View>
                 </View>
               </ImageBackground>
@@ -855,27 +885,31 @@ export default function HomeScreen() {
               visible={filtersVisible}
               transparent
               animationType="fade"
-              onRequestClose={closeFilters}
+              onRequestClose={() => closeFilters()}
             >
               <View style={styles.modalRoot}>
-                <Pressable style={styles.modalOverlay} onPress={closeFilters} />
+                <Animated.View
+                  style={[styles.modalOverlay, { opacity: sheetAnim }]}
+                >
+                  <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={() => closeFilters()}
+                  />
+                </Animated.View>
                 <Animated.View style={[styles.filterSheet, sheetAnimatedStyle]}>
-                  <View style={styles.sheetHandle} />
-
-                  <View style={styles.sheetHeader}>
-                    <View>
-                      <Text style={styles.sheetTitle}>Filtros</Text>
-                      <Text style={styles.sheetSubtitle}>
-                        Afina tu busqueda sin llenar el Home de controles.
-                      </Text>
+                  <View
+                    style={styles.sheetDragArea}
+                    {...sheetPanResponder.panHandlers}
+                  >
+                    <View style={styles.sheetHandle} />
+                    <View style={styles.sheetHeader}>
+                      <View>
+                        <Text style={styles.sheetTitle}>Filtros</Text>
+                        <Text style={styles.sheetSubtitle}>
+                          Afina tu busqueda sin llenar el Home de controles.
+                        </Text>
+                      </View>
                     </View>
-                    <TouchableOpacity
-                      activeOpacity={0.85}
-                      style={styles.closeButton}
-                      onPress={closeFilters}
-                    >
-                      <Ionicons name="close" size={20} color={colors.text} />
-                    </TouchableOpacity>
                   </View>
 
                   <ScrollView
@@ -899,75 +933,6 @@ export default function HomeScreen() {
                           placeholderTextColor={colors.subtext}
                           style={styles.searchInput}
                         />
-                      </View>
-                    </View>
-
-                    <View style={styles.filterGroup}>
-                      <Text style={styles.filterGroupTitle}>Prioridad</Text>
-                      <View style={styles.sortList}>
-                        <TouchableOpacity
-                          activeOpacity={0.9}
-                          style={[
-                            styles.sortOption,
-                            sortBy === "newest" && styles.sortOptionActive,
-                          ]}
-                          onPress={() => setSortBy("newest")}
-                        >
-                          <View style={styles.sortOptionIcon}>
-                            <Ionicons
-                              name="sparkles-outline"
-                              size={17}
-                              color={colors.primary}
-                            />
-                          </View>
-                          <View style={styles.sortOptionCopy}>
-                            <Text style={styles.sortOptionTitle}>
-                              Novedades primero
-                            </Text>
-                            <Text style={styles.sortOptionText}>
-                              Ideal para ver oportunidades recien publicadas.
-                            </Text>
-                          </View>
-                          {sortBy === "newest" && (
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={20}
-                              color={colors.primary}
-                            />
-                          )}
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          activeOpacity={0.9}
-                          style={[
-                            styles.sortOption,
-                            sortBy === "nearest" && styles.sortOptionActive,
-                          ]}
-                          onPress={() => setSortBy("nearest")}
-                        >
-                          <View style={styles.sortOptionIcon}>
-                            <Ionicons
-                              name="navigate-outline"
-                              size={17}
-                              color={colors.primary}
-                            />
-                          </View>
-                          <View style={styles.sortOptionCopy}>
-                            <Text style={styles.sortOptionTitle}>
-                              Mejor por cercania
-                            </Text>
-                            <Text style={styles.sortOptionText}>
-                              Prioriza lotes con referencia de distancia.
-                            </Text>
-                          </View>
-                          {sortBy === "nearest" && (
-                            <Ionicons
-                              name="checkmark-circle"
-                              size={20}
-                              color={colors.primary}
-                            />
-                          )}
-                        </TouchableOpacity>
                       </View>
                     </View>
 
@@ -998,7 +963,6 @@ export default function HomeScreen() {
                           ]}
                           onPress={() => {
                             setDistanceFilterEnabled((current) => !current);
-                            setSortBy("nearest");
                           }}
                         >
                           <Text
@@ -1216,7 +1180,7 @@ export default function HomeScreen() {
                     <TouchableOpacity
                       activeOpacity={0.86}
                       style={styles.applyButton}
-                      onPress={closeFilters}
+                      onPress={() => closeFilters()}
                     >
                       <Text style={styles.applyButtonText}>
                         Ver {filteredLotes.length} lotes
@@ -1326,19 +1290,30 @@ const styles = StyleSheet.create({
   filterButton: {
     minHeight: 52,
     borderRadius: radii.full,
-    backgroundColor: colors.primary,
+    backgroundColor: "#F0F7FF",
+    borderWidth: 1,
+    borderColor: "#BFDBFE",
+
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.md,
+
+    paddingHorizontal: spacing.lg,
     gap: spacing.xs,
+
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
   filterButtonText: {
-    ...typography.caption,
-    color: colors.white,
+    ...typography.bodyStrong,
+    color: colors.primary,
     fontWeight: "700",
   },
   heroMetaRow: {
+    minHeight: 52,
     marginTop: spacing.md,
     padding: spacing.sm,
     borderRadius: radii.lg,
@@ -1457,6 +1432,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 26,
     elevation: 8,
+  },
+  sheetDragArea: {
+    paddingTop: spacing.sm,
+    backgroundColor: "#F7FAFF",
   },
   sheetHandle: {
     alignSelf: "center",
@@ -1845,22 +1824,24 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   feedFavorite: {
-    minWidth: 46,
-    height: 32,
+    position: "absolute",
+    top: 10,
+    left: 10,
+    backgroundColor: "rgba(0,0,0,0.42)",
+    paddingHorizontal: 7,
+    paddingVertical: 5,
     borderRadius: radii.full,
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: colors.border,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    paddingHorizontal: spacing.xs,
+    zIndex: 5,
   },
   feedFavoriteText: {
+    color: "white",
     fontSize: 12,
-    color: colors.text,
-    fontWeight: "700",
+    fontWeight: "600",
+  },
+  feedFavoriteContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   feedUnits: {
     ...typography.caption,
@@ -1921,32 +1902,25 @@ const styles = StyleSheet.create({
     height: "100%",
     resizeMode: "cover",
   },
-  productImageShade: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 58,
-    backgroundColor: "rgba(17,24,39,0.18)",
-  },
   productFavorite: {
     position: "absolute",
-    top: spacing.sm,
-    right: spacing.sm,
-    minWidth: 48,
-    height: 34,
+    top: 10,
+    left: 10,
+    backgroundColor: "rgba(0,0,0,0.42)",
+    paddingHorizontal: 7,
+    paddingVertical: 5,
     borderRadius: radii.full,
-    backgroundColor: "rgba(255,255,255,0.92)",
+    zIndex: 5,
+  },
+  productFavoriteContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
     gap: 4,
-    paddingHorizontal: spacing.xs,
   },
   productFavoriteText: {
+    color: "white",
     fontSize: 12,
-    color: colors.text,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   productLocationBadge: {
     position: "absolute",
@@ -1974,7 +1948,7 @@ const styles = StyleSheet.create({
   productTitle: {
     ...typography.bodyStrong,
     color: colors.text,
-    minHeight: 44,
+    minHeight: 15,
   },
   productMetaRow: {
     flexDirection: "row",

@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: 140,
+    paddingBottom: 20,
     gap: spacing.lg,
   },
   topBar: {

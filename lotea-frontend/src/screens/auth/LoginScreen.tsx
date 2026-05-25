@@ -10,11 +10,12 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  ImageBackground,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
 import { useAuth } from "../../context/AuthContext";
-import Button from "../../components/ui/Button";
+import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
@@ -47,11 +48,14 @@ export default function LoginScreen() {
       });
 
       const data = await response.json();
+
       // console.log("LOGIN RESPONSE:", data); // mostrar el login
 
       // Se adapta el manejo de errores al formato típico de NestJS (message)
       if (!response.ok) {
-        throw new Error(data.message || data.error || "Error en login");
+        throw new Error(
+          "El correo electrónico o la contraseña son incorrectos",
+        );
       }
 
       await login(data.user, data.access_token);
@@ -74,14 +78,18 @@ export default function LoginScreen() {
           contentContainerStyle={styles.screenContent}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.hero}>
+          <ImageBackground
+            source={require("../../assets/backgrounds/login-hero-fluid.png")}
+            style={styles.hero}
+            imageStyle={styles.heroImage}
+          >
             <View style={styles.heroGlowLarge} />
             <View style={styles.heroGlowSmall} />
             <Text style={styles.brand}>LOTEA</Text>
             <Text style={styles.heroSubtitle}>
               Accede para gestionar tus lotes y seguir vendiendo.
             </Text>
-          </View>
+          </ImageBackground>
 
           <Card style={styles.formCard}>
             <View style={styles.formSection}>
@@ -101,7 +109,13 @@ export default function LoginScreen() {
                   error ? styles.inputError : null,
                 ]}
                 value={identifier}
-                onChangeText={setIdentifier}
+                onChangeText={(text) => {
+                  setIdentifier(text);
+
+                  if (error) {
+                    setError("");
+                  }
+                }}
                 autoCapitalize="none"
               />
 
@@ -114,12 +128,18 @@ export default function LoginScreen() {
                   error ? styles.inputError : null,
                 ]}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(text) => {
+                  setPassword(text);
+
+                  if (error) {
+                    setError("");
+                  }
+                }}
               />
 
               {error ? <Text style={styles.error}>{error}</Text> : null}
 
-              <Button
+              <PrimaryActionButton
                 title="Entrar"
                 onPress={handleLogin}
                 style={styles.primaryButton}
@@ -157,6 +177,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     padding: spacing.xl,
     overflow: "hidden",
+  },
+  heroImage: {
+    borderRadius: radii.xl,
   },
   heroGlowLarge: {
     position: "absolute",

@@ -85,15 +85,6 @@ export default function Button({
         style,
       ]}
     >
-      <View
-        pointerEvents="none"
-        style={[
-          styles.glow,
-          {
-            backgroundColor: palette.accentColor,
-          },
-        ]}
-      />
       <Text style={[styles.text, { color: palette.textColor }, textStyle]}>
         {title}
       </Text>
@@ -110,15 +101,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.lg,
     overflow: "hidden",
-  },
-  glow: {
-    position: "absolute",
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    top: -82,
-    right: -36,
-    opacity: 0.18,
   },
   text: {
     ...typography.bodyStrong,
