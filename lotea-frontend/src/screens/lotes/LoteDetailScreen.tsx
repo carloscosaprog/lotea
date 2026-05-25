@@ -164,6 +164,20 @@ export default function LoteDetailScreen() {
   const [contacting, setContacting] = useState(false);
 
   const scale = useRef(new Animated.Value(1)).current;
+  const galleryRef = useRef<FlatList<any> | null>(null);
+  const modalGalleryRef = useRef<FlatList<any> | null>(null);
+  const scrollStartX = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const isProgrammaticScroll = useRef(false);
+  const dotAnim = useRef(new Animated.Value(imagenActual)).current;
+
+  useEffect(() => {
+    Animated.timing(dotAnim, {
+      toValue: imagenActual,
+      duration: 260,
+      useNativeDriver: false,
+    }).start();
+  }, [imagenActual, dotAnim]);
   const currentUser = user as { id?: number; id_usuario?: number } | null;
   const currentUserId = currentUser?.id ?? currentUser?.id_usuario;
 
@@ -179,6 +193,24 @@ export default function LoteDetailScreen() {
       }).start();
     }
   };
+
+  useEffect(() => {
+    if (fullscreen && modalGalleryRef.current) {
+      modalGalleryRef.current.scrollToIndex({
+        index: imagenActual,
+        animated: false,
+      });
+    }
+  }, [fullscreen, imagenActual]);
+
+  useEffect(() => {
+    if (!fullscreen && galleryRef.current) {
+      galleryRef.current.scrollToIndex({
+        index: imagenActual,
+        animated: false,
+      });
+    }
+  }, [fullscreen, imagenActual]);
 
   useEffect(() => {
     const fetchLote = async () => {
@@ -327,6 +359,9 @@ export default function LoteDetailScreen() {
   }
 
   const imagenes = Array.isArray(lote.imagenes) ? lote.imagenes : [];
+  const galleryWidth = screenWidth - spacing.lg * 2;
+  const imageSources =
+    imagenes.length > 0 ? imagenes : ["https://via.placeholder.com/300"];
   const categorias = getLoteCategories(lote);
   const nombreVendedor =
     typeof vendedor?.nombre === "string"
@@ -405,35 +440,138 @@ export default function LoteDetailScreen() {
       )}
 
       <View style={styles.galleryContainer}>
-        <TouchableOpacity
-          activeOpacity={0.95}
-          onPress={() => setFullscreen(true)}
-          style={styles.mainImageWrapper}
-        >
-          <Image
-            source={{
-              uri: imagenes[imagenActual]
-                ? getImageUrl(imagenes[imagenActual])
-                : "https://via.placeholder.com/300",
-            }}
-            style={styles.mainImage}
-          />
-          <View style={styles.imageOverlay}></View>
-        </TouchableOpacity>
+        <FlatList
+          ref={galleryRef}
+          data={imageSources}
+          horizontal
+          pagingEnabled
+          nestedScrollEnabled
+          decelerationRate="fast"
+          showsHorizontalScrollIndicator={false}
+          style={{ width: galleryWidth }}
+          contentContainerStyle={{ alignItems: "center" }}
+          keyExtractor={(_, index) => index.toString()}
+          onScrollBeginDrag={(e) => {
+            isDragging.current = true;
+            scrollStartX.current = e.nativeEvent.contentOffset.x;
+          }}
+          onScrollEndDrag={(e) => {
+            isDragging.current = false;
+            const endX = e.nativeEvent.contentOffset.x;
+            const startX = scrollStartX.current ?? 0;
+            const dx = endX - startX;
+            const threshold = galleryWidth * 0.12;
+            let newIndex = imagenActual;
+
+            if (Math.abs(dx) > threshold) {
+              // swipe left -> dx > 0 (moved to the right) -> next image
+              if (dx > 0)
+                newIndex = Math.min(imagenes.length - 1, imagenActual + 1);
+              else newIndex = Math.max(0, imagenActual - 1);
+            } else {
+              // small drag -> snap back to current
+              newIndex = imagenActual;
+            }
+
+            // mark programmatic scroll to avoid conflicting momentum updates
+            isProgrammaticScroll.current = true;
+            galleryRef.current?.scrollToOffset({
+              offset: newIndex * galleryWidth,
+              animated: true,
+            });
+            setImagenActual(newIndex);
+          }}
+          onMomentumScrollEnd={(e) => {
+            // if we initiated the scroll programmatically, just clear flag
+            const index = Math.round(
+              e.nativeEvent.contentOffset.x / galleryWidth,
+            );
+            if (isProgrammaticScroll.current) {
+              isProgrammaticScroll.current = false;
+              setImagenActual(index);
+              return;
+            }
+
+            // user-driven momentum: update index
+            setImagenActual(index);
+          }}
+          renderItem={({ item }) => {
+            const uri =
+              typeof item === "string" && item.startsWith("http")
+                ? item
+                : getImageUrl(item);
+            return (
+              <View style={[styles.mainImageWrapper, { width: galleryWidth }]}>
+                <TouchableOpacity
+                  activeOpacity={0.95}
+                  onPress={() => setFullscreen(true)}
+                  style={styles.mainImageTouchable}
+                >
+                  <Image source={{ uri }} style={styles.mainImage} />
+                  <View style={styles.imageOverlay}></View>
+                </TouchableOpacity>
+              </View>
+            );
+          }}
+        />
 
         {imagenes.length > 0 && (
           <View style={styles.galleryDotsContainer}>
-            {imagenes.map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                activeOpacity={0.7}
-                onPress={() => setImagenActual(index)}
-                style={[
-                  styles.galleryDot,
-                  imagenActual === index && styles.galleryDotActive,
-                ]}
-              />
-            ))}
+            {imagenes.map((_, index) => {
+              const inputRange = [index - 1, index, index + 1];
+              const width = dotAnim.interpolate({
+                inputRange,
+                outputRange: [8, 24, 8],
+                extrapolate: "clamp",
+              });
+              const height = dotAnim.interpolate({
+                inputRange,
+                outputRange: [8, 12, 8],
+                extrapolate: "clamp",
+              });
+              const translateY = dotAnim.interpolate({
+                inputRange,
+                outputRange: [0, -6, 0],
+                extrapolate: "clamp",
+              });
+              const borderRadius = dotAnim.interpolate({
+                inputRange,
+                outputRange: [4, 12, 4],
+                extrapolate: "clamp",
+              });
+
+              const bgColor =
+                imagenActual === index ? colors.primary : "#E5E7EB";
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setImagenActual(index);
+                    galleryRef.current?.scrollToIndex({
+                      index,
+                      animated: true,
+                    });
+                  }}
+                  style={{ marginHorizontal: spacing.xs }}
+                >
+                  <Animated.View
+                    style={[
+                      styles.galleryDotBase,
+                      {
+                        width,
+                        height,
+                        borderRadius,
+                        transform: [{ translateY }],
+                        backgroundColor: bgColor,
+                      },
+                      imagenActual === index && styles.galleryDotActive,
+                    ]}
+                  />
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
       </View>
@@ -669,7 +807,9 @@ export default function LoteDetailScreen() {
           </View>
 
           <FlatList
+            ref={modalGalleryRef}
             data={imagenes}
+            initialScrollIndex={imagenActual}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -681,6 +821,11 @@ export default function LoteDetailScreen() {
               );
               setImagenActual(index);
             }}
+            getItemLayout={(_, index) => ({
+              length: screenWidth,
+              offset: screenWidth * index,
+              index,
+            })}
             renderItem={({ item }) => (
               <View style={styles.fullImageContainer}>
                 <PinchGestureHandler
@@ -789,6 +934,10 @@ const styles = StyleSheet.create({
     width: "100%",
     position: "relative",
   },
+  mainImageTouchable: {
+    flex: 1,
+    position: "relative",
+  },
   mainImage: {
     width: "100%",
     height: 300,
@@ -841,6 +990,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+  },
+  galleryDotBase: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#E5E7EB",
   },
   summaryHeader: {
     flexDirection: "row",
