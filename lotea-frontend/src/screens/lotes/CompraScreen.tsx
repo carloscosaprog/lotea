@@ -38,10 +38,7 @@ export default function CompraScreen() {
   const comision = total * comisionPorcentaje;
   const totalVendedor = total - comision;
 
-  const imagenPrincipal =
-    lote.imagenes && lote.imagenes.length > 0 && lote.imagenes[0]?.url
-      ? getImageUrl(lote.imagenes[0].url)
-      : "https://picsum.photos/200";
+  const imagenPrincipal = getImageUrl(lote.imagenes?.[0]);
 
   const handleCantidadChange = (value: string) => {
     const limpio = value.replace(/[^0-9]/g, "");
@@ -223,7 +220,7 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: 140,
+    paddingBottom: 20,
     gap: spacing.lg,
   },
   topBar: {

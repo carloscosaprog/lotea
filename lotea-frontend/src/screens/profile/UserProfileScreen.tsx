@@ -6,12 +6,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  ImageBackground,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useRoute, useNavigation } from "@react-navigation/native";
 
 import { getLotesByUser } from "../../services/lotesService";
 import { getUserById } from "../../services/authService";
-import LoteCard from "../../components/lotes/LoteCard";
+import LoteCard from "../../components/lotes/LoteCardUserProfile";
 import Avatar from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
 import type { Lote } from "../../types/Lote";
@@ -19,6 +21,7 @@ import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
+import { getImageUrl } from "../../utils/getImageUrl";
 
 export default function UserProfileScreen() {
   const route = useRoute<any>();
@@ -60,41 +63,81 @@ export default function UserProfileScreen() {
     );
   }
 
+  const totalUnits = lotes.reduce(
+    (sum, lote) => sum + Number(lote.cantidad || 0),
+    0,
+  );
+  const avatarUri = user?.avatar ? getImageUrl(user.avatar) : null;
+  const homeFluidBackground = require("../../assets/backgrounds/home-fluid-bg.png");
+
   return (
     <View style={layoutStyles.screen}>
       <FlatList
         data={lotes}
         keyExtractor={(item) => item.id_lote.toString()}
-        numColumns={2}
         renderItem={({ item }) => <LoteCard lote={item} />}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={styles.content}
         ListHeaderComponent={
           <View style={styles.headerWrap}>
-            <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.8}>
-              <Text style={styles.back}>Volver</Text>
-            </TouchableOpacity>
+            <View style={styles.topBar}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="chevron-back" size={22} color={colors.text} />
+              </TouchableOpacity>
+              <Text style={styles.topBarTitle}>Perfil del vendedor</Text>
+              <View style={{ width: 22 }} />
+            </View>
 
             {user && (
-              <Card style={styles.heroCard} contentStyle={styles.heroContent}>
-                <View style={styles.heroGlow} />
-                <Avatar uri={user.avatar} name={user.nombre} size={88} />
-                <Text style={styles.username}>{user.nombre || "Sin nombre"}</Text>
-                <Text style={styles.email}>{user.email || "Sin email"}</Text>
+              <ImageBackground
+                source={homeFluidBackground}
+                style={styles.heroCard}
+                imageStyle={styles.heroBackgroundImage}
+              >
+                <View style={styles.heroOverlay}>
+                  <View style={styles.heroHeader}>
+                    <Avatar
+                      uri={user.avatar ? getImageUrl(user.avatar) : null}
+                      name={user.nombre}
+                      size={88}
+                    />
 
-                <View style={styles.statsRow}>
-                  <View style={styles.statPill}>
-                    <Text style={styles.statValue}>{lotes.length}</Text>
-                    <Text style={styles.statLabel}>
-                      {lotes.length === 1 ? "lote activo" : "lotes activos"}
-                    </Text>
+                    <View style={styles.heroProfileCopy}>
+                      <Text style={styles.username}>
+                        {user.nombre || "Sin nombre"}
+                      </Text>
+
+                      <Text style={styles.email}>
+                        {user.email || "Sin email"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.heroStatsRow}>
+                    <View style={styles.heroStat}>
+                      <Text style={styles.heroStatValue}>{lotes.length}</Text>
+
+                      <Text style={styles.heroStatLabel}>
+                        {lotes.length === 1 ? "Lote activo" : "Lotes activos"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.heroStat}>
+                      <Text style={styles.heroStatValue}>{totalUnits}</Text>
+
+                      <Text style={styles.heroStatLabel}>Unidades</Text>
+                    </View>
                   </View>
                 </View>
-              </Card>
+              </ImageBackground>
             )}
 
             <View style={layoutStyles.pageHeader}>
-              <Text style={layoutStyles.headerEyebrow}>Catalogo del vendedor</Text>
+              <Text style={layoutStyles.headerEyebrow}>
+                Catálogo del vendedor
+              </Text>
               <Text style={styles.sectionTitle}>Lotes publicados</Text>
               <Text style={layoutStyles.headerSubtitle}>
                 Explora los productos disponibles de este perfil.
@@ -104,9 +147,11 @@ export default function UserProfileScreen() {
         }
         ListEmptyComponent={
           <Card style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Este usuario aun no tiene lotes</Text>
+            <Text style={styles.emptyTitle}>
+              Este usuario aún no tiene lotes
+            </Text>
             <Text style={styles.emptyText}>
-              Vuelve mas tarde para ver nuevas publicaciones.
+              Vuelve más tarde para ver nuevas publicaciones.
             </Text>
           </Card>
         }
@@ -116,46 +161,103 @@ export default function UserProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxxl,
+    gap: spacing.lg,
+  },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFF6FF",
+  },
+  topBarTitle: {
+    ...typography.heading,
+    color: colors.text,
+    fontWeight: "800",
+    fontSize: 18,
+  },
   loadingText: {
     ...typography.body,
     color: colors.subtext,
     marginTop: spacing.sm,
   },
   headerWrap: {
-    paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
     gap: spacing.lg,
   },
-  back: {
-    ...typography.bodyStrong,
-    color: colors.primary,
-  },
   heroCard: {
-    backgroundColor: colors.primary,
-    borderColor: "#60A5FA",
+    borderRadius: radii.xl,
+    overflow: "hidden",
+    minHeight: 240,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.35)",
   },
-  heroContent: {
+  heroBackgroundImage: {
+    borderRadius: radii.xl,
+  },
+
+  heroOverlay: {
+    flex: 1,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: "rgba(255,255,255,0.72)",
+    gap: spacing.lg,
+  },
+  heroHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: spacing.xxl,
+    gap: spacing.md,
+  },
+  heroProfileCopy: {
+    flex: 1,
     gap: spacing.xs,
   },
-  heroGlow: {
-    position: "absolute",
-    top: -26,
-    right: -18,
-    width: 170,
-    height: 170,
-    borderRadius: radii.full,
-    backgroundColor: "rgba(255,255,255,0.18)",
-  },
   username: {
-    ...typography.heading,
-    color: colors.white,
+    ...typography.title,
+    color: colors.text,
+    fontWeight: "800",
   },
   email: {
     ...typography.body,
-    color: "#DBEAFE",
+    color: colors.subtext,
+  },
+  heroSubtitle: {
+    ...typography.body,
+    color: colors.subtext,
+    lineHeight: 22,
+  },
+  heroStatsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  heroStat: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: "rgba(255,255,255,0.72)",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.45)",
+  },
+  heroStatValue: {
+    ...typography.heading,
+    color: colors.primary,
+    fontWeight: "800",
+    marginBottom: spacing.xs,
+  },
+  heroStatLabel: {
+    ...typography.caption,
+    color: colors.subtext,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   statsRow: {
     marginTop: spacing.sm,
@@ -164,31 +266,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radii.full,
-    backgroundColor: "rgba(255,255,255,0.16)",
+    backgroundColor: "#EFF6FF",
     alignItems: "center",
     minWidth: 140,
   },
   statValue: {
     ...typography.heading,
-    color: colors.white,
+    color: colors.primary,
   },
   statLabel: {
     ...typography.caption,
-    color: "#E0F2FE",
+    color: colors.primary,
   },
   sectionTitle: {
     ...typography.title,
     color: colors.text,
-  },
-  row: {
-    justifyContent: "space-between",
-    gap: spacing.sm,
-  },
-  listContent: {
-    paddingBottom: spacing.xxxl,
+    marginTop: spacing.sm,
   },
   emptyCard: {
     marginHorizontal: spacing.lg,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: "#E0ECFF",
+    backgroundColor: colors.white,
+    shadowColor: "#0F172A",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 3,
   },
   emptyTitle: {
     ...typography.heading,

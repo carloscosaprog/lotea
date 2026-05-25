@@ -12,7 +12,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
-import { useAuth } from "../../context/AuthContext";
 import {
   Conversation,
   getConversations,
@@ -23,35 +22,23 @@ import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
 import { getImageUrl } from "../../utils/getImageUrl";
 
-const getUserId = (user: unknown) => {
-  const currentUser = user as { id?: number; id_usuario?: number } | null;
-
-  return currentUser?.id ?? currentUser?.id_usuario ?? null;
-};
-
 export default function ConversationsScreen() {
   const navigation = useNavigation<any>();
-  const { user } = useAuth();
-  const userId = getUserId(user);
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadConversations = useCallback(async () => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-
     try {
-      const data = await getConversations(userId);
+      const data = await getConversations();
       setConversations(data);
     } catch (error) {
+      console.error("Error cargando conversaciones:", error);
       Alert.alert("Error", "No se pudieron cargar las conversaciones");
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -90,13 +77,17 @@ export default function ConversationsScreen() {
             style={styles.row}
             onPress={() =>
               navigation.navigate("Chat", {
-                conversationId: item.id,
-                loteTitulo: item.loteTitulo,
+                loteId: item.loteId,
+                otherUserId: item.otherUserId,
                 otherUserName: item.otherUserName,
+                loteTitulo: item.loteTitulo,
               })
             }
           >
-            <Image source={{ uri: getImageUrl(item.loteImagen ?? undefined) }} style={styles.image} />
+            <Image
+              source={{ uri: getImageUrl(item.loteImagen ?? undefined) }}
+              style={styles.image}
+            />
             <View style={styles.copy}>
               <Text numberOfLines={1} style={styles.title}>
                 {item.otherUserName || "Conversacion"}

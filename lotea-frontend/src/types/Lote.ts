@@ -6,18 +6,30 @@ export interface Lote {
   cantidad: number;
   id_vendedor: number;
 
-  vendedor?: string;
+  vendedor?: {
+    id_usuario: number;
+    nombre: string;
+    latitud?: number | null;
+    longitud?: number | null;
+    ciudad?: string | null;
+    direccion?: string | null;
+  } | null;
+
+  distancia_km?: number;
+  ciudad?: string | null;
+  direccion?: string | null;
+  latitud?: number | null;
+  longitud?: number | null;
+
   categoria?: string;
   categorias: string[];
+  categoriasIds?: number[];
 
-  // mantener por compatibilidad
   imagen?: string;
-
-  // formato estándar
   imagenes: string[];
 
-  // favoritos
   total_favoritos?: number;
+  isFavorito?: boolean;
 }
 
 export type LoteCreate = {
@@ -26,8 +38,7 @@ export type LoteCreate = {
   precio: number;
   cantidad: number;
   id_categoria?: number;
-  categoria?: string;
-  categorias: string[];
+  categoriasIds?: number[];
 };
 
 export type LoteUpdate = {
@@ -36,7 +47,12 @@ export type LoteUpdate = {
   precio?: number;
   cantidad?: number;
   id_categoria?: number;
-  categoria?: string;
-  categorias?: string[];
-  imagenes?: string[];
+  categoriasIds?: number[];
+};
+
+export type ImagenLote = {
+  id_imagen: number;
+  id_lote: number;
+  url: string;
+  es_principal?: boolean;
 };

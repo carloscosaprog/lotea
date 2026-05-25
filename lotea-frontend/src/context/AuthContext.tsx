@@ -3,7 +3,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getProfile } from "../services/authService";
 
 interface User {
-  id: number;
+  id?: number;
+  id_usuario?: number;
   nombre: string;
   email: string;
   avatar?: string | null;

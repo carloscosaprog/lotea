@@ -13,6 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import { getPedidos } from "../../services/pedidosService";
 import Card from "../../components/ui/Card";
 import Button from "../../components/ui/Button";
+import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
 import { useAuth } from "../../context/AuthContext";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -113,7 +114,7 @@ export default function MisPedidosScreen() {
             <Text style={styles.emptyText}>
               Explora lotes y realiza tu primera compra en LOTEA.
             </Text>
-            <Button
+            <PrimaryActionButton
               title="Ver lotes"
               onPress={() => navigation.navigate("Home")}
               style={styles.emptyButton}

@@ -6,19 +6,19 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 import { getFavoritos } from "../../services/favoritosService";
 import type { Lote } from "../../types/Lote";
-import LoteCard from "../../components/lotes/LoteCard";
+import LoteCard from "../../components/lotes/LoteCardUserProfile";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-import { Dimensions } from "react-native";
 
 //calcular el espacio de cada card
 const screenWidth = Dimensions.get("window").width;

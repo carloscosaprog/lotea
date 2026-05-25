@@ -11,10 +11,11 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
+  ImageBackground,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
-import Button from "../../components/ui/Button";
+import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
 import { componentStyles, layoutStyles } from "../../styles/theme";
@@ -26,12 +27,46 @@ export default function RegisterScreen() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({
+    nombre: "",
+    email: "",
+    password: "",
+  });
 
   const navigation = useNavigation<any>();
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const handleRegister = async () => {
+    const newErrors = {
+      nombre: "",
+      email: "",
+      password: "",
+    };
+
+    if (!nombre.trim()) {
+      newErrors.nombre = "Introduce tu nombre";
+    }
+
+    if (!email.trim()) {
+      newErrors.email = "Introduce tu correo electrónico";
+    } else if (!isValidEmail(email)) {
+      newErrors.email = "Introduce un correo electrónico válido";
+    }
+
+    if (!password.trim()) {
+      newErrors.password = "Introduce una contraseña";
+    }
+
+    setErrors(newErrors);
+
+    if (newErrors.nombre || newErrors.email || newErrors.password) {
+      return;
+    }
+
     try {
-      const response = await fetch(`${API_URL}/auth/register`, {
+      const response = await fetch(`${API_URL}/usuarios/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,7 +81,7 @@ export default function RegisterScreen() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Error en registro");
+        throw new Error(data.message || data.error || "Error en registro");
       }
 
       Alert.alert("Usuario creado correctamente");
@@ -67,14 +102,18 @@ export default function RegisterScreen() {
           contentContainerStyle={styles.screenContent}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.hero}>
+          <ImageBackground
+            source={require("../../assets/backgrounds/login-hero-fluid.png")}
+            style={styles.hero}
+            imageStyle={styles.heroImage}
+          >
             <View style={styles.heroGlowLarge} />
             <View style={styles.heroGlowSmall} />
             <Text style={styles.brand}>LOTEA</Text>
             <Text style={styles.heroSubtitle}>
               Crea tu cuenta para publicar, vender y gestionar lotes.
             </Text>
-          </View>
+          </ImageBackground>
 
           <Card style={styles.formCard}>
             <View style={styles.formSection}>
@@ -89,33 +128,78 @@ export default function RegisterScreen() {
               <TextInput
                 placeholder="Nombre"
                 placeholderTextColor={colors.subtext}
-                style={componentStyles.input}
+                style={[
+                  componentStyles.input,
+                  errors.nombre && styles.inputError,
+                ]}
                 value={nombre}
-                onChangeText={setNombre}
+                onChangeText={(text) => {
+                  setNombre(text);
+
+                  if (errors.nombre) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      nombre: "",
+                    }));
+                  }
+                }}
               />
+              {errors.nombre ? (
+                <Text style={styles.errorText}>{errors.nombre}</Text>
+              ) : null}
 
               <TextInput
                 placeholder="Correo electronico"
                 placeholderTextColor={colors.subtext}
-                style={componentStyles.input}
+                style={[
+                  componentStyles.input,
+                  errors.email && styles.inputError,
+                ]}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => {
+                  setEmail(text);
+
+                  if (errors.email) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      email: "",
+                    }));
+                  }
+                }}
                 autoCapitalize="none"
               />
+              {errors.email ? (
+                <Text style={styles.errorText}>{errors.email}</Text>
+              ) : null}
 
               <TextInput
                 placeholder="Contraseña"
                 placeholderTextColor={colors.subtext}
                 secureTextEntry
-                style={componentStyles.input}
+                style={[
+                  componentStyles.input,
+                  errors.password && styles.inputError,
+                ]}
                 value={password}
-                onChangeText={setPassword}
-              />
+                onChangeText={(text) => {
+                  setPassword(text);
 
-              <Button
+                  if (errors.password) {
+                    setErrors((prev) => ({
+                      ...prev,
+                      password: "",
+                    }));
+                  }
+                }}
+              />
+              {errors.password ? (
+                <Text style={styles.errorText}>{errors.password}</Text>
+              ) : null}
+
+              <PrimaryActionButton
                 title="Crear cuenta"
-                variant="accent"
                 onPress={handleRegister}
+                style={styles.registerButton}
               />
 
               <TouchableOpacity
@@ -150,6 +234,19 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     padding: spacing.xl,
     overflow: "hidden",
+  },
+  heroImage: {
+    borderRadius: radii.xl,
+  },
+  registerButton: {
+    backgroundColor: colors.accent,
+    borderColor: "#10B981",
+
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.28,
+    shadowRadius: 20,
+    elevation: 8,
   },
   heroGlowLarge: {
     position: "absolute",
@@ -192,5 +289,14 @@ const styles = StyleSheet.create({
     ...typography.bodyStrong,
     color: colors.primary,
     textAlign: "center",
+  },
+  inputError: {
+    borderColor: colors.danger,
+  },
+
+  errorText: {
+    ...typography.caption,
+    color: colors.danger,
+    marginTop: -6,
   },
 });
