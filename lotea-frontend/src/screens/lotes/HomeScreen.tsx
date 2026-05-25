@@ -8,6 +8,7 @@ import {
   FlatList,
   Image,
   Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -372,7 +373,61 @@ export default function HomeScreen() {
     useState<Categoria | null>(null);
   const contentAnim = useRef(new Animated.Value(0)).current;
   const sheetAnim = useRef(new Animated.Value(0)).current;
+  const dragY = useRef(new Animated.Value(0)).current;
   const profileCity = (user as any)?.ciudad;
+
+  const closeFilters = (fromDrag = false) => {
+    const targetDrag = fromDrag ? 520 : 0;
+
+    Animated.parallel([
+      Animated.timing(sheetAnim, {
+        toValue: 0,
+        duration: 180,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(dragY, {
+        toValue: targetDrag,
+        duration: fromDrag ? 180 : 0,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        setFiltersVisible(false);
+        setActiveFilterCategory(null);
+        dragY.setValue(0);
+      }
+    });
+  };
+
+  const sheetPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, gestureState) =>
+        Math.abs(gestureState.dy) > 6 && Math.abs(gestureState.dx) < 10,
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          dragY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const shouldClose = gestureState.dy > 120 || gestureState.vy > 1.1;
+
+        if (shouldClose) {
+          closeFilters(true);
+          return;
+        }
+
+        Animated.spring(dragY, {
+          toValue: 0,
+          useNativeDriver: true,
+          speed: 18,
+          bounciness: 6,
+        }).start();
+      },
+    }),
+  ).current;
 
   const fetchLotes = useCallback(async () => {
     try {
@@ -427,13 +482,15 @@ export default function HomeScreen() {
     if (!filtersVisible) return;
 
     sheetAnim.setValue(0);
-    Animated.timing(sheetAnim, {
+    dragY.setValue(0);
+    Animated.spring(sheetAnim, {
       toValue: 1,
-      duration: 300,
-      easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
+      damping: 22,
+      stiffness: 180,
+      mass: 0.9,
     }).start();
-  }, [filtersVisible, sheetAnim]);
+  }, [filtersVisible, sheetAnim, dragY]);
 
   const catalogMaxPrice = useMemo(() => {
     return Math.max(0, ...lotes.map((lote) => Number(lote.precio) || 0));
@@ -598,10 +655,13 @@ export default function HomeScreen() {
     opacity: sheetAnim,
     transform: [
       {
-        translateY: sheetAnim.interpolate({
-          inputRange: [0, 1],
-          outputRange: [360, 0],
-        }),
+        translateY: Animated.add(
+          sheetAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [520, 0],
+          }),
+          dragY,
+        ),
       },
     ],
   };
@@ -609,20 +669,6 @@ export default function HomeScreen() {
   const handleFavoriteChange = () => setFavoritesVersion((prev) => prev + 1);
 
   const openFilters = () => setFiltersVisible(true);
-
-  const closeFilters = () => {
-    Animated.timing(sheetAnim, {
-      toValue: 0,
-      duration: 180,
-      easing: Easing.in(Easing.cubic),
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) {
-        setFiltersVisible(false);
-        setActiveFilterCategory(null);
-      }
-    });
-  };
 
   const clearFilters = () => {
     setActiveCategories(["Todas"]);
@@ -839,19 +885,30 @@ export default function HomeScreen() {
               visible={filtersVisible}
               transparent
               animationType="fade"
-              onRequestClose={closeFilters}
+              onRequestClose={() => closeFilters()}
             >
               <View style={styles.modalRoot}>
-                <Pressable style={styles.modalOverlay} onPress={closeFilters} />
+                <Animated.View
+                  style={[styles.modalOverlay, { opacity: sheetAnim }]}
+                >
+                  <Pressable
+                    style={StyleSheet.absoluteFill}
+                    onPress={() => closeFilters()}
+                  />
+                </Animated.View>
                 <Animated.View style={[styles.filterSheet, sheetAnimatedStyle]}>
-                  <View style={styles.sheetHandle} />
-
-                  <View style={styles.sheetHeader}>
-                    <View>
-                      <Text style={styles.sheetTitle}>Filtros</Text>
-                      <Text style={styles.sheetSubtitle}>
-                        Afina tu busqueda sin llenar el Home de controles.
-                      </Text>
+                  <View
+                    style={styles.sheetDragArea}
+                    {...sheetPanResponder.panHandlers}
+                  >
+                    <View style={styles.sheetHandle} />
+                    <View style={styles.sheetHeader}>
+                      <View>
+                        <Text style={styles.sheetTitle}>Filtros</Text>
+                        <Text style={styles.sheetSubtitle}>
+                          Afina tu busqueda sin llenar el Home de controles.
+                        </Text>
+                      </View>
                     </View>
                   </View>
 
@@ -1123,7 +1180,7 @@ export default function HomeScreen() {
                     <TouchableOpacity
                       activeOpacity={0.86}
                       style={styles.applyButton}
-                      onPress={closeFilters}
+                      onPress={() => closeFilters()}
                     >
                       <Text style={styles.applyButtonText}>
                         Ver {filteredLotes.length} lotes
@@ -1375,6 +1432,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 26,
     elevation: 8,
+  },
+  sheetDragArea: {
+    paddingTop: spacing.sm,
+    backgroundColor: "#F7FAFF",
   },
   sheetHandle: {
     alignSelf: "center",
