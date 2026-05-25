@@ -353,7 +353,8 @@ const styles = StyleSheet.create({
   },
   statContent: {
     paddingVertical: spacing.md,
-    alignItems: "flex-start",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 2,
   },
   statValue: {
