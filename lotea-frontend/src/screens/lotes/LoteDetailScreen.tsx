@@ -1136,7 +1136,7 @@ const styles = StyleSheet.create({
   relatedFavorite: {
     position: "absolute",
     top: 10,
-    right: 10,
+    left: 10,
     backgroundColor: "rgba(0,0,0,0.42)",
     paddingHorizontal: 7,
     paddingVertical: 5,
