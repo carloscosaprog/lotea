@@ -13,7 +13,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 import Card from "../../components/ui/Card";
 import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
-import { getPedidos } from "../../services/pedidosService";
+import { getVentas } from "../../services/pedidosService";
 import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
@@ -41,37 +41,37 @@ const estadoColors: Record<string, string> = {
 
 const formatCurrency = (value: number) => `${value.toFixed(2)} EUR`;
 
-const getPedidoResumen = (pedido: Pedido) => {
+const getVentaResumen = (pedido: Pedido) => {
   const detalle = pedido.detalles[0];
   const lote = detalle?.lote;
   const subtotal = pedido.detalles.reduce(
     (sum, item) => sum + Number(item.precio_unitario) * item.cantidad,
     0,
   );
-  const total = subtotal + subtotal * 0.1;
 
   return {
     detalle,
     lote,
-    total,
+    subtotal,
     image: getImageUrl(lote?.imagenes?.[0]),
+    comprador: pedido.usuario?.nombre ?? "Comprador",
   };
 };
 
-export default function MisPedidosScreen() {
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+export default function MisVentasScreen() {
+  const [ventas, setVentas] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigation = useNavigation<any>();
 
-  const fetchPedidos = useCallback(async () => {
+  const fetchVentas = useCallback(async () => {
     try {
       setErrorMessage(null);
-      const data = await getPedidos();
-      setPedidos(data);
+      const data = await getVentas();
+      setVentas(data);
     } catch (error) {
       console.log(error);
-      setErrorMessage("No se pudieron cargar tus compras.");
+      setErrorMessage("No se pudieron cargar tus ventas.");
     } finally {
       setLoading(false);
     }
@@ -80,15 +80,15 @@ export default function MisPedidosScreen() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      fetchPedidos();
-    }, [fetchPedidos]),
+      fetchVentas();
+    }, [fetchVentas]),
   );
 
   if (loading) {
     return (
       <View style={layoutStyles.center}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando tus compras...</Text>
+        <Text style={styles.loadingText}>Cargando tus ventas...</Text>
       </View>
     );
   }
@@ -96,7 +96,7 @@ export default function MisPedidosScreen() {
   return (
     <View style={layoutStyles.screen}>
       <FlatList
-        data={pedidos}
+        data={ventas}
         keyExtractor={(item) => item.id_pedido.toString()}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
@@ -110,16 +110,16 @@ export default function MisPedidosScreen() {
                 <Ionicons name="chevron-back" size={22} color={colors.text} />
               </TouchableOpacity>
 
-              <Text style={styles.topBarTitle}>Mis compras</Text>
+              <Text style={styles.topBarTitle}>Mis ventas</Text>
 
               <View style={{ width: 22 }} />
             </View>
 
             <View style={layoutStyles.pageHeader}>
-              <Text style={layoutStyles.headerEyebrow}>Compras</Text>
-              <Text style={styles.title}>Pedidos realizados</Text>
+              <Text style={layoutStyles.headerEyebrow}>Ventas</Text>
+              <Text style={styles.title}>Pedidos recibidos</Text>
               <Text style={layoutStyles.headerSubtitle}>
-                Sigue el estado de tus compras simuladas en LOTEA.
+                Gestiona los pedidos que han comprado tus lotes.
               </Text>
             </View>
 
@@ -137,29 +137,31 @@ export default function MisPedidosScreen() {
         }
         ListEmptyComponent={
           <Card style={{ marginHorizontal: spacing.lg }}>
-            <Text style={styles.emptyTitle}>
-              Aun no has realizado ningun pedido
-            </Text>
+            <Text style={styles.emptyTitle}>Todavia no has recibido ventas</Text>
             <Text style={styles.emptyText}>
-              Explora lotes y completa tu primera compra simulada.
+              Cuando alguien compre uno de tus lotes, aparecera aqui.
             </Text>
             <PrimaryActionButton
-              title="Ver lotes"
-              icon="storefront-outline"
-              onPress={() => navigation.navigate("Home")}
+              title="Ver mis lotes"
+              icon="cube-outline"
+              onPress={() => navigation.navigate("MisLotes")}
               style={styles.emptyButton}
             />
           </Card>
         }
         renderItem={({ item }) => {
-          const { detalle, lote, total, image } = getPedidoResumen(item);
+          const { detalle, lote, subtotal, image, comprador } =
+            getVentaResumen(item);
           const estadoColor = estadoColors[item.estado] ?? colors.primary;
 
           return (
             <TouchableOpacity
               activeOpacity={0.9}
               onPress={() =>
-                navigation.navigate("PedidoDetail", { id: item.id_pedido })
+                navigation.navigate("PedidoDetail", {
+                  id: item.id_pedido,
+                  perspective: "seller",
+                })
               }
             >
               <Card contentStyle={styles.cardContent}>
@@ -178,12 +180,18 @@ export default function MisPedidosScreen() {
                   </View>
 
                   <Text style={styles.subtitle}>
-                    {new Date(item.fecha).toLocaleDateString()} -{" "}
-                    {detalle?.cantidad ?? 0} unidades
+                    Comprador: {comprador} - {detalle?.cantidad ?? 0} unidades
                   </Text>
 
                   <View style={styles.metaRow}>
-                    <Text style={styles.price}>{formatCurrency(total)}</Text>
+                    <View>
+                      <Text style={styles.price}>
+                        {formatCurrency(subtotal)}
+                      </Text>
+                      <Text style={styles.netHint}>
+                        Importe producto sin comision
+                      </Text>
+                    </View>
                     <View
                       style={[
                         styles.estadoPill,
@@ -272,6 +280,11 @@ const styles = StyleSheet.create({
   price: {
     ...typography.heading,
     color: colors.accent,
+  },
+  netHint: {
+    ...typography.caption,
+    color: colors.subtext,
+    fontSize: 11,
   },
   estadoPill: {
     borderRadius: radii.full,

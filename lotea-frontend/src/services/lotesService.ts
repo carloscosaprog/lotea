@@ -100,6 +100,15 @@ export const normalizeLote = (raw: any): Lote => {
     typeof lote.longitud === "number"
       ? lote.longitud
       : vendedor?.longitud ?? null;
+  const compradores = Array.isArray(lote.compradores)
+    ? lote.compradores.map((comprador: any) => ({
+        id_usuario: comprador.id_usuario,
+        nombre: comprador.nombre ?? "Comprador",
+        email: comprador.email,
+        cantidad: Number(comprador.cantidad ?? 0),
+        total: Number(comprador.total ?? 0),
+      }))
+    : [];
 
   return {
     ...lote,
@@ -115,6 +124,12 @@ export const normalizeLote = (raw: any): Lote => {
     categoriasIds,
     imagenes,
     isFavorito,
+    vendido:
+      typeof lote.vendido === "boolean"
+        ? lote.vendido
+        : Number(lote.cantidad ?? 0) <= 0,
+    total_vendido: Number(lote.total_vendido ?? 0),
+    compradores,
 
     total_favoritos:
       typeof lote.total_favoritos === "number"

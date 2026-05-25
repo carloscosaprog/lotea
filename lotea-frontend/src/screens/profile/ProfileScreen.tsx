@@ -191,6 +191,32 @@ export default function ProfileScreen() {
         </Pressable>
       </Card>
 
+      {/* MIS VENTAS */}
+      <Card>
+        <Pressable
+          onPress={() => navigation.navigate("MisVentas")}
+          style={({ pressed }) => [
+            styles.actionPressable,
+            pressed && styles.actionPressablePressed,
+          ]}
+          android_ripple={{ color: "rgba(59,130,246,0.08)" }}
+        >
+          <View style={styles.quickAction}>
+            <View style={styles.quickActionLeft}>
+              <View style={styles.quickIcon}>
+                <Ionicons
+                  name="bag-check-outline"
+                  size={20}
+                  color={colors.primary}
+                />
+              </View>
+              <Text style={styles.quickActionText}>Mis ventas</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
+          </View>
+        </Pressable>
+      </Card>
+
       {/* MI UBICACION */}
       <Card>
         <Pressable
