@@ -1,76 +1,94 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
-import { getPedidos } from "../../services/pedidosService";
 import Card from "../../components/ui/Card";
-import Button from "../../components/ui/Button";
 import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
-import { useAuth } from "../../context/AuthContext";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { getPedidos } from "../../services/pedidosService";
 import { colors } from "../../styles/colors";
-import { spacing } from "../../styles/spacing";
-import { typography } from "../../styles/typography";
 import { layoutStyles } from "../../styles/theme";
-import { API_URL } from "../../config/api";
+import { radii, spacing } from "../../styles/spacing";
+import { typography } from "../../styles/typography";
+import type { Pedido } from "../../types/Pedido";
+import { getImageUrl } from "../../utils/getImageUrl";
+
+const estadoLabels: Record<string, string> = {
+  pendiente_pago: "Pendiente de pago",
+  pagado: "Pago confirmado",
+  preparando: "Preparando",
+  enviado: "Enviado",
+  entregado: "Entregado",
+  cancelado: "Cancelado",
+};
+
+const estadoColors: Record<string, string> = {
+  pendiente_pago: colors.warning,
+  pagado: colors.primary,
+  preparando: colors.primary,
+  enviado: colors.accent,
+  entregado: colors.accent,
+  cancelado: colors.danger,
+};
+
+const formatCurrency = (value: number) => `${value.toFixed(2)} EUR`;
+
+const getPedidoResumen = (pedido: Pedido) => {
+  const detalle = pedido.detalles[0];
+  const lote = detalle?.lote;
+  const subtotal = pedido.detalles.reduce(
+    (sum, item) => sum + Number(item.precio_unitario) * item.cantidad,
+    0,
+  );
+  const total = subtotal + subtotal * 0.1;
+
+  return {
+    detalle,
+    lote,
+    total,
+    image: getImageUrl(lote?.imagenes?.[0]),
+  };
+};
 
 export default function MisPedidosScreen() {
-  const [pedidos, setPedidos] = useState<any[]>([]);
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const { user } = useAuth();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigation = useNavigation<any>();
 
-  const fetchPedidos = async () => {
+  const fetchPedidos = useCallback(async () => {
     try {
+      setErrorMessage(null);
       const data = await getPedidos();
       setPedidos(data);
     } catch (error) {
       console.log(error);
+      setErrorMessage("No se pudieron cargar tus compras.");
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchPedidos();
   }, []);
 
-  const updateEstado = async (id: number, estado: string) => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-
-      await axios.put(
-        `${API_URL}/pedidos/${id}`,
-        { estado },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
       fetchPedidos();
-    } catch (error) {
-      console.log(error);
-    }
-  };
+    }, [fetchPedidos]),
+  );
 
   if (loading) {
     return (
       <View style={layoutStyles.center}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Cargando tus pedidos...</Text>
+        <Text style={styles.loadingText}>Cargando tus compras...</Text>
       </View>
     );
   }
@@ -92,18 +110,29 @@ export default function MisPedidosScreen() {
                 <Ionicons name="chevron-back" size={22} color={colors.text} />
               </TouchableOpacity>
 
-              <Text style={styles.topBarTitle}>Mis pedidos</Text>
+              <Text style={styles.topBarTitle}>Mis compras</Text>
 
               <View style={{ width: 22 }} />
             </View>
 
             <View style={layoutStyles.pageHeader}>
               <Text style={layoutStyles.headerEyebrow}>Compras</Text>
-              <Text style={styles.title}>Tus pedidos realizados</Text>
+              <Text style={styles.title}>Pedidos realizados</Text>
               <Text style={layoutStyles.headerSubtitle}>
-                Consulta el estado de tus compras y su progreso.
+                Sigue el estado de tus compras simuladas en LOTEA.
               </Text>
             </View>
+
+            {errorMessage && (
+              <View style={styles.errorBanner}>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={18}
+                  color={colors.danger}
+                />
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+            )}
           </View>
         }
         ListEmptyComponent={
@@ -112,39 +141,65 @@ export default function MisPedidosScreen() {
               Aun no has realizado ningun pedido
             </Text>
             <Text style={styles.emptyText}>
-              Explora lotes y realiza tu primera compra en LOTEA.
+              Explora lotes y completa tu primera compra simulada.
             </Text>
             <PrimaryActionButton
               title="Ver lotes"
+              icon="storefront-outline"
               onPress={() => navigation.navigate("Home")}
               style={styles.emptyButton}
             />
           </Card>
         }
-        renderItem={({ item }) => (
-          <Card contentStyle={styles.cardContent}>
-            <View style={styles.copy}>
-              <Text style={styles.titleItem}>{item.titulo}</Text>
-              <Text style={styles.subtitle}>Cantidad: {item.cantidad}</Text>
-              <Text style={styles.price}>{item.precio_unitario} EUR</Text>
-              <Text style={styles.estado}>Estado: {item.estado}</Text>
-            </View>
+        renderItem={({ item }) => {
+          const { detalle, lote, total, image } = getPedidoResumen(item);
+          const estadoColor = estadoColors[item.estado] ?? colors.primary;
 
-            {item.id_usuario !== user?.id && item.estado === "pendiente" && (
-              <View style={styles.actionsRow}>
-                <Button
-                  title="Completar"
-                  onPress={() => updateEstado(item.id_pedido, "completado")}
-                />
-                <Button
-                  title="Cancelar"
-                  variant="danger"
-                  onPress={() => updateEstado(item.id_pedido, "cancelado")}
-                />
-              </View>
-            )}
-          </Card>
-        )}
+          return (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              onPress={() =>
+                navigation.navigate("PedidoDetail", { id: item.id_pedido })
+              }
+            >
+              <Card contentStyle={styles.cardContent}>
+                <Image source={{ uri: image }} style={styles.thumbnail} />
+
+                <View style={styles.copy}>
+                  <View style={styles.cardTopRow}>
+                    <Text style={styles.titleItem} numberOfLines={2}>
+                      {lote?.titulo ?? "Lote"}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={colors.subtext}
+                    />
+                  </View>
+
+                  <Text style={styles.subtitle}>
+                    {new Date(item.fecha).toLocaleDateString()} -{" "}
+                    {detalle?.cantidad ?? 0} unidades
+                  </Text>
+
+                  <View style={styles.metaRow}>
+                    <Text style={styles.price}>{formatCurrency(total)}</Text>
+                    <View
+                      style={[
+                        styles.estadoPill,
+                        { backgroundColor: `${estadoColor}18` },
+                      ]}
+                    >
+                      <Text style={[styles.estadoText, { color: estadoColor }]}>
+                        {estadoLabels[item.estado] ?? item.estado}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </Card>
+            </TouchableOpacity>
+          );
+        }}
       />
     </View>
   );
@@ -180,30 +235,52 @@ const styles = StyleSheet.create({
   },
   cardContent: {
     marginHorizontal: spacing.lg,
+    flexDirection: "row",
     gap: spacing.md,
+    alignItems: "center",
+  },
+  thumbnail: {
+    width: 76,
+    height: 76,
+    borderRadius: radii.md,
+    backgroundColor: "#E5E7EB",
   },
   copy: {
-    gap: 4,
+    flex: 1,
+    gap: spacing.xs,
+  },
+  cardTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xs,
   },
   titleItem: {
     ...typography.bodyStrong,
     color: colors.text,
+    flex: 1,
   },
   subtitle: {
     ...typography.caption,
     color: colors.subtext,
   },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
   price: {
     ...typography.heading,
     color: colors.accent,
   },
-  estado: {
-    ...typography.caption,
-    color: colors.primary,
+  estadoPill: {
+    borderRadius: radii.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
   },
-  actionsRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
+  estadoText: {
+    ...typography.caption,
+    fontWeight: "800",
   },
   emptyTitle: {
     ...typography.heading,
@@ -216,5 +293,21 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     marginTop: spacing.lg,
+    minHeight: 58,
+  },
+  errorBanner: {
+    borderRadius: radii.lg,
+    backgroundColor: "#FEF2F2",
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+  },
+  errorText: {
+    ...typography.bodyStrong,
+    color: colors.danger,
+    flex: 1,
   },
 });

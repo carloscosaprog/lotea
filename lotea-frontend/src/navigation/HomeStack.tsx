@@ -7,6 +7,7 @@ import UserProfileScreen from "../screens/profile/UserProfileScreen";
 import CompraScreen from "../screens/lotes/CompraScreen";
 import EditLoteScreen from "../screens/lotes/EditLoteScreen";
 import ChatScreen from "../screens/chat/ChatScreen";
+import PedidoDetailScreen from "../screens/lotes/PedidoDetailScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,7 @@ export default function HomeStack() {
       <Stack.Screen name="LoteDetail" component={LoteDetailScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileScreen} />
       <Stack.Screen name="Compra" component={CompraScreen} />
+      <Stack.Screen name="PedidoDetail" component={PedidoDetailScreen} />
       <Stack.Screen name="EditLote" component={EditLoteScreen} />
       <Stack.Screen name="Chat" component={ChatScreen} />
     </Stack.Navigator>

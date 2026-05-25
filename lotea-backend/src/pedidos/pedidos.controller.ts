@@ -22,8 +22,16 @@ export class PedidosController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.pedidosService.findOne(id);
+  findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: JwtUser) {
+    return this.pedidosService.findOne(id, user.sub);
+  }
+
+  @Patch(':id/simular-siguiente-estado')
+  simularSiguienteEstado(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtUser,
+  ) {
+    return this.pedidosService.simularSiguienteEstado(id, user.sub);
   }
 
   @Patch(':id')
