@@ -16,6 +16,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getProfile } from "../../services/authService";
 import { getConversations } from "../../services/chatService";
 import { getMisLotes } from "../../services/lotesService";
+import { getPedidos, getVentas } from "../../services/pedidosService";
 import { useAuth } from "../../context/AuthContext";
 import type { Lote } from "../../types/Lote";
 import Avatar from "../../components/ui/Avatar";
@@ -30,6 +31,8 @@ import { getImageUrl } from "../../utils/getImageUrl";
 export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [myLotes, setMyLotes] = useState<Lote[]>([]);
+  const [misPedidos, setMisPedidos] = useState<any[]>([]);
+  const [misVentas, setMisVentas] = useState<any[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -41,11 +44,24 @@ export default function ProfileScreen() {
     useCallback(() => {
       const loadProfile = async () => {
         try {
-          const [profileData, lotesData, conversationsData] = await Promise.all(
-            [getProfile(), getMisLotes(), getConversations()],
-          );
+          const [
+            profileData,
+            lotesData,
+            pedidosData,
+            ventasData,
+            conversationsData,
+          ] = await Promise.all([
+            getProfile(),
+            getMisLotes(),
+            getPedidos(),
+            getVentas(),
+            getConversations(),
+          ]);
           setUser(profileData);
           setMyLotes(lotesData);
+          setMisPedidos(pedidosData);
+          setMisVentas(ventasData);
+
           setUnreadMessages(
             conversationsData.reduce(
               (total, conversation) => total + (conversation.unreadCount ?? 0),
@@ -127,15 +143,15 @@ export default function ProfileScreen() {
           <Text style={styles.statValue}>{myLotes.length}</Text>
           <Text style={styles.statLabel}>Mis lotes</Text>
         </Card>
+
         <Card style={styles.statCard} contentStyle={styles.statContent}>
-          <Text style={styles.statValue}>{totalUnits}</Text>
-          <Text style={styles.statLabel}>Unidades</Text>
+          <Text style={styles.statValue}>{misPedidos.length}</Text>
+          <Text style={styles.statLabel}>Mis pedidos</Text>
         </Card>
+
         <Card style={styles.statCard} contentStyle={styles.statContent}>
-          <Text style={styles.statValue}>
-            {user?.nombre ? user.nombre.length : 0}
-          </Text>
-          <Text style={styles.statLabel}>Perfil</Text>
+          <Text style={styles.statValue}>{misVentas.length}</Text>
+          <Text style={styles.statLabel}>Mis ventas</Text>
         </Card>
       </View>
 
