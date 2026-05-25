@@ -21,6 +21,11 @@ export class PedidosController {
     return this.pedidosService.findByUsuario(user.sub);
   }
 
+  @Get('ventas')
+  findVentas(@CurrentUser() user: JwtUser) {
+    return this.pedidosService.findVentasByVendedor(user.sub);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: JwtUser) {
     return this.pedidosService.findOne(id, user.sub);

@@ -33,6 +33,14 @@ export const getPedidos = async (): Promise<Pedido[]> => {
   return Array.isArray(res.data) ? res.data.map(normalizePedido) : [];
 };
 
+export const getVentas = async (): Promise<Pedido[]> => {
+  const res = await axios.get(`${API_URL}/pedidos/ventas`, {
+    headers: await authHeaders(),
+  });
+
+  return Array.isArray(res.data) ? res.data.map(normalizePedido) : [];
+};
+
 export const getPedidoById = async (id: number): Promise<Pedido> => {
   const res = await axios.get(`${API_URL}/pedidos/${id}`, {
     headers: await authHeaders(),

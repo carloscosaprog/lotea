@@ -73,6 +73,7 @@ export default function PedidoDetailScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const id = Number(route.params?.id);
+  const isSellerPerspective = route.params?.perspective === "seller";
 
   const loadPedido = useCallback(async () => {
     try {
@@ -112,6 +113,7 @@ export default function PedidoDetailScreen() {
       total: subtotal + fee,
       image: getImageUrl(lote?.imagenes?.[0]),
       vendedor: lote?.vendedor?.nombre ?? "Vendedor",
+      comprador: pedido?.usuario?.nombre ?? "Comprador",
     };
   }, [pedido]);
 
@@ -165,7 +167,9 @@ export default function PedidoDetailScreen() {
         <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Detalle de pedido</Text>
+        <Text style={styles.topBarTitle}>
+          {isSellerPerspective ? "Detalle de venta" : "Detalle de pedido"}
+        </Text>
         <View style={{ width: 22 }} />
       </View>
 
@@ -264,7 +268,9 @@ export default function PedidoDetailScreen() {
           <View style={styles.productCopy}>
             <Text style={styles.productTitle}>{resumen.lote?.titulo}</Text>
             <Text style={styles.productMeta}>
-              Vendedor: {resumen.vendedor}
+              {isSellerPerspective
+                ? `Comprador: ${resumen.comprador}`
+                : `Vendedor: ${resumen.vendedor}`}
             </Text>
             <Text style={styles.productMeta}>
               Cantidad: {resumen.detalle?.cantidad ?? 0}
@@ -315,9 +321,11 @@ export default function PedidoDetailScreen() {
           style={styles.actionButton}
         />
         <SecondaryActionButton
-          title="Volver a mis compras"
+          title={isSellerPerspective ? "Volver a mis ventas" : "Volver a mis compras"}
           onPress={() =>
-            navigation.navigate("Perfil", { screen: "MisPedidos" })
+            navigation.navigate("Perfil", {
+              screen: isSellerPerspective ? "MisVentas" : "MisPedidos",
+            })
           }
           style={styles.actionButton}
         />

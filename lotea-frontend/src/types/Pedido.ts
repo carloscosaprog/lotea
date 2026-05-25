@@ -31,6 +31,14 @@ export type Pedido = {
   estado: EstadoPedido;
   metodo_pago?: MetodoPago | null;
   direccion_entrega?: string | null;
+  usuario?: {
+    id_usuario: number;
+    nombre: string;
+    email?: string;
+    ciudad?: string | null;
+    direccion?: string | null;
+    avatar?: string | null;
+  } | null;
   detalles: DetallePedido[];
 };
 

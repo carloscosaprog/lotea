@@ -13,6 +13,16 @@ export class PedidosService {
   constructor(private readonly prisma: PrismaService) {}
 
   private readonly pedidoInclude = {
+    usuario: {
+      select: {
+        id_usuario: true,
+        nombre: true,
+        email: true,
+        ciudad: true,
+        direccion: true,
+        avatar: true,
+      },
+    },
     detalles: {
       include: {
         lote: {
@@ -129,6 +139,22 @@ export class PedidosService {
   findByUsuario(id_usuario: number) {
     return this.prisma.pedido.findMany({
       where: { id_usuario },
+      include: this.pedidoInclude,
+      orderBy: { fecha: 'desc' },
+    });
+  }
+
+  findVentasByVendedor(id_vendedor: number) {
+    return this.prisma.pedido.findMany({
+      where: {
+        detalles: {
+          some: {
+            lote: {
+              id_vendedor,
+            },
+          },
+        },
+      },
       include: this.pedidoInclude,
       orderBy: { fecha: 'desc' },
     });
