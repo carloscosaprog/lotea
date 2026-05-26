@@ -60,7 +60,13 @@ export default function FavoritosScreen() {
         ListHeaderComponent={
           <View style={styles.headerWrap}>
             <View style={styles.topBar}>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("Perfil", {
+                    screen: "ProfileMain",
+                  })
+                }
+              >
                 <Ionicons name="chevron-back" size={22} color={colors.text} />
               </TouchableOpacity>
 

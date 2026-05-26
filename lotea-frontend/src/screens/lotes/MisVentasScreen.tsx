@@ -105,7 +105,11 @@ export default function MisVentasScreen() {
             <View style={styles.topBar}>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => navigation.goBack()}
+                onPress={() =>
+                  navigation.navigate("Perfil", {
+                    screen: "ProfileMain",
+                  })
+                }
               >
                 <Ionicons name="chevron-back" size={22} color={colors.text} />
               </TouchableOpacity>
@@ -137,7 +141,9 @@ export default function MisVentasScreen() {
         }
         ListEmptyComponent={
           <Card style={{ marginHorizontal: spacing.lg }}>
-            <Text style={styles.emptyTitle}>Todavia no has recibido ventas</Text>
+            <Text style={styles.emptyTitle}>
+              Todavia no has recibido ventas
+            </Text>
             <Text style={styles.emptyText}>
               Cuando alguien compre uno de tus lotes, aparecera aqui.
             </Text>

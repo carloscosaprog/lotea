@@ -50,9 +50,17 @@ export default function Navbar({
           return (
             <Pressable
               key={route.key}
-              onPress={() =>
-                (navigation as any).navigate(target.name, target.params)
-              }
+              onPress={() => {
+                if (route.name === "Perfil") {
+                  navigation.navigate("Perfil", {
+                    screen: "ProfileMain",
+                  });
+
+                  return;
+                }
+
+                (navigation as any).navigate(target.name, target.params);
+              }}
               style={styles.item}
             >
               <View style={styles.iconWrap}>

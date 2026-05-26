@@ -83,7 +83,11 @@ export default function MisLotesScreen() {
             <View style={styles.topBar}>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => navigation.goBack()}
+                onPress={() =>
+                  navigation.navigate("Perfil", {
+                    screen: "ProfileMain",
+                  })
+                }
               >
                 <Ionicons name="chevron-back" size={22} color={colors.text} />
               </TouchableOpacity>
@@ -170,7 +174,8 @@ export default function MisLotesScreen() {
                   <View key={comprador.id_usuario} style={styles.buyerRow}>
                     <Text style={styles.buyerName}>{comprador.nombre}</Text>
                     <Text style={styles.buyerMeta}>
-                      {comprador.cantidad} uds - {comprador.total.toFixed(2)} EUR
+                      {comprador.cantidad} uds - {comprador.total.toFixed(2)}{" "}
+                      EUR
                     </Text>
                   </View>
                 ))}

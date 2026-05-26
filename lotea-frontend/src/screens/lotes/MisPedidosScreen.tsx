@@ -205,7 +205,11 @@ export default function MisPedidosScreen() {
             <View style={styles.topBar}>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => navigation.goBack()}
+                onPress={() =>
+                  navigation.navigate("Perfil", {
+                    screen: "ProfileMain",
+                  })
+                }
               >
                 <Ionicons name="chevron-back" size={22} color={colors.text} />
               </TouchableOpacity>
@@ -338,7 +342,9 @@ export default function MisPedidosScreen() {
                     />
                   </View>
 
-                  <Text style={styles.modalTitle}>Gracias por tu valoracion</Text>
+                  <Text style={styles.modalTitle}>
+                    Gracias por tu valoracion
+                  </Text>
                   <RatingStars
                     value={submittedReview.puntuacion}
                     size={26}
@@ -413,7 +419,9 @@ export default function MisPedidosScreen() {
                             }}
                           >
                             <Ionicons
-                              name={selectedRating >= star ? "star" : "star-outline"}
+                              name={
+                                selectedRating >= star ? "star" : "star-outline"
+                              }
                               size={38}
                               color={
                                 selectedRating >= star
