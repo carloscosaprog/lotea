@@ -169,15 +169,12 @@ export default function LoteDetailScreen() {
   const scrollStartX = useRef<number | null>(null);
   const isDragging = useRef(false);
   const isProgrammaticScroll = useRef(false);
-  const dotAnim = useRef(new Animated.Value(imagenActual)).current;
-
-  useEffect(() => {
-    Animated.timing(dotAnim, {
-      toValue: imagenActual,
-      duration: 260,
-      useNativeDriver: false,
-    }).start();
-  }, [imagenActual, dotAnim]);
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const galleryWidth = screenWidth - spacing.lg * 2;
+  const dotAnim = Animated.divide(scrollX, galleryWidth);
+  const dotSize = 8;
+  const dotMargin = spacing.xs;
+  const dotSpacing = dotSize + dotMargin * 2;
   const currentUser = user as { id?: number; id_usuario?: number } | null;
   const currentUserId = currentUser?.id ?? currentUser?.id_usuario;
 
@@ -359,7 +356,11 @@ export default function LoteDetailScreen() {
   }
 
   const imagenes = Array.isArray(lote.imagenes) ? lote.imagenes : [];
-  const galleryWidth = screenWidth - spacing.lg * 2;
+  const activeDotTranslateX = dotAnim.interpolate({
+    inputRange: [0, Math.max(1, imagenes.length - 1)],
+    outputRange: [0, dotSpacing * Math.max(1, imagenes.length - 1)],
+    extrapolate: "clamp",
+  });
   const imageSources =
     imagenes.length > 0 ? imagenes : ["https://via.placeholder.com/300"];
   const categorias = getLoteCategories(lote);
@@ -451,6 +452,11 @@ export default function LoteDetailScreen() {
           style={{ width: galleryWidth }}
           contentContainerStyle={{ alignItems: "center" }}
           keyExtractor={(_, index) => index.toString()}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: false },
+          )}
+          scrollEventThrottle={16}
           onScrollBeginDrag={(e) => {
             isDragging.current = true;
             scrollStartX.current = e.nativeEvent.contentOffset.x;
@@ -517,33 +523,16 @@ export default function LoteDetailScreen() {
 
         {imagenes.length > 0 && (
           <View style={styles.galleryDotsContainer}>
-            {imagenes.map((_, index) => {
-              const inputRange = [index - 1, index, index + 1];
-              const width = dotAnim.interpolate({
-                inputRange,
-                outputRange: [8, 24, 8],
-                extrapolate: "clamp",
-              });
-              const height = dotAnim.interpolate({
-                inputRange,
-                outputRange: [8, 12, 8],
-                extrapolate: "clamp",
-              });
-              const translateY = dotAnim.interpolate({
-                inputRange,
-                outputRange: [0, -6, 0],
-                extrapolate: "clamp",
-              });
-              const borderRadius = dotAnim.interpolate({
-                inputRange,
-                outputRange: [4, 12, 4],
-                extrapolate: "clamp",
-              });
-
-              const bgColor =
-                imagenActual === index ? colors.primary : "#E5E7EB";
-
-              return (
+            <View style={styles.galleryDotsTrack}>
+              <Animated.View
+                style={[
+                  styles.galleryActiveDot,
+                  {
+                    transform: [{ translateX: activeDotTranslateX }],
+                  },
+                ]}
+              />
+              {imagenes.map((_, index) => (
                 <TouchableOpacity
                   key={index}
                   activeOpacity={0.85}
@@ -556,22 +545,10 @@ export default function LoteDetailScreen() {
                   }}
                   style={{ marginHorizontal: spacing.xs }}
                 >
-                  <Animated.View
-                    style={[
-                      styles.galleryDotBase,
-                      {
-                        width,
-                        height,
-                        borderRadius,
-                        transform: [{ translateY }],
-                        backgroundColor: bgColor,
-                      },
-                      imagenActual === index && styles.galleryDotActive,
-                    ]}
-                  />
+                  <View style={styles.galleryDot} />
                 </TouchableOpacity>
-              );
-            })}
+              ))}
+            </View>
           </View>
         )}
       </View>
@@ -976,25 +953,29 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
   },
-  galleryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: radii.full,
-    backgroundColor: "#E5E7EB",
+  galleryDotsTrack: {
+    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
   },
-  galleryDotActive: {
-    width: 24,
+  galleryActiveDot: {
+    position: "absolute",
+    left: 0,
+    width: 18,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.primary,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+    zIndex: 1,
   },
-  galleryDotBase: {
+  galleryDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radii.full,
     backgroundColor: "#E5E7EB",
   },
   summaryHeader: {
