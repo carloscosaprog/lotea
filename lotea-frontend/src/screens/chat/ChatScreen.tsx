@@ -14,7 +14,6 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -56,7 +55,6 @@ export default function ChatScreen() {
   const route = useRoute<any>();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const userId = getUserId(user);
@@ -90,17 +88,10 @@ export default function ChatScreen() {
   const isKeyboardOpen = keyboardHeight > 0;
 
   const inputBarBottomPadding =
-    Platform.OS === "android" && isKeyboardOpen
-      ? spacing.lg
-      : Math.max(insets.bottom, spacing.lg);
-  const inputBarBottomOffset =
-    Platform.OS === "android" && isKeyboardOpen
-      ? Math.max(keyboardHeight - tabBarHeight - insets.bottom, 0) + spacing.sm
-      : 0;
+    Platform.OS === "android" ? (isKeyboardOpen ? 50 : 10) : 0;
+
   const listBottomPadding =
-    Platform.OS === "android" && isKeyboardOpen
-      ? keyboardHeight + spacing.xxxl
-      : spacing.lg;
+    Platform.OS === "android" && isKeyboardOpen ? 10 : spacing.lg;
 
   useEffect(() => {
     if (!loteId || !otherUserId) {
@@ -224,8 +215,8 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={layoutStyles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      keyboardVerticalOffset={Platform.OS === "android" ? 12 : 0}
     >
       <View style={styles.header}>
         <TouchableOpacity
@@ -352,7 +343,6 @@ export default function ChatScreen() {
         style={[
           styles.inputBar,
           {
-            marginBottom: inputBarBottomOffset,
             paddingBottom: inputBarBottomPadding,
           },
         ]}
