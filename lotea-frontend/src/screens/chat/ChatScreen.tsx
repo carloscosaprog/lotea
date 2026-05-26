@@ -75,7 +75,8 @@ export default function ChatScreen() {
     otherUserIdParam && Number.isFinite(Number(otherUserIdParam))
       ? Number(otherUserIdParam)
       : null;
-  const title = route.params?.otherUserName || route.params?.loteTitulo || "Chat";
+  const title =
+    route.params?.otherUserName || route.params?.loteTitulo || "Chat";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loteId] = useState<number | null>(initialLoteId);
@@ -107,20 +108,37 @@ export default function ChatScreen() {
       return;
     }
 
-    const loadMessages = async () => {
+    const loadMessages = async (showError = true) => {
       try {
         const data = await getMessages(loteId, otherUserId);
-        setMessages(data);
+
+        setMessages((current) => {
+          if (JSON.stringify(current) === JSON.stringify(data)) {
+            return current;
+          }
+
+          return data;
+        });
+
         await markConversationAsRead(loteId, otherUserId);
       } catch (error) {
         console.error("Error cargando mensajes:", error);
-        Alert.alert("Error", "No se pudieron cargar los mensajes");
+
+        if (showError) {
+          Alert.alert("Error", "No se pudieron cargar los mensajes");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadMessages();
+
+    const interval = setInterval(() => {
+      loadMessages(false);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [loteId, otherUserId]);
 
   useEffect(() => {
@@ -129,7 +147,10 @@ export default function ChatScreen() {
       listRef.current?.scrollToEnd({ animated: true });
     };
 
-    const showSubscription = Keyboard.addListener("keyboardDidShow", handleKeyboardShow);
+    const showSubscription = Keyboard.addListener(
+      "keyboardDidShow",
+      handleKeyboardShow,
+    );
     const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
       setKeyboardHeight(0);
     });
@@ -207,7 +228,10 @@ export default function ChatScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.8}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
+        >
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerCopy}>
@@ -258,7 +282,9 @@ export default function ChatScreen() {
           { paddingBottom: listBottomPadding },
         ]}
         keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+        onContentSizeChange={() =>
+          listRef.current?.scrollToEnd({ animated: true })
+        }
         renderItem={({ item }) => {
           const isMine = item.senderId === userId;
 
@@ -345,7 +371,10 @@ export default function ChatScreen() {
         />
         <TouchableOpacity
           activeOpacity={0.85}
-          style={[styles.sendButton, (!text.trim() || sending) && styles.sendButtonDisabled]}
+          style={[
+            styles.sendButton,
+            (!text.trim() || sending) && styles.sendButtonDisabled,
+          ]}
           onPress={handleSend}
           disabled={!text.trim() || sending}
         >

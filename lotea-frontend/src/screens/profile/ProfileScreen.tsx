@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Image,
   Modal,
@@ -39,7 +39,20 @@ export default function ProfileScreen() {
 
   const { logout } = useAuth();
   const navigation = useNavigation<any>();
+  const loadUnreadMessages = async () => {
+    try {
+      const conversationsData = await getConversations();
 
+      setUnreadMessages(
+        conversationsData.reduce(
+          (total, conversation) => total + (conversation.unreadCount ?? 0),
+          0,
+        ),
+      );
+    } catch (error) {
+      console.error("Error cargando conversaciones:", error);
+    }
+  };
   useFocusEffect(
     useCallback(() => {
       const loadProfile = async () => {
@@ -62,12 +75,7 @@ export default function ProfileScreen() {
           setMisPedidos(pedidosData);
           setMisVentas(ventasData);
 
-          setUnreadMessages(
-            conversationsData.reduce(
-              (total, conversation) => total + (conversation.unreadCount ?? 0),
-              0,
-            ),
-          );
+          await loadUnreadMessages();
         } catch (error) {
           console.error(error);
           Alert.alert("Error al cargar perfil");
@@ -79,6 +87,13 @@ export default function ProfileScreen() {
       loadProfile();
     }, []),
   );
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadUnreadMessages();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (

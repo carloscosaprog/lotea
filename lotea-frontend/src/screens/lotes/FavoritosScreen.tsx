@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   },
 
   cardWrapper: {
-    marginHorizontal: 30,
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
 
