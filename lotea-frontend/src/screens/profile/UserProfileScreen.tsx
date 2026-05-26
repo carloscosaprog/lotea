@@ -53,6 +53,7 @@ export default function UserProfileScreen() {
       },
     });
   const [loading, setLoading] = useState(true);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -103,6 +104,9 @@ export default function UserProfileScreen() {
     1,
     ...Object.values(resumenCalificaciones.distribucion),
   );
+  const visibleReviews = showAllReviews
+    ? calificaciones
+    : calificaciones.slice(0, 3);
 
   return (
     <View style={layoutStyles.screen}>
@@ -230,51 +234,72 @@ export default function UserProfileScreen() {
                 </View>
               </Card>
 
-              {calificaciones.length > 0 ? (
-                calificaciones.map((calificacion) => (
-                  <Card
-                    key={calificacion.id_calificacion}
-                    contentStyle={styles.reviewCardContent}
-                  >
-                    <View style={styles.reviewTopRow}>
-                      <View style={styles.reviewBuyer}>
-                        <Avatar
-                          uri={
-                            calificacion.comprador?.avatar
-                              ? getImageUrl(calificacion.comprador.avatar)
-                              : null
-                          }
-                          name={calificacion.comprador?.nombre}
-                          size={42}
-                        />
-                        <View style={styles.reviewBuyerCopy}>
-                          <Text style={styles.reviewBuyerName}>
-                            {calificacion.comprador?.nombre ?? "Comprador"}
-                          </Text>
-                          <Text style={styles.reviewDate}>
-                            {new Date(
-                              calificacion.fecha_creacion,
-                            ).toLocaleDateString()}
-                          </Text>
+              <Text style={styles.recentReviewsTitle}>Últimas opiniones</Text>
+
+              {visibleReviews.length > 0 ? (
+                <>
+                  {visibleReviews.map((calificacion) => (
+                    <Card
+                      key={calificacion.id_calificacion}
+                      contentStyle={styles.reviewCardContent}
+                    >
+                      <View style={styles.reviewTopRow}>
+                        <View style={styles.reviewBuyer}>
+                          <Avatar
+                            uri={
+                              calificacion.comprador?.avatar
+                                ? getImageUrl(calificacion.comprador.avatar)
+                                : null
+                            }
+                            name={calificacion.comprador?.nombre}
+                            size={42}
+                          />
+
+                          <View style={styles.reviewBuyerCopy}>
+                            <Text style={styles.reviewBuyerName}>
+                              {calificacion.comprador?.nombre ?? "Comprador"}
+                            </Text>
+
+                            <Text style={styles.reviewDate}>
+                              {new Date(
+                                calificacion.fecha_creacion,
+                              ).toLocaleDateString()}
+                            </Text>
+                          </View>
                         </View>
+
+                        <RatingStars value={calificacion.puntuacion} />
                       </View>
 
-                      <RatingStars value={calificacion.puntuacion} />
-                    </View>
+                      <Text style={styles.reviewComment}>
+                        {calificacion.comentario ||
+                          "El comprador no añadió comentario."}
+                      </Text>
+                    </Card>
+                  ))}
 
-                    <Text style={styles.reviewComment}>
-                      {calificacion.comentario ||
-                        "El comprador no anadio comentario."}
-                    </Text>
-                  </Card>
-                ))
+                  {calificaciones.length > 3 && (
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      style={styles.showMoreButton}
+                      onPress={() => setShowAllReviews((prev) => !prev)}
+                    >
+                      <Text style={styles.showMoreText}>
+                        {showAllReviews
+                          ? "Mostrar menos opiniones"
+                          : `Ver las ${calificaciones.length - 3} opiniones restantes`}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
               ) : (
                 <Card contentStyle={styles.reviewCardContent}>
                   <Text style={styles.emptyTitle}>
-                    Este vendedor aun no tiene calificaciones
+                    Este vendedor aún no tiene calificaciones
                   </Text>
+
                   <Text style={styles.emptyText}>
-                    Las opiniones apareceran aqui tras pedidos entregados.
+                    Las opiniones aparecerán aquí tras pedidos entregados.
                   </Text>
                 </Card>
               )}
@@ -476,7 +501,7 @@ const styles = StyleSheet.create({
   distributionFill: {
     height: "100%",
     borderRadius: radii.full,
-    backgroundColor: colors.warning,
+    backgroundColor: colors.primary,
   },
   distributionCount: {
     ...typography.caption,
@@ -534,5 +559,44 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.body,
     color: colors.subtext,
+  },
+  footerReviews: {
+    marginTop: spacing.lg,
+    gap: spacing.md,
+  },
+
+  reviewsToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  reviewsToggleTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    fontWeight: "800",
+  },
+
+  reviewsToggleSubtitle: {
+    ...typography.caption,
+    color: colors.subtext,
+    marginTop: 2,
+  },
+  showMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+  },
+
+  showMoreText: {
+    ...typography.bodyStrong,
+    color: colors.primary,
+  },
+  recentReviewsTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    fontWeight: "800",
   },
 });

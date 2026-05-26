@@ -36,7 +36,7 @@ export default function RatingStars({
               key={star}
               name={icon}
               size={size}
-              color={colors.warning}
+              color={colors.primary}
             />
           );
         })}
