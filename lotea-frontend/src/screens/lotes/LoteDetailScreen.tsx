@@ -38,6 +38,8 @@ import { API_URL } from "../../config/api";
 import { getImageUrl } from "../../utils/getImageUrl";
 import { formatLoteLocation } from "../../utils/formatLocation";
 import { toggleFavorito } from "../../services/favoritosService";
+import RatingStars from "../../components/ui/RatingStars";
+import { getResumenCalificaciones } from "../../services/calificacionesService";
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 const screenWidth = Dimensions.get("window").width;
@@ -66,8 +68,10 @@ function RelatedLoteCard({ lote }: { lote: Lote }) {
   const categories = getLoteCategories(lote).filter(Boolean).slice(0, 2);
 
   const handleToggleFavorito = async () => {
+    if (!lote) return;
+
     try {
-      const res = await toggleFavorito(lote.id_lote, isFavorito);
+      const res = await toggleFavorito(lote.id_lote, lote.isFavorito ?? false);
 
       lote.isFavorito = res.favorito;
       lote.total_favoritos = res.total_favoritos;
@@ -157,6 +161,10 @@ export default function LoteDetailScreen() {
 
   const [lote, setLote] = useState<Lote | null>(null);
   const [vendedor, setVendedor] = useState<any>(null);
+  const [resumenVendedor, setResumenVendedor] = useState({
+    media: 0,
+    total: 0,
+  });
   const [imagenActual, setImagenActual] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const [lotesUsuario, setLotesUsuario] = useState<Lote[]>([]);
@@ -166,6 +174,7 @@ export default function LoteDetailScreen() {
 
   const scale = useRef(new Animated.Value(1)).current;
   const galleryRef = useRef<FlatList<any> | null>(null);
+  const scrollViewRef = useRef<ScrollView | null>(null);
   const modalGalleryRef = useRef<FlatList<any> | null>(null);
   const scrollStartX = useRef<number | null>(null);
   const isDragging = useRef(false);
@@ -179,6 +188,8 @@ export default function LoteDetailScreen() {
   const activeDotOffset = dotMargin - (activeDotWidth - dotSize) / 2;
   const currentUser = user as { id?: number; id_usuario?: number } | null;
   const currentUserId = currentUser?.id ?? currentUser?.id_usuario;
+  const isFavorito = lote?.isFavorito ?? false;
+  const totalFavoritos = lote?.total_favoritos ?? 0;
 
   const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], {
     useNativeDriver: true,
@@ -214,6 +225,8 @@ export default function LoteDetailScreen() {
 
   useEffect(() => {
     const fetchLote = async () => {
+      setLoading(true);
+      setLote(null);
       try {
         if (id) {
           const data = await getLoteById(Number(id));
@@ -228,12 +241,28 @@ export default function LoteDetailScreen() {
 
     fetchLote();
   }, [id]);
+  useEffect(() => {
+    setImagenActual(0);
+
+    galleryRef.current?.scrollToOffset({
+      offset: 0,
+      animated: false,
+    });
+
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({
+        y: 0,
+        animated: false,
+      });
+    }, 50);
+  }, [id]);
 
   useEffect(() => {
     const fetchUser = async () => {
       if (lote?.id_vendedor) {
         try {
           const data = await getUserById(lote.id_vendedor);
+
           setVendedor(data);
         } catch (error) {
           console.log("Error cargando vendedor", error);
@@ -242,6 +271,24 @@ export default function LoteDetailScreen() {
     };
 
     fetchUser();
+  }, [lote]);
+  useEffect(() => {
+    const fetchRating = async () => {
+      if (!lote?.id_vendedor) return;
+
+      try {
+        const resumen = await getResumenCalificaciones(lote.id_vendedor);
+
+        setResumenVendedor({
+          media: resumen.media,
+          total: resumen.total,
+        });
+      } catch (error) {
+        console.log("Error cargando valoración", error);
+      }
+    };
+
+    fetchRating();
   }, [lote]);
 
   useEffect(() => {
@@ -343,6 +390,23 @@ export default function LoteDetailScreen() {
       setContacting(false);
     }
   };
+  const handleToggleFavorito = async () => {
+    if (!lote) return;
+    try {
+      const res = await toggleFavorito(lote.id_lote, lote.isFavorito ?? false);
+      setLote((prev) =>
+        prev
+          ? {
+              ...prev,
+              isFavorito: res.favorito,
+              total_favoritos: res.total_favoritos,
+            }
+          : prev,
+      );
+    } catch (error) {
+      console.log("Error favorito:", error);
+    }
+  };
 
   if (loading) {
     return (
@@ -401,6 +465,7 @@ export default function LoteDetailScreen() {
 
   return (
     <ScrollView
+      ref={scrollViewRef}
       style={layoutStyles.screen}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -567,14 +632,30 @@ export default function LoteDetailScreen() {
       </View>
 
       <Card>
-        <View style={styles.summaryHeader}>
-          <View style={styles.summaryCopy}>
-            <Text style={styles.title}>{lote.titulo}</Text>
-            <Text style={styles.ratingLine}>
+        <View style={styles.summaryBlock}>
+          <Text style={styles.title}>{lote.titulo}</Text>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={styles.favoriteRow}
+            onPress={handleToggleFavorito}
+          >
+            <Ionicons
+              name={isFavorito ? "heart" : "heart-outline"}
+              size={20}
+              color={colors.primary}
+            />
+
+            <Text style={styles.favoriteText}>{totalFavoritos} favoritos</Text>
+          </TouchableOpacity>
+
+          <View style={styles.stockPriceRow}>
+            <Text style={styles.stockText}>
               Quedan {lote.cantidad} unidades
             </Text>
+
+            <Text style={styles.price}>{lote.precio} EUR</Text>
           </View>
-          <Text style={styles.price}>{lote.precio} EUR</Text>
         </View>
 
         {locationLabel && (
@@ -648,6 +729,15 @@ export default function LoteDetailScreen() {
             <Text style={styles.sellerName}>
               {vendedor?.nombre || nombreVendedor}
             </Text>
+
+            <RatingStars
+              value={resumenVendedor.media}
+              total={resumenVendedor.total}
+              showValue
+              size={14}
+              style={styles.sellerRating}
+            />
+
             <Text style={styles.sellerLink}>Ver perfil del vendedor</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
@@ -997,18 +1087,15 @@ const styles = StyleSheet.create({
     borderRadius: radii.full,
     backgroundColor: "#E5E7EB",
   },
-  summaryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: spacing.md,
-    alignItems: "flex-start",
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EFF6FF",
-  },
   summaryCopy: {
     flex: 1,
     gap: spacing.xs,
+  },
+  summaryBlock: {
+    gap: spacing.md,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFF6FF",
   },
   title: {
     ...typography.title,
@@ -1016,11 +1103,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 22,
     lineHeight: 28,
-  },
-  ratingLine: {
-    ...typography.caption,
-    color: colors.subtext,
-    marginTop: spacing.xs,
   },
   price: {
     ...typography.heading,
@@ -1491,5 +1573,31 @@ const styles = StyleSheet.create({
     color: colors.subtext,
     textAlign: "center",
     marginTop: spacing.xs,
+  },
+
+  sellerRating: {
+    marginTop: 2,
+  },
+  favoriteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+
+  favoriteText: {
+    ...typography.body,
+    color: colors.subtext,
+  },
+
+  stockPriceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  stockText: {
+    ...typography.caption,
+    color: colors.subtext,
+    fontWeight: "600",
   },
 });

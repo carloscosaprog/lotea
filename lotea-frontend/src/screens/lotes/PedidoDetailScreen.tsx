@@ -9,7 +9,11 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 
 import Card from "../../components/ui/Card";
 import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
@@ -164,7 +168,10 @@ export default function PedidoDetailScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.topBar}>
-        <TouchableOpacity activeOpacity={0.8} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>
@@ -175,7 +182,11 @@ export default function PedidoDetailScreen() {
 
       {errorMessage && (
         <View style={styles.errorBanner}>
-          <Ionicons name="alert-circle-outline" size={18} color={colors.danger} />
+          <Ionicons
+            name="alert-circle-outline"
+            size={18}
+            color={colors.danger}
+          />
           <Text style={styles.errorText}>{errorMessage}</Text>
         </View>
       )}
@@ -301,14 +312,16 @@ export default function PedidoDetailScreen() {
           <Text style={styles.summaryLabel}>Metodo de pago</Text>
           <Text style={styles.summaryValue}>
             {pedido.metodo_pago
-              ? metodoLabels[pedido.metodo_pago] ?? pedido.metodo_pago
+              ? (metodoLabels[pedido.metodo_pago] ?? pedido.metodo_pago)
               : "Simulado"}
           </Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.summaryRow}>
           <Text style={styles.summaryTotal}>Total</Text>
-          <Text style={styles.summaryTotal}>{formatCurrency(resumen.total)}</Text>
+          <Text style={styles.summaryTotal}>
+            {formatCurrency(resumen.total)}
+          </Text>
         </View>
       </Card>
 
@@ -318,15 +331,6 @@ export default function PedidoDetailScreen() {
           icon="play-forward-outline"
           onPress={handleAdvance}
           disabled={!canAdvance || advancing}
-          style={styles.actionButton}
-        />
-        <SecondaryActionButton
-          title={isSellerPerspective ? "Volver a mis ventas" : "Volver a mis compras"}
-          onPress={() =>
-            navigation.navigate("Perfil", {
-              screen: isSellerPerspective ? "MisVentas" : "MisPedidos",
-            })
-          }
           style={styles.actionButton}
         />
       </View>

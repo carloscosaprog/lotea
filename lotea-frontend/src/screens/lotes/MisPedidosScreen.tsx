@@ -42,7 +42,7 @@ const estadoLabels: Record<string, string> = {
 };
 
 const estadoColors: Record<string, string> = {
-  pendiente_pago: colors.warning,
+  pendiente_pago: colors.primary,
   pagado: colors.primary,
   preparando: colors.primary,
   enviado: colors.accent,
@@ -425,7 +425,7 @@ export default function MisPedidosScreen() {
                               size={38}
                               color={
                                 selectedRating >= star
-                                  ? colors.warning
+                                  ? colors.primary
                                   : "#CBD5E1"
                               }
                             />

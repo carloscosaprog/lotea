@@ -161,7 +161,7 @@ export default function ProfileScreen() {
 
         <Card style={styles.statCard} contentStyle={styles.statContent}>
           <Text style={styles.statValue}>{misPedidos.length}</Text>
-          <Text style={styles.statLabel}>Mis pedidos</Text>
+          <Text style={styles.statLabel}>Mis compras</Text>
         </Card>
 
         <Card style={styles.statCard} contentStyle={styles.statContent}>
@@ -215,7 +215,7 @@ export default function ProfileScreen() {
                   color={colors.primary}
                 />
               </View>
-              <Text style={styles.quickActionText}>Mis pedidos</Text>
+              <Text style={styles.quickActionText}>Mis compras</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </View>
