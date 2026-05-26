@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   ImageBackground,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
@@ -353,6 +354,7 @@ function MarketplaceListCard({
 }
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const { loading: loadingAuth, user } = useAuth();
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -885,6 +887,8 @@ export default function HomeScreen() {
               visible={filtersVisible}
               transparent
               animationType="fade"
+              navigationBarTranslucent
+              statusBarTranslucent
               onRequestClose={() => closeFilters()}
             >
               <View style={styles.modalRoot}>
@@ -1169,7 +1173,14 @@ export default function HomeScreen() {
                     </View>
                   </ScrollView>
 
-                  <View style={styles.sheetFooter}>
+                  <View
+                    style={[
+                      styles.sheetFooter,
+                      {
+                        paddingBottom: spacing.lg + insets.bottom,
+                      },
+                    ]}
+                  >
                     <TouchableOpacity
                       activeOpacity={0.86}
                       style={styles.clearButton}
