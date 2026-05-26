@@ -39,6 +39,7 @@ import { getImageUrl } from "../../utils/getImageUrl";
 import { formatLoteLocation } from "../../utils/formatLocation";
 import { toggleFavorito } from "../../services/favoritosService";
 
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 const screenWidth = Dimensions.get("window").width;
 const APPROXIMATION_RADIUS_METERS = 900;
 
@@ -171,10 +172,11 @@ export default function LoteDetailScreen() {
   const isProgrammaticScroll = useRef(false);
   const scrollX = useRef(new Animated.Value(0)).current;
   const galleryWidth = screenWidth - spacing.lg * 2;
-  const dotAnim = Animated.divide(scrollX, galleryWidth);
   const dotSize = 8;
   const dotMargin = spacing.xs;
   const dotSpacing = dotSize + dotMargin * 2;
+  const activeDotWidth = 18;
+  const activeDotOffset = dotMargin - (activeDotWidth - dotSize) / 2;
   const currentUser = user as { id?: number; id_usuario?: number } | null;
   const currentUserId = currentUser?.id ?? currentUser?.id_usuario;
 
@@ -206,6 +208,7 @@ export default function LoteDetailScreen() {
         index: imagenActual,
         animated: false,
       });
+      scrollX.setValue(imagenActual * galleryWidth);
     }
   }, [fullscreen, imagenActual]);
 
@@ -356,9 +359,12 @@ export default function LoteDetailScreen() {
   }
 
   const imagenes = Array.isArray(lote.imagenes) ? lote.imagenes : [];
-  const activeDotTranslateX = dotAnim.interpolate({
-    inputRange: [0, Math.max(1, imagenes.length - 1)],
-    outputRange: [0, dotSpacing * Math.max(1, imagenes.length - 1)],
+  const activeDotTranslateX = scrollX.interpolate({
+    inputRange: [0, galleryWidth * Math.max(1, imagenes.length - 1)],
+    outputRange: [
+      activeDotOffset,
+      activeDotOffset + dotSpacing * Math.max(1, imagenes.length - 1),
+    ],
     extrapolate: "clamp",
   });
   const imageSources =
@@ -441,7 +447,7 @@ export default function LoteDetailScreen() {
       )}
 
       <View style={styles.galleryContainer}>
-        <FlatList
+        <AnimatedFlatList
           ref={galleryRef}
           data={imageSources}
           horizontal
@@ -454,7 +460,7 @@ export default function LoteDetailScreen() {
           keyExtractor={(_, index) => index.toString()}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-            { useNativeDriver: false },
+            { useNativeDriver: true },
           )}
           scrollEventThrottle={16}
           onScrollBeginDrag={(e) => {
@@ -505,7 +511,7 @@ export default function LoteDetailScreen() {
             const uri =
               typeof item === "string" && item.startsWith("http")
                 ? item
-                : getImageUrl(item);
+                : getImageUrl(item as string | null);
             return (
               <View style={[styles.mainImageWrapper, { width: galleryWidth }]}>
                 <TouchableOpacity
@@ -528,6 +534,7 @@ export default function LoteDetailScreen() {
                 style={[
                   styles.galleryActiveDot,
                   {
+                    width: activeDotWidth,
                     transform: [{ translateX: activeDotTranslateX }],
                   },
                 ]}
