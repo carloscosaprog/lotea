@@ -6,7 +6,6 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -19,12 +18,6 @@ import { colors } from "../../styles/colors";
 import { layoutStyles } from "../../styles/theme";
 import { spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
-
-//calcular el espacio de cada card
-const screenWidth = Dimensions.get("window").width;
-const horizontalPadding = spacing.lg * 2;
-const gap = spacing.md;
-const cardWidth = (screenWidth - horizontalPadding - gap) / 2;
 
 export default function FavoritosScreen() {
   const [lotes, setLotes] = useState<Lote[]>([]);
@@ -61,8 +54,7 @@ export default function FavoritosScreen() {
       <FlatList
         data={lotes}
         keyExtractor={(item) => item.id_lote.toString()}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
+        numColumns={1}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         ListHeaderComponent={
@@ -135,7 +127,6 @@ const styles = StyleSheet.create({
     ...typography.title,
     color: colors.text,
   },
-
   listContent: {
     paddingBottom: spacing.xxxl,
   },
@@ -147,7 +138,7 @@ const styles = StyleSheet.create({
   },
 
   cardWrapper: {
-    width: cardWidth,
+    marginHorizontal: 30,
     marginBottom: spacing.md,
   },
 
