@@ -301,10 +301,16 @@ export default function LoteDetailScreen() {
           try {
             await deleteLote(lote.id_lote);
 
-            await deleteLote(lote.id_lote);
-
-            navigation.navigate("Home", {
-              screen: "HomeScreen",
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: "Home",
+                  params: {
+                    screen: "HomeScreen",
+                  },
+                },
+              ],
             });
           } catch {
             Alert.alert("Error", "No se pudo eliminar el lote");
@@ -742,20 +748,26 @@ export default function LoteDetailScreen() {
       )}
 
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          style={styles.buyButton}
-          onPress={() =>
-            navigation.navigate("Compra", {
-              lote,
-            })
-          }
-          activeOpacity={0.85}
-        >
-          <View style={styles.buyButtonContent}>
-            <Ionicons name="bag-check-outline" size={24} color={colors.white} />
-            <Text style={styles.buyButtonText}>Comprar lote</Text>
-          </View>
-        </TouchableOpacity>
+        {currentUserId && lote.id_vendedor !== currentUserId && (
+          <TouchableOpacity
+            style={styles.buyButton}
+            onPress={() =>
+              navigation.navigate("Compra", {
+                lote,
+              })
+            }
+            activeOpacity={0.85}
+          >
+            <View style={styles.buyButtonContent}>
+              <Ionicons
+                name="bag-check-outline"
+                size={24}
+                color={colors.white}
+              />
+              <Text style={styles.buyButtonText}>Comprar lote</Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {currentUserId && lote.id_vendedor !== currentUserId && (
           <TouchableOpacity
