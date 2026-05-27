@@ -221,7 +221,7 @@ export default function LoteDetailScreen() {
       });
       scrollX.setValue(imagenActual * galleryWidth);
     }
-  }, [fullscreen, imagenActual]);
+  }, [fullscreen, imagenActual, galleryWidth, scrollX]);
 
   useEffect(() => {
     const fetchLote = async () => {
@@ -258,6 +258,7 @@ export default function LoteDetailScreen() {
     };
 
     syncFavorito();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lote?.id_lote]);
 
   useEffect(() => {
