@@ -317,7 +317,11 @@ export default function EditLocationScreen() {
         <View style={styles.topBar}>
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => navigation.goBack()}
+            onPress={() =>
+              navigation.navigate("Perfil", {
+                screen: "ProfileMain",
+              })
+            }
           >
             <Ionicons name="chevron-back" size={22} color={colors.text} />
           </TouchableOpacity>

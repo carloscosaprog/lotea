@@ -12,9 +12,9 @@ export type CalificacionLote = {
 export type CalificacionPedido = {
   id_pedido: number;
   fecha: string;
-  detalles?: Array<{
+  detalles?: {
     lote?: CalificacionLote | null;
-  }>;
+  }[];
 };
 
 export type Calificacion = {

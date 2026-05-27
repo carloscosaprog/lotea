@@ -16,6 +16,7 @@ import {
   TouchableOpacity,
   ImageBackground,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import Slider from "@react-native-community/slider";
@@ -202,7 +203,7 @@ function MarketplaceLotCard({
             <Ionicons
               name={isFavorito ? "heart" : "heart-outline"}
               size={16}
-              color={isFavorito ? "red" : "white"}
+              color={isFavorito ? colors.primary : "white"}
             />
             <Text style={styles.productFavoriteText}>{totalFavoritos}</Text>
           </View>
@@ -311,7 +312,7 @@ function MarketplaceListCard({
           <Ionicons
             name={isFavorito ? "heart" : "heart-outline"}
             size={16}
-            color={isFavorito ? "red" : "white"}
+            color={isFavorito ? colors.primary : "white"}
           />
           <Text style={styles.feedFavoriteText}>{totalFavoritos}</Text>
         </View>
@@ -353,6 +354,7 @@ function MarketplaceListCard({
 }
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const { loading: loadingAuth, user } = useAuth();
   const [lotes, setLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -443,28 +445,38 @@ export default function HomeScreen() {
   }, [distanceFilterEnabled, distanceValue]);
 
   useEffect(() => {
-    if (loadingAuth) {
+    if (loadingAuth || !user) {
       return;
     }
 
-    if (!user) {
-      return;
-    }
+    let isMounted = true;
 
     const loadData = async () => {
-      await fetchLotes();
-
       try {
+        // Espera un tick para asegurar hidratacion completa
+        await new Promise((resolve) => setTimeout(resolve, 150));
+
+        if (!isMounted) return;
+
+        await fetchLotes();
+
         const cats = await getCategorias();
+
+        if (!isMounted) return;
+
         const normalizedCategories = Array.isArray(cats) ? cats : [];
 
         setCategoriasDisponibles(normalizedCategories);
       } catch (e) {
-        console.error("Error cargando categorias", e);
+        console.error("Error cargando Home", e);
       }
     };
 
     loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [fetchLotes, loadingAuth, user]);
 
   useEffect(() => {
@@ -617,10 +629,6 @@ export default function HomeScreen() {
     return count;
   }, [activeCategories, distanceFilterEnabled, priceFilterEnabled, search]);
 
-  const selectedCategoriesLabel = activeCategories.includes("Todas")
-    ? "Todas las categorias"
-    : activeCategories.join(", ");
-
   const allFilterCategories = useMemo(() => {
     if (activeFilterCategory) {
       return [
@@ -720,6 +728,7 @@ export default function HomeScreen() {
           renderItem={renderHorizontalLote}
           contentContainerStyle={styles.carouselList}
           showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
         />
       </Animated.View>
     );
@@ -745,6 +754,7 @@ export default function HomeScreen() {
             onFavoriteChange={handleFavoriteChange}
           />
         )}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         refreshing={refreshing}
@@ -885,6 +895,8 @@ export default function HomeScreen() {
               visible={filtersVisible}
               transparent
               animationType="fade"
+              navigationBarTranslucent
+              statusBarTranslucent
               onRequestClose={() => closeFilters()}
             >
               <View style={styles.modalRoot}>
@@ -1169,7 +1181,14 @@ export default function HomeScreen() {
                     </View>
                   </ScrollView>
 
-                  <View style={styles.sheetFooter}>
+                  <View
+                    style={[
+                      styles.sheetFooter,
+                      {
+                        paddingBottom: spacing.lg + insets.bottom,
+                      },
+                    ]}
+                  >
                     <TouchableOpacity
                       activeOpacity={0.86}
                       style={styles.clearButton}

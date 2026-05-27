@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         setUser(profile);
         await AsyncStorage.setItem("user", JSON.stringify(profile));
-      } catch (error) {
+      } catch {
         // TOKEN INVÁLIDO → LIMPIAR TODO
         await AsyncStorage.removeItem("user");
         await AsyncStorage.removeItem("token");

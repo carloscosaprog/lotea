@@ -1,6 +1,7 @@
 import { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
@@ -19,9 +20,21 @@ const targetByRoute: Record<string, { name: string; params?: object }> = {
   Perfil: { name: "Perfil", params: { screen: "ProfileMain" } },
 };
 
-export default function Navbar({ state, descriptors, navigation }: BottomTabBarProps) {
+export default function Navbar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
+  const insets = useSafeAreaInsets();
   return (
-    <View style={styles.shell}>
+    <View
+      style={[
+        styles.shell,
+        {
+          paddingBottom: Math.max(insets.bottom, spacing.lg),
+        },
+      ]}
+    >
       <View style={styles.bar}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
@@ -37,7 +50,17 @@ export default function Navbar({ state, descriptors, navigation }: BottomTabBarP
           return (
             <Pressable
               key={route.key}
-              onPress={() => (navigation as any).navigate(target.name, target.params)}
+              onPress={() => {
+                if (route.name === "Perfil") {
+                  navigation.navigate("Perfil", {
+                    screen: "ProfileMain",
+                  });
+
+                  return;
+                }
+
+                (navigation as any).navigate(target.name, target.params);
+              }}
               style={styles.item}
             >
               <View style={styles.iconWrap}>
@@ -50,7 +73,9 @@ export default function Navbar({ state, descriptors, navigation }: BottomTabBarP
               <Text style={[styles.label, isFocused && styles.labelActive]}>
                 {label}
               </Text>
-              <View style={[styles.indicator, isFocused && styles.indicatorActive]} />
+              <View
+                style={[styles.indicator, isFocused && styles.indicatorActive]}
+              />
             </Pressable>
           );
         })}
@@ -110,4 +135,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
 });
-

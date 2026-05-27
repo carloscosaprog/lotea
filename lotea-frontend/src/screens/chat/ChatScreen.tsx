@@ -14,9 +14,7 @@ import {
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -55,8 +53,6 @@ export default function ChatScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { user } = useAuth();
-  const insets = useSafeAreaInsets();
-  const tabBarHeight = useBottomTabBarHeight();
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const userId = getUserId(user);
@@ -75,7 +71,8 @@ export default function ChatScreen() {
     otherUserIdParam && Number.isFinite(Number(otherUserIdParam))
       ? Number(otherUserIdParam)
       : null;
-  const title = route.params?.otherUserName || route.params?.loteTitulo || "Chat";
+  const title =
+    route.params?.otherUserName || route.params?.loteTitulo || "Chat";
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loteId] = useState<number | null>(initialLoteId);
@@ -89,17 +86,10 @@ export default function ChatScreen() {
   const isKeyboardOpen = keyboardHeight > 0;
 
   const inputBarBottomPadding =
-    Platform.OS === "android" && isKeyboardOpen
-      ? spacing.lg
-      : Math.max(insets.bottom, spacing.lg);
-  const inputBarBottomOffset =
-    Platform.OS === "android" && isKeyboardOpen
-      ? Math.max(keyboardHeight - tabBarHeight - insets.bottom, 0) + spacing.sm
-      : 0;
+    Platform.OS === "android" ? (isKeyboardOpen ? 50 : 10) : 0;
+
   const listBottomPadding =
-    Platform.OS === "android" && isKeyboardOpen
-      ? keyboardHeight + spacing.xxxl
-      : spacing.lg;
+    Platform.OS === "android" && isKeyboardOpen ? 10 : spacing.lg;
 
   useEffect(() => {
     if (!loteId || !otherUserId) {
@@ -107,20 +97,37 @@ export default function ChatScreen() {
       return;
     }
 
-    const loadMessages = async () => {
+    const loadMessages = async (showError = true) => {
       try {
         const data = await getMessages(loteId, otherUserId);
-        setMessages(data);
+
+        setMessages((current) => {
+          if (JSON.stringify(current) === JSON.stringify(data)) {
+            return current;
+          }
+
+          return data;
+        });
+
         await markConversationAsRead(loteId, otherUserId);
       } catch (error) {
         console.error("Error cargando mensajes:", error);
-        Alert.alert("Error", "No se pudieron cargar los mensajes");
+
+        if (showError) {
+          Alert.alert("Error", "No se pudieron cargar los mensajes");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadMessages();
+
+    const interval = setInterval(() => {
+      loadMessages(false);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [loteId, otherUserId]);
 
   useEffect(() => {
@@ -129,7 +136,10 @@ export default function ChatScreen() {
       listRef.current?.scrollToEnd({ animated: true });
     };
 
-    const showSubscription = Keyboard.addListener("keyboardDidShow", handleKeyboardShow);
+    const showSubscription = Keyboard.addListener(
+      "keyboardDidShow",
+      handleKeyboardShow,
+    );
     const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
       setKeyboardHeight(0);
     });
@@ -203,11 +213,14 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={layoutStyles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      keyboardVerticalOffset={Platform.OS === "android" ? 12 : 0}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.8}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.8}
+        >
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <View style={styles.headerCopy}>
@@ -258,7 +271,9 @@ export default function ChatScreen() {
           { paddingBottom: listBottomPadding },
         ]}
         keyboardShouldPersistTaps="handled"
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+        onContentSizeChange={() =>
+          listRef.current?.scrollToEnd({ animated: true })
+        }
         renderItem={({ item }) => {
           const isMine = item.senderId === userId;
 
@@ -326,7 +341,6 @@ export default function ChatScreen() {
         style={[
           styles.inputBar,
           {
-            marginBottom: inputBarBottomOffset,
             paddingBottom: inputBarBottomPadding,
           },
         ]}
@@ -345,7 +359,10 @@ export default function ChatScreen() {
         />
         <TouchableOpacity
           activeOpacity={0.85}
-          style={[styles.sendButton, (!text.trim() || sending) && styles.sendButtonDisabled]}
+          style={[
+            styles.sendButton,
+            (!text.trim() || sending) && styles.sendButtonDisabled,
+          ]}
           onPress={handleSend}
           disabled={!text.trim() || sending}
         >

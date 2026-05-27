@@ -21,7 +21,6 @@ import {
   Layers3,
   PackageCheck,
   PencilLine,
-  Plus,
   Tag,
   Trash2,
   X,

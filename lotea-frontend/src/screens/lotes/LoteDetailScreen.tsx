@@ -28,17 +28,19 @@ import { getUserById } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import type { Lote } from "../../types/Lote";
 import Avatar from "../../components/ui/Avatar";
-import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
-import { componentStyles, layoutStyles } from "../../styles/theme";
+import { layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { API_URL } from "../../config/api";
 import { getImageUrl } from "../../utils/getImageUrl";
 import { formatLoteLocation } from "../../utils/formatLocation";
-import { toggleFavorito } from "../../services/favoritosService";
+import { toggleFavorito, checkFavorito } from "../../services/favoritosService";
+import RatingStars from "../../components/ui/RatingStars";
+import { getResumenCalificaciones } from "../../services/calificacionesService";
 
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 const screenWidth = Dimensions.get("window").width;
 const APPROXIMATION_RADIUS_METERS = 900;
 
@@ -65,8 +67,10 @@ function RelatedLoteCard({ lote }: { lote: Lote }) {
   const categories = getLoteCategories(lote).filter(Boolean).slice(0, 2);
 
   const handleToggleFavorito = async () => {
+    if (!lote) return;
+
     try {
-      const res = await toggleFavorito(lote.id_lote, isFavorito);
+      const res = await toggleFavorito(lote.id_lote, lote.isFavorito ?? false);
 
       lote.isFavorito = res.favorito;
       lote.total_favoritos = res.total_favoritos;
@@ -103,7 +107,7 @@ function RelatedLoteCard({ lote }: { lote: Lote }) {
             <Ionicons
               name={isFavorito ? "heart" : "heart-outline"}
               size={16}
-              color={isFavorito ? "red" : "white"}
+              color={isFavorito ? colors.primary : "white"}
             />
             <Text style={styles.relatedFavoriteText}>{totalFavoritos}</Text>
           </View>
@@ -156,6 +160,10 @@ export default function LoteDetailScreen() {
 
   const [lote, setLote] = useState<Lote | null>(null);
   const [vendedor, setVendedor] = useState<any>(null);
+  const [resumenVendedor, setResumenVendedor] = useState({
+    media: 0,
+    total: 0,
+  });
   const [imagenActual, setImagenActual] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const [lotesUsuario, setLotesUsuario] = useState<Lote[]>([]);
@@ -164,8 +172,24 @@ export default function LoteDetailScreen() {
   const [contacting, setContacting] = useState(false);
 
   const scale = useRef(new Animated.Value(1)).current;
+  const galleryRef = useRef<FlatList<any> | null>(null);
+  const scrollViewRef = useRef<ScrollView | null>(null);
+  const modalGalleryRef = useRef<FlatList<any> | null>(null);
+  const scrollStartX = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const isProgrammaticScroll = useRef(false);
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const galleryWidth = screenWidth - spacing.lg * 2;
+  const dotSize = 8;
+  const dotMargin = spacing.xs;
+  const dotSpacing = dotSize + dotMargin * 2;
+  const activeDotWidth = 18;
+  const activeDotOffset = dotMargin - (activeDotWidth - dotSize) / 2;
   const currentUser = user as { id?: number; id_usuario?: number } | null;
   const currentUserId = currentUser?.id ?? currentUser?.id_usuario;
+  const [isFavorito, setIsFavorito] = useState(false);
+  const [totalFavoritos, setTotalFavoritos] = useState(0);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], {
     useNativeDriver: true,
@@ -181,7 +205,28 @@ export default function LoteDetailScreen() {
   };
 
   useEffect(() => {
+    if (fullscreen && modalGalleryRef.current) {
+      modalGalleryRef.current.scrollToIndex({
+        index: imagenActual,
+        animated: false,
+      });
+    }
+  }, [fullscreen, imagenActual]);
+
+  useEffect(() => {
+    if (!fullscreen && galleryRef.current) {
+      galleryRef.current.scrollToIndex({
+        index: imagenActual,
+        animated: false,
+      });
+      scrollX.setValue(imagenActual * galleryWidth);
+    }
+  }, [fullscreen, imagenActual, galleryWidth, scrollX]);
+
+  useEffect(() => {
     const fetchLote = async () => {
+      setLoading(true);
+      setLote(null);
       try {
         if (id) {
           const data = await getLoteById(Number(id));
@@ -198,10 +243,46 @@ export default function LoteDetailScreen() {
   }, [id]);
 
   useEffect(() => {
+    const syncFavorito = async () => {
+      if (!lote) return;
+
+      try {
+        const result = await checkFavorito(lote.id_lote);
+
+        setIsFavorito(result.favorito);
+
+        setTotalFavoritos(lote.total_favoritos ?? 0);
+      } catch (error) {
+        console.log("Error comprobando favorito:", error);
+      }
+    };
+
+    syncFavorito();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lote?.id_lote]);
+
+  useEffect(() => {
+    setImagenActual(0);
+
+    galleryRef.current?.scrollToOffset({
+      offset: 0,
+      animated: false,
+    });
+
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({
+        y: 0,
+        animated: false,
+      });
+    }, 50);
+  }, [id]);
+
+  useEffect(() => {
     const fetchUser = async () => {
       if (lote?.id_vendedor) {
         try {
           const data = await getUserById(lote.id_vendedor);
+
           setVendedor(data);
         } catch (error) {
           console.log("Error cargando vendedor", error);
@@ -210,6 +291,24 @@ export default function LoteDetailScreen() {
     };
 
     fetchUser();
+  }, [lote]);
+  useEffect(() => {
+    const fetchRating = async () => {
+      if (!lote?.id_vendedor) return;
+
+      try {
+        const resumen = await getResumenCalificaciones(lote.id_vendedor);
+
+        setResumenVendedor({
+          media: resumen.media,
+          total: resumen.total,
+        });
+      } catch (error) {
+        console.log("Error cargando valoración", error);
+      }
+    };
+
+    fetchRating();
   }, [lote]);
 
   useEffect(() => {
@@ -269,10 +368,16 @@ export default function LoteDetailScreen() {
           try {
             await deleteLote(lote.id_lote);
 
-            await deleteLote(lote.id_lote);
-
-            navigation.navigate("Home", {
-              screen: "HomeScreen",
+            navigation.reset({
+              index: 0,
+              routes: [
+                {
+                  name: "Home",
+                  params: {
+                    screen: "HomeScreen",
+                  },
+                },
+              ],
             });
           } catch {
             Alert.alert("Error", "No se pudo eliminar el lote");
@@ -305,6 +410,44 @@ export default function LoteDetailScreen() {
       setContacting(false);
     }
   };
+  const handleToggleFavorito = async () => {
+    if (!lote || favoriteLoading) return;
+
+    try {
+      setFavoriteLoading(true);
+
+      const previousFavorito = isFavorito;
+
+      const optimisticFavorito = !previousFavorito;
+
+      setIsFavorito(optimisticFavorito);
+      setTotalFavoritos((prev) =>
+        optimisticFavorito ? prev + 1 : Math.max(0, prev - 1),
+      );
+
+      const res = await toggleFavorito(lote.id_lote, previousFavorito);
+
+      setIsFavorito(res.favorito);
+      setTotalFavoritos(res.total_favoritos);
+
+      setLote((prev) =>
+        prev
+          ? {
+              ...prev,
+              isFavorito: res.favorito,
+              total_favoritos: res.total_favoritos,
+            }
+          : prev,
+      );
+    } catch (error) {
+      console.log("Error favorito:", error);
+
+      setIsFavorito(lote.isFavorito ?? false);
+      setTotalFavoritos(lote.total_favoritos ?? 0);
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -327,6 +470,16 @@ export default function LoteDetailScreen() {
   }
 
   const imagenes = Array.isArray(lote.imagenes) ? lote.imagenes : [];
+  const activeDotTranslateX = scrollX.interpolate({
+    inputRange: [0, galleryWidth * Math.max(1, imagenes.length - 1)],
+    outputRange: [
+      activeDotOffset,
+      activeDotOffset + dotSpacing * Math.max(1, imagenes.length - 1),
+    ],
+    extrapolate: "clamp",
+  });
+  const imageSources =
+    imagenes.length > 0 ? imagenes : ["https://via.placeholder.com/300"];
   const categorias = getLoteCategories(lote);
   const nombreVendedor =
     typeof vendedor?.nombre === "string"
@@ -353,6 +506,7 @@ export default function LoteDetailScreen() {
 
   return (
     <ScrollView
+      ref={scrollViewRef}
       style={layoutStyles.screen}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
@@ -367,7 +521,6 @@ export default function LoteDetailScreen() {
         <Text style={styles.topBarBrand}>LOTEA</Text>
         <View style={{ width: 22 }} />
       </View>
-
       {currentUserId && lote.id_vendedor === currentUserId && (
         <View style={styles.ownerActions}>
           <TouchableOpacity
@@ -403,50 +556,144 @@ export default function LoteDetailScreen() {
           </TouchableOpacity>
         </View>
       )}
-
       <View style={styles.galleryContainer}>
-        <TouchableOpacity
-          activeOpacity={0.95}
-          onPress={() => setFullscreen(true)}
-          style={styles.mainImageWrapper}
-        >
-          <Image
-            source={{
-              uri: imagenes[imagenActual]
-                ? getImageUrl(imagenes[imagenActual])
-                : "https://via.placeholder.com/300",
-            }}
-            style={styles.mainImage}
-          />
-          <View style={styles.imageOverlay}></View>
-        </TouchableOpacity>
+        <AnimatedFlatList
+          ref={galleryRef}
+          data={imageSources}
+          horizontal
+          pagingEnabled
+          nestedScrollEnabled
+          decelerationRate="fast"
+          showsHorizontalScrollIndicator={false}
+          style={{ width: galleryWidth }}
+          contentContainerStyle={{ alignItems: "center" }}
+          keyExtractor={(_, index) => index.toString()}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: true },
+          )}
+          scrollEventThrottle={16}
+          onScrollBeginDrag={(e) => {
+            isDragging.current = true;
+            scrollStartX.current = e.nativeEvent.contentOffset.x;
+          }}
+          onScrollEndDrag={(e) => {
+            isDragging.current = false;
+            const endX = e.nativeEvent.contentOffset.x;
+            const startX = scrollStartX.current ?? 0;
+            const dx = endX - startX;
+            const threshold = galleryWidth * 0.12;
+            let newIndex = imagenActual;
+
+            if (Math.abs(dx) > threshold) {
+              // swipe left -> dx > 0 (moved to the right) -> next image
+              if (dx > 0)
+                newIndex = Math.min(imagenes.length - 1, imagenActual + 1);
+              else newIndex = Math.max(0, imagenActual - 1);
+            } else {
+              // small drag -> snap back to current
+              newIndex = imagenActual;
+            }
+
+            // mark programmatic scroll to avoid conflicting momentum updates
+            isProgrammaticScroll.current = true;
+            galleryRef.current?.scrollToOffset({
+              offset: newIndex * galleryWidth,
+              animated: true,
+            });
+            setImagenActual(newIndex);
+          }}
+          onMomentumScrollEnd={(e) => {
+            // if we initiated the scroll programmatically, just clear flag
+            const index = Math.round(
+              e.nativeEvent.contentOffset.x / galleryWidth,
+            );
+            if (isProgrammaticScroll.current) {
+              isProgrammaticScroll.current = false;
+              setImagenActual(index);
+              return;
+            }
+
+            // user-driven momentum: update index
+            setImagenActual(index);
+          }}
+          renderItem={({ item }) => {
+            const uri =
+              typeof item === "string" && item.startsWith("http")
+                ? item
+                : getImageUrl(item as string | null);
+            return (
+              <View style={[styles.mainImageWrapper, { width: galleryWidth }]}>
+                <TouchableOpacity
+                  activeOpacity={0.95}
+                  onPress={() => setFullscreen(true)}
+                  style={styles.mainImageTouchable}
+                >
+                  <Image source={{ uri }} style={styles.mainImage} />
+                  <View style={styles.imageOverlay}></View>
+                </TouchableOpacity>
+              </View>
+            );
+          }}
+        />
 
         {imagenes.length > 0 && (
           <View style={styles.galleryDotsContainer}>
-            {imagenes.map((_, index) => (
-              <TouchableOpacity
-                key={index}
-                activeOpacity={0.7}
-                onPress={() => setImagenActual(index)}
+            <View style={styles.galleryDotsTrack}>
+              <Animated.View
                 style={[
-                  styles.galleryDot,
-                  imagenActual === index && styles.galleryDotActive,
+                  styles.galleryActiveDot,
+                  {
+                    width: activeDotWidth,
+                    transform: [{ translateX: activeDotTranslateX }],
+                  },
                 ]}
               />
-            ))}
+              {imagenes.map((_, index) => (
+                <TouchableOpacity
+                  key={index}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setImagenActual(index);
+                    galleryRef.current?.scrollToIndex({
+                      index,
+                      animated: true,
+                    });
+                  }}
+                  style={{ marginHorizontal: spacing.xs }}
+                >
+                  <View style={styles.galleryDot} />
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         )}
       </View>
-
       <Card>
-        <View style={styles.summaryHeader}>
-          <View style={styles.summaryCopy}>
-            <Text style={styles.title}>{lote.titulo}</Text>
-            <Text style={styles.ratingLine}>
+        <View style={styles.summaryBlock}>
+          <Text style={styles.title}>{lote.titulo}</Text>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            style={styles.favoriteRow}
+            onPress={handleToggleFavorito}
+          >
+            <Ionicons
+              name={isFavorito ? "heart" : "heart-outline"}
+              size={28}
+              color={isFavorito ? colors.primary : colors.primary}
+            />
+
+            <Text style={styles.favoriteText}>{totalFavoritos} favoritos</Text>
+          </TouchableOpacity>
+
+          <View style={styles.stockPriceRow}>
+            <Text style={styles.stockText}>
               Quedan {lote.cantidad} unidades
             </Text>
+
+            <Text style={styles.price}>{lote.precio} EUR</Text>
           </View>
-          <Text style={styles.price}>{lote.precio} EUR</Text>
         </View>
 
         {locationLabel && (
@@ -520,17 +767,27 @@ export default function LoteDetailScreen() {
             <Text style={styles.sellerName}>
               {vendedor?.nombre || nombreVendedor}
             </Text>
+
+            <RatingStars
+              value={resumenVendedor.media}
+              total={resumenVendedor.total}
+              showValue
+              size={14}
+              style={styles.sellerRating}
+            />
+
             <Text style={styles.sellerLink}>Ver perfil del vendedor</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
         </TouchableOpacity>
       </Card>
-
-      <Card>
-        <Text style={styles.descriptionTitle}>Descripcion</Text>
-        <Text style={styles.description}>{lote.descripcion}</Text>
-      </Card>
-
+      {typeof lote.descripcion === "string" &&
+        lote.descripcion.trim().length > 0 && (
+          <Card>
+            <Text style={styles.descriptionTitle}>Descripcion</Text>
+            <Text style={styles.description}>{lote.descripcion}</Text>
+          </Card>
+        )}
       {categorias.length > 0 && (
         <View style={styles.categoriesSection}>
           <View style={styles.categoriesHeader}>
@@ -552,7 +809,6 @@ export default function LoteDetailScreen() {
           </View>
         </View>
       )}
-
       {lotesUsuario.length > 0 && (
         <View style={styles.moreSection}>
           <View style={styles.marketSectionHeader}>
@@ -585,7 +841,6 @@ export default function LoteDetailScreen() {
           />
         </View>
       )}
-
       {lotesSimilares.length > 0 && (
         <View style={styles.moreSection}>
           <View style={styles.marketSectionHeader}>
@@ -618,22 +873,27 @@ export default function LoteDetailScreen() {
           />
         </View>
       )}
-
       <View style={styles.buttonsContainer}>
-        <TouchableOpacity
-          style={styles.buyButton}
-          onPress={() =>
-            navigation.navigate("Compra", {
-              lote,
-            })
-          }
-          activeOpacity={0.85}
-        >
-          <View style={styles.buyButtonContent}>
-            <Ionicons name="bag-check-outline" size={24} color={colors.white} />
-            <Text style={styles.buyButtonText}>Comprar lote</Text>
-          </View>
-        </TouchableOpacity>
+        {currentUserId && lote.id_vendedor !== currentUserId && (
+          <TouchableOpacity
+            style={styles.buyButton}
+            onPress={() =>
+              navigation.navigate("Compra", {
+                lote,
+              })
+            }
+            activeOpacity={0.85}
+          >
+            <View style={styles.buyButtonContent}>
+              <Ionicons
+                name="bag-check-outline"
+                size={24}
+                color={colors.white}
+              />
+              <Text style={styles.buyButtonText}>Comprar lote</Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
         {currentUserId && lote.id_vendedor !== currentUserId && (
           <TouchableOpacity
@@ -655,7 +915,6 @@ export default function LoteDetailScreen() {
           </TouchableOpacity>
         )}
       </View>
-
       <Modal visible={fullscreen} transparent animationType="fade">
         <View style={styles.modal}>
           <View style={styles.topModalBar}>
@@ -669,7 +928,9 @@ export default function LoteDetailScreen() {
           </View>
 
           <FlatList
+            ref={modalGalleryRef}
             data={imagenes}
+            initialScrollIndex={imagenActual}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
@@ -681,6 +942,11 @@ export default function LoteDetailScreen() {
               );
               setImagenActual(index);
             }}
+            getItemLayout={(_, index) => ({
+              length: screenWidth,
+              offset: screenWidth * index,
+              index,
+            })}
             renderItem={({ item }) => (
               <View style={styles.fullImageContainer}>
                 <PinchGestureHandler
@@ -789,6 +1055,10 @@ const styles = StyleSheet.create({
     width: "100%",
     position: "relative",
   },
+  mainImageTouchable: {
+    flex: 1,
+    position: "relative",
+  },
   mainImage: {
     width: "100%",
     height: 300,
@@ -827,33 +1097,40 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
   },
-  galleryDot: {
-    width: 8,
-    height: 8,
-    borderRadius: radii.full,
-    backgroundColor: "#E5E7EB",
+  galleryDotsTrack: {
+    position: "relative",
+    flexDirection: "row",
+    alignItems: "center",
   },
-  galleryDotActive: {
-    width: 24,
+  galleryActiveDot: {
+    position: "absolute",
+    left: 0,
+    width: 18,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: colors.primary,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
+    zIndex: 1,
   },
-  summaryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: spacing.md,
-    alignItems: "flex-start",
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: "#EFF6FF",
+  galleryDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radii.full,
+    backgroundColor: "#E5E7EB",
   },
   summaryCopy: {
     flex: 1,
     gap: spacing.xs,
+  },
+  summaryBlock: {
+    gap: spacing.md,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFF6FF",
   },
   title: {
     ...typography.title,
@@ -861,11 +1138,6 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontSize: 22,
     lineHeight: 28,
-  },
-  ratingLine: {
-    ...typography.caption,
-    color: colors.subtext,
-    marginTop: spacing.xs,
   },
   price: {
     ...typography.heading,
@@ -1336,5 +1608,32 @@ const styles = StyleSheet.create({
     color: colors.subtext,
     textAlign: "center",
     marginTop: spacing.xs,
+  },
+
+  sellerRating: {
+    marginTop: 2,
+  },
+  favoriteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+
+  favoriteText: {
+    ...typography.bodyStrong,
+    color: colors.subtext,
+    fontSize: 17,
+  },
+
+  stockPriceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  stockText: {
+    ...typography.caption,
+    color: colors.subtext,
+    fontWeight: "600",
   },
 });

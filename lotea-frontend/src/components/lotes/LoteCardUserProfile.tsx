@@ -28,7 +28,6 @@ export default function LoteCard({ lote }: Props) {
 
   const imagenSrc = { uri: getImageUrl(primeraImagen) };
 
-  const totalImagenes = lote.imagenes?.length || 0;
   const locationLabel = formatLoteLocation(lote);
   const categorias = Array.isArray(lote.categorias)
     ? lote.categorias
@@ -75,7 +74,7 @@ export default function LoteCard({ lote }: Props) {
               <Ionicons
                 name={isFavorito ? "heart" : "heart-outline"}
                 size={16}
-                color={isFavorito ? "red" : "white"}
+                color={isFavorito ? colors.primary : "white"}
               />
               <Text style={styles.likeText}>{totalFavoritos}</Text>
             </View>

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Image,
   Modal,
@@ -16,6 +16,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getProfile } from "../../services/authService";
 import { getConversations } from "../../services/chatService";
 import { getMisLotes } from "../../services/lotesService";
+import { getPedidos, getVentas } from "../../services/pedidosService";
 import { useAuth } from "../../context/AuthContext";
 import type { Lote } from "../../types/Lote";
 import Avatar from "../../components/ui/Avatar";
@@ -30,28 +31,46 @@ import { getImageUrl } from "../../utils/getImageUrl";
 export default function ProfileScreen() {
   const [user, setUser] = useState<any>(null);
   const [myLotes, setMyLotes] = useState<Lote[]>([]);
+  const [misPedidos, setMisPedidos] = useState<any[]>([]);
+  const [misVentas, setMisVentas] = useState<any[]>([]);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [avatarOpen, setAvatarOpen] = useState(false);
 
   const { logout } = useAuth();
   const navigation = useNavigation<any>();
+  const loadUnreadMessages = async () => {
+    try {
+      const conversationsData = await getConversations();
 
+      setUnreadMessages(
+        conversationsData.reduce(
+          (total, conversation) => total + (conversation.unreadCount ?? 0),
+          0,
+        ),
+      );
+    } catch (error) {
+      console.error("Error cargando conversaciones:", error);
+    }
+  };
   useFocusEffect(
     useCallback(() => {
       const loadProfile = async () => {
         try {
-          const [profileData, lotesData, conversationsData] = await Promise.all(
-            [getProfile(), getMisLotes(), getConversations()],
-          );
+          const [profileData, lotesData, pedidosData, ventasData] =
+            await Promise.all([
+              getProfile(),
+              getMisLotes(),
+              getPedidos(),
+              getVentas(),
+              getConversations(),
+            ]);
           setUser(profileData);
           setMyLotes(lotesData);
-          setUnreadMessages(
-            conversationsData.reduce(
-              (total, conversation) => total + (conversation.unreadCount ?? 0),
-              0,
-            ),
-          );
+          setMisPedidos(pedidosData);
+          setMisVentas(ventasData);
+
+          await loadUnreadMessages();
         } catch (error) {
           console.error(error);
           Alert.alert("Error al cargar perfil");
@@ -63,6 +82,13 @@ export default function ProfileScreen() {
       loadProfile();
     }, []),
   );
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadUnreadMessages();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -86,7 +112,6 @@ export default function ProfileScreen() {
     );
   }
 
-  const totalUnits = myLotes.reduce((sum, lote) => sum + lote.cantidad, 0);
   const avatarUri = user.avatar ? getImageUrl(user.avatar) : null;
 
   return (
@@ -127,15 +152,15 @@ export default function ProfileScreen() {
           <Text style={styles.statValue}>{myLotes.length}</Text>
           <Text style={styles.statLabel}>Mis lotes</Text>
         </Card>
+
         <Card style={styles.statCard} contentStyle={styles.statContent}>
-          <Text style={styles.statValue}>{totalUnits}</Text>
-          <Text style={styles.statLabel}>Unidades</Text>
+          <Text style={styles.statValue}>{misPedidos.length}</Text>
+          <Text style={styles.statLabel}>Mis compras</Text>
         </Card>
+
         <Card style={styles.statCard} contentStyle={styles.statContent}>
-          <Text style={styles.statValue}>
-            {user?.nombre ? user.nombre.length : 0}
-          </Text>
-          <Text style={styles.statLabel}>Perfil</Text>
+          <Text style={styles.statValue}>{misVentas.length}</Text>
+          <Text style={styles.statLabel}>Mis ventas</Text>
         </Card>
       </View>
 
@@ -184,7 +209,7 @@ export default function ProfileScreen() {
                   color={colors.primary}
                 />
               </View>
-              <Text style={styles.quickActionText}>Mis pedidos</Text>
+              <Text style={styles.quickActionText}>Mis compras</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </View>
@@ -390,6 +415,7 @@ const styles = StyleSheet.create({
   statLabel: {
     ...typography.caption,
     color: colors.subtext,
+    fontSize: 12,
   },
   quickAction: {
     flexDirection: "row",
