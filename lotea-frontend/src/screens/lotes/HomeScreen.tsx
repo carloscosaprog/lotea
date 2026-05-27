@@ -203,7 +203,7 @@ function MarketplaceLotCard({
             <Ionicons
               name={isFavorito ? "heart" : "heart-outline"}
               size={16}
-              color={isFavorito ? "red" : "white"}
+              color={isFavorito ? colors.primary : "white"}
             />
             <Text style={styles.productFavoriteText}>{totalFavoritos}</Text>
           </View>
@@ -312,7 +312,7 @@ function MarketplaceListCard({
           <Ionicons
             name={isFavorito ? "heart" : "heart-outline"}
             size={16}
-            color={isFavorito ? "red" : "white"}
+            color={isFavorito ? colors.primary : "white"}
           />
           <Text style={styles.feedFavoriteText}>{totalFavoritos}</Text>
         </View>

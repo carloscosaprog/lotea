@@ -107,7 +107,7 @@ function RelatedLoteCard({ lote }: { lote: Lote }) {
             <Ionicons
               name={isFavorito ? "heart" : "heart-outline"}
               size={16}
-              color={isFavorito ? "red" : "white"}
+              color={isFavorito ? colors.primary : "white"}
             />
             <Text style={styles.relatedFavoriteText}>{totalFavoritos}</Text>
           </View>

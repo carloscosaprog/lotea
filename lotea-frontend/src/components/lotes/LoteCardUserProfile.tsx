@@ -74,7 +74,7 @@ export default function LoteCard({ lote }: Props) {
               <Ionicons
                 name={isFavorito ? "heart" : "heart-outline"}
                 size={16}
-                color={isFavorito ? "red" : "white"}
+                color={isFavorito ? colors.primary : "white"}
               />
               <Text style={styles.likeText}>{totalFavoritos}</Text>
             </View>
