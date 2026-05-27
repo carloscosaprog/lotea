@@ -728,6 +728,7 @@ export default function HomeScreen() {
           renderItem={renderHorizontalLote}
           contentContainerStyle={styles.carouselList}
           showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
         />
       </Animated.View>
     );
@@ -753,6 +754,7 @@ export default function HomeScreen() {
             onFavoriteChange={handleFavoriteChange}
           />
         )}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         refreshing={refreshing}
