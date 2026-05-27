@@ -28,11 +28,11 @@ import { typography } from "../../styles/typography";
 import type { EstadoPedido, Pedido } from "../../types/Pedido";
 import { getImageUrl } from "../../utils/getImageUrl";
 
-const timelineSteps: Array<{
+const timelineSteps: {
   estado: EstadoPedido;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-}> = [
+}[] = [
   { estado: "pagado", label: "Pedido realizado", icon: "receipt-outline" },
   { estado: "pagado", label: "Pago confirmado", icon: "card-outline" },
   { estado: "preparando", label: "Preparando pedido", icon: "cube-outline" },

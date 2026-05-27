@@ -26,12 +26,12 @@ import { getImageUrl } from "../../utils/getImageUrl";
 
 const PLATFORM_FEE_RATE = 0.1;
 
-const paymentMethods: Array<{
+const paymentMethods: {
   id: MetodoPago;
   title: string;
   description: string;
   icon: keyof typeof Ionicons.glyphMap;
-}> = [
+}[] = [
   {
     id: "tarjeta",
     title: "Tarjeta bancaria",
@@ -252,11 +252,11 @@ export default function CompraScreen() {
 
       <View style={styles.loteCopy}>
         <Text style={styles.title}>{lote.titulo}</Text>
-        <Text style={styles.subtitle}>{formatCurrency(unitPrice)} / unidad</Text>
+        <Text style={styles.subtitle}>
+          {formatCurrency(unitPrice)} / unidad
+        </Text>
         <View style={[styles.stockPill, isSoldOut && styles.stockPillDanger]}>
-          <Text
-            style={[styles.stockText, isSoldOut && styles.stockTextDanger]}
-          >
+          <Text style={[styles.stockText, isSoldOut && styles.stockTextDanger]}>
             {isSoldOut ? "Lote agotado" : `Stock disponible: ${stock}`}
           </Text>
         </View>
@@ -317,7 +317,11 @@ export default function CompraScreen() {
 
         <View style={styles.stockHelperRow}>
           <Ionicons
-            name={stockExceeded || isSoldOut ? "warning-outline" : "shield-checkmark-outline"}
+            name={
+              stockExceeded || isSoldOut
+                ? "warning-outline"
+                : "shield-checkmark-outline"
+            }
             size={16}
             color={stockExceeded || isSoldOut ? colors.danger : colors.accent}
           />

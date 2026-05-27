@@ -57,19 +57,14 @@ export default function ProfileScreen() {
     useCallback(() => {
       const loadProfile = async () => {
         try {
-          const [
-            profileData,
-            lotesData,
-            pedidosData,
-            ventasData,
-            conversationsData,
-          ] = await Promise.all([
-            getProfile(),
-            getMisLotes(),
-            getPedidos(),
-            getVentas(),
-            getConversations(),
-          ]);
+          const [profileData, lotesData, pedidosData, ventasData] =
+            await Promise.all([
+              getProfile(),
+              getMisLotes(),
+              getPedidos(),
+              getVentas(),
+              getConversations(),
+            ]);
           setUser(profileData);
           setMyLotes(lotesData);
           setMisPedidos(pedidosData);

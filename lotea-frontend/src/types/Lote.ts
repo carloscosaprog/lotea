@@ -34,13 +34,13 @@ export interface Lote {
   isFavorito?: boolean;
   vendido?: boolean;
   total_vendido?: number;
-  compradores?: Array<{
+  compradores?: {
     id_usuario: number;
     nombre: string;
     email?: string;
     cantidad: number;
     total: number;
-  }>;
+  }[];
 }
 
 export type LoteCreate = {
