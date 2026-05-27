@@ -421,6 +421,7 @@ const styles = StyleSheet.create({
   statLabel: {
     ...typography.caption,
     color: colors.subtext,
+    fontSize: 12,
   },
   quickAction: {
     flexDirection: "row",

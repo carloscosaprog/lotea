@@ -445,28 +445,38 @@ export default function HomeScreen() {
   }, [distanceFilterEnabled, distanceValue]);
 
   useEffect(() => {
-    if (loadingAuth) {
+    if (loadingAuth || !user) {
       return;
     }
 
-    if (!user) {
-      return;
-    }
+    let isMounted = true;
 
     const loadData = async () => {
-      await fetchLotes();
-
       try {
+        // Espera un tick para asegurar hidratacion completa
+        await new Promise((resolve) => setTimeout(resolve, 150));
+
+        if (!isMounted) return;
+
+        await fetchLotes();
+
         const cats = await getCategorias();
+
+        if (!isMounted) return;
+
         const normalizedCategories = Array.isArray(cats) ? cats : [];
 
         setCategoriasDisponibles(normalizedCategories);
       } catch (e) {
-        console.error("Error cargando categorias", e);
+        console.error("Error cargando Home", e);
       }
     };
 
     loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [fetchLotes, loadingAuth, user]);
 
   useEffect(() => {
