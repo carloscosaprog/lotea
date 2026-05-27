@@ -37,7 +37,7 @@ import { typography } from "../../styles/typography";
 import { API_URL } from "../../config/api";
 import { getImageUrl } from "../../utils/getImageUrl";
 import { formatLoteLocation } from "../../utils/formatLocation";
-import { toggleFavorito } from "../../services/favoritosService";
+import { toggleFavorito, checkFavorito } from "../../services/favoritosService";
 import RatingStars from "../../components/ui/RatingStars";
 import { getResumenCalificaciones } from "../../services/calificacionesService";
 
@@ -188,8 +188,9 @@ export default function LoteDetailScreen() {
   const activeDotOffset = dotMargin - (activeDotWidth - dotSize) / 2;
   const currentUser = user as { id?: number; id_usuario?: number } | null;
   const currentUserId = currentUser?.id ?? currentUser?.id_usuario;
-  const isFavorito = lote?.isFavorito ?? false;
-  const totalFavoritos = lote?.total_favoritos ?? 0;
+  const [isFavorito, setIsFavorito] = useState(false);
+  const [totalFavoritos, setTotalFavoritos] = useState(0);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   const onPinchEvent = Animated.event([{ nativeEvent: { scale } }], {
     useNativeDriver: true,
@@ -241,6 +242,25 @@ export default function LoteDetailScreen() {
 
     fetchLote();
   }, [id]);
+
+  useEffect(() => {
+    const syncFavorito = async () => {
+      if (!lote) return;
+
+      try {
+        const result = await checkFavorito(lote.id_lote);
+
+        setIsFavorito(result.favorito);
+
+        setTotalFavoritos(lote.total_favoritos ?? 0);
+      } catch (error) {
+        console.log("Error comprobando favorito:", error);
+      }
+    };
+
+    syncFavorito();
+  }, [lote?.id_lote]);
+
   useEffect(() => {
     setImagenActual(0);
 
@@ -391,9 +411,26 @@ export default function LoteDetailScreen() {
     }
   };
   const handleToggleFavorito = async () => {
-    if (!lote) return;
+    if (!lote || favoriteLoading) return;
+
     try {
-      const res = await toggleFavorito(lote.id_lote, lote.isFavorito ?? false);
+      setFavoriteLoading(true);
+
+      const previousFavorito = isFavorito;
+      const previousTotal = totalFavoritos;
+
+      const optimisticFavorito = !previousFavorito;
+
+      setIsFavorito(optimisticFavorito);
+      setTotalFavoritos((prev) =>
+        optimisticFavorito ? prev + 1 : Math.max(0, prev - 1),
+      );
+
+      const res = await toggleFavorito(lote.id_lote, previousFavorito);
+
+      setIsFavorito(res.favorito);
+      setTotalFavoritos(res.total_favoritos);
+
       setLote((prev) =>
         prev
           ? {
@@ -405,6 +442,11 @@ export default function LoteDetailScreen() {
       );
     } catch (error) {
       console.log("Error favorito:", error);
+
+      setIsFavorito(lote.isFavorito ?? false);
+      setTotalFavoritos(lote.total_favoritos ?? 0);
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -642,8 +684,8 @@ export default function LoteDetailScreen() {
           >
             <Ionicons
               name={isFavorito ? "heart" : "heart-outline"}
-              size={20}
-              color={colors.primary}
+              size={28}
+              color={isFavorito ? colors.primary : colors.primary}
             />
 
             <Text style={styles.favoriteText}>{totalFavoritos} favoritos</Text>
@@ -1585,8 +1627,9 @@ const styles = StyleSheet.create({
   },
 
   favoriteText: {
-    ...typography.body,
+    ...typography.bodyStrong,
     color: colors.subtext,
+    fontSize: 17,
   },
 
   stockPriceRow: {
