@@ -28,10 +28,9 @@ import { getUserById } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import type { Lote } from "../../types/Lote";
 import Avatar from "../../components/ui/Avatar";
-import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import { colors } from "../../styles/colors";
-import { componentStyles, layoutStyles } from "../../styles/theme";
+import { layoutStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { API_URL } from "../../config/api";
@@ -417,7 +416,6 @@ export default function LoteDetailScreen() {
       setFavoriteLoading(true);
 
       const previousFavorito = isFavorito;
-      const previousTotal = totalFavoritos;
 
       const optimisticFavorito = !previousFavorito;
 
