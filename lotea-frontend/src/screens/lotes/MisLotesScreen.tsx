@@ -159,7 +159,7 @@ export default function MisLotesScreen() {
               </View>
             </TouchableOpacity>
 
-            {item.vendido && item.compradores?.length ? (
+            {item.compradores?.length ? (
               <View style={styles.buyersBox}>
                 <View style={styles.buyersHeader}>
                   <Ionicons
