@@ -522,7 +522,6 @@ export default function LoteDetailScreen() {
         <Text style={styles.topBarBrand}>LOTEA</Text>
         <View style={{ width: 22 }} />
       </View>
-
       {currentUserId && lote.id_vendedor === currentUserId && (
         <View style={styles.ownerActions}>
           <TouchableOpacity
@@ -558,7 +557,6 @@ export default function LoteDetailScreen() {
           </TouchableOpacity>
         </View>
       )}
-
       <View style={styles.galleryContainer}>
         <AnimatedFlatList
           ref={galleryRef}
@@ -672,7 +670,6 @@ export default function LoteDetailScreen() {
           </View>
         )}
       </View>
-
       <Card>
         <View style={styles.summaryBlock}>
           <Text style={styles.title}>{lote.titulo}</Text>
@@ -785,12 +782,13 @@ export default function LoteDetailScreen() {
           <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
         </TouchableOpacity>
       </Card>
-
-      <Card>
-        <Text style={styles.descriptionTitle}>Descripcion</Text>
-        <Text style={styles.description}>{lote.descripcion}</Text>
-      </Card>
-
+      {typeof lote.descripcion === "string" &&
+        lote.descripcion.trim().length > 0 && (
+          <Card>
+            <Text style={styles.descriptionTitle}>Descripcion</Text>
+            <Text style={styles.description}>{lote.descripcion}</Text>
+          </Card>
+        )}
       {categorias.length > 0 && (
         <View style={styles.categoriesSection}>
           <View style={styles.categoriesHeader}>
@@ -812,7 +810,6 @@ export default function LoteDetailScreen() {
           </View>
         </View>
       )}
-
       {lotesUsuario.length > 0 && (
         <View style={styles.moreSection}>
           <View style={styles.marketSectionHeader}>
@@ -845,7 +842,6 @@ export default function LoteDetailScreen() {
           />
         </View>
       )}
-
       {lotesSimilares.length > 0 && (
         <View style={styles.moreSection}>
           <View style={styles.marketSectionHeader}>
@@ -878,7 +874,6 @@ export default function LoteDetailScreen() {
           />
         </View>
       )}
-
       <View style={styles.buttonsContainer}>
         {currentUserId && lote.id_vendedor !== currentUserId && (
           <TouchableOpacity
@@ -921,7 +916,6 @@ export default function LoteDetailScreen() {
           </TouchableOpacity>
         )}
       </View>
-
       <Modal visible={fullscreen} transparent animationType="fade">
         <View style={styles.modal}>
           <View style={styles.topModalBar}>
