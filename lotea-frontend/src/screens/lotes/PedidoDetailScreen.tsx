@@ -17,7 +17,6 @@ import {
 
 import Card from "../../components/ui/Card";
 import PrimaryActionButton from "../../components/ui/PrimaryActionButton";
-import SecondaryActionButton from "../../components/ui/SecondaryActionButton";
 import {
   getPedidoById,
   simularSiguienteEstado,

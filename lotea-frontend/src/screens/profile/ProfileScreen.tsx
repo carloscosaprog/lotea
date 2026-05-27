@@ -117,7 +117,6 @@ export default function ProfileScreen() {
     );
   }
 
-  const totalUnits = myLotes.reduce((sum, lote) => sum + lote.cantidad, 0);
   const avatarUri = user.avatar ? getImageUrl(user.avatar) : null;
 
   return (

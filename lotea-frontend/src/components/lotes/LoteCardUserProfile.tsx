@@ -28,7 +28,6 @@ export default function LoteCard({ lote }: Props) {
 
   const imagenSrc = { uri: getImageUrl(primeraImagen) };
 
-  const totalImagenes = lote.imagenes?.length || 0;
   const locationLabel = formatLoteLocation(lote);
   const categorias = Array.isArray(lote.categorias)
     ? lote.categorias

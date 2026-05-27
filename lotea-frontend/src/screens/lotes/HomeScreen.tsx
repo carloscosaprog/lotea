@@ -629,10 +629,6 @@ export default function HomeScreen() {
     return count;
   }, [activeCategories, distanceFilterEnabled, priceFilterEnabled, search]);
 
-  const selectedCategoriesLabel = activeCategories.includes("Todas")
-    ? "Todas las categorias"
-    : activeCategories.join(", ");
-
   const allFilterCategories = useMemo(() => {
     if (activeFilterCategory) {
       return [
