@@ -11,7 +11,7 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://18.212.85.0:3000"
+        "EXPO_PUBLIC_API_URL": "http://52.5.91.195:3000"
       }
     },
     "production": {

@@ -35,30 +35,26 @@ export default function LoginScreen() {
     setError("");
 
     try {
+      console.log("API_URL:", API_URL);
+
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        // Se envía el email y la contraseña en el formato que espera el backend
         body: JSON.stringify({
           email: identifier,
           contrasena: password,
         }),
       });
 
-      const data = await response.json();
+      console.log("STATUS:", response.status);
 
-      // console.log("LOGIN RESPONSE:", data); // mostrar el login
+      const text = await response.text();
 
-      // Se adapta el manejo de errores al formato típico de NestJS (message)
-      if (!response.ok) {
-        throw new Error(
-          "El correo electrónico o la contraseña son incorrectos",
-        );
-      }
+      console.log("RAW RESPONSE:", text);
 
-      await login(data.user, data.access_token);
+      setError(`STATUS ${response.status}: ${text}`);
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);

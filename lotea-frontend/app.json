@@ -2,11 +2,14 @@
   "expo": {
     "name": "lotea",
     "slug": "lotea",
-    "version": "1.0.0",
+    "version": "1.0.1",
+    "updates": {
+      "enabled": false
+    },
     "orientation": "portrait",
     "scheme": "lotea",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true
@@ -26,6 +29,7 @@
         "android.permission.ACCESS_FINE_LOCATION"
       ],
       "package": "com.carloscosaprog.lotea",
+      "versionCode": 2,
       "usesCleartextTraffic": true
     },
     "web": {
