@@ -9,6 +9,8 @@ export interface Lote {
   vendedor?: {
     id_usuario: number;
     nombre: string;
+    email?: string;
+    avatar?: string | null;
     latitud?: number | null;
     longitud?: number | null;
     ciudad?: string | null;
@@ -30,6 +32,15 @@ export interface Lote {
 
   total_favoritos?: number;
   isFavorito?: boolean;
+  vendido?: boolean;
+  total_vendido?: number;
+  compradores?: {
+    id_usuario: number;
+    nombre: string;
+    email?: string;
+    cantidad: number;
+    total: number;
+  }[];
 }
 
 export type LoteCreate = {

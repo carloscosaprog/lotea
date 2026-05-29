@@ -83,7 +83,11 @@ export default function MisLotesScreen() {
             <View style={styles.topBar}>
               <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => navigation.goBack()}
+                onPress={() =>
+                  navigation.navigate("Perfil", {
+                    screen: "ProfileMain",
+                  })
+                }
               >
                 <Ionicons name="chevron-back" size={22} color={colors.text} />
               </TouchableOpacity>
@@ -98,9 +102,9 @@ export default function MisLotesScreen() {
 
             <View style={layoutStyles.pageHeader}>
               <Text style={layoutStyles.headerEyebrow}>Gestion</Text>
-              <Text style={styles.title}>Tus publicaciones activas</Text>
+              <Text style={styles.title}>Tus publicaciones</Text>
               <Text style={layoutStyles.headerSubtitle}>
-                Edita, revisa o elimina los lotes que tienes publicados.
+                Edita tus lotes activos y revisa las ventas cerradas.
               </Text>
             </View>
           </View>
@@ -134,15 +138,49 @@ export default function MisLotesScreen() {
                 source={{
                   uri: getImageUrl(item.imagenes?.[0]),
                 }}
-                style={styles.image}
+                style={[styles.image, item.vendido && styles.imageSold]}
               />
 
               <View style={styles.copy}>
-                <Text style={styles.titleItem}>{item.titulo}</Text>
-                <Text style={styles.subtitle}>{item.cantidad} unidades</Text>
+                <View style={styles.titleRow}>
+                  <Text style={styles.titleItem}>{item.titulo}</Text>
+                  {item.vendido && (
+                    <View style={styles.soldPill}>
+                      <Text style={styles.soldPillText}>Vendido</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.subtitle}>
+                  {item.vendido
+                    ? `${item.total_vendido ?? 0} unidades vendidas`
+                    : `${item.cantidad} unidades disponibles`}
+                </Text>
                 <Text style={styles.price}>{item.precio} EUR</Text>
               </View>
             </TouchableOpacity>
+
+            {item.compradores?.length ? (
+              <View style={styles.buyersBox}>
+                <View style={styles.buyersHeader}>
+                  <Ionicons
+                    name="people-outline"
+                    size={16}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.buyersTitle}>Compradores</Text>
+                </View>
+
+                {item.compradores.map((comprador) => (
+                  <View key={comprador.id_usuario} style={styles.buyerRow}>
+                    <Text style={styles.buyerName}>{comprador.nombre}</Text>
+                    <Text style={styles.buyerMeta}>
+                      {comprador.cantidad} uds - {comprador.total.toFixed(2)}{" "}
+                      EUR
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
 
             <View style={styles.actionsRow}>
               <TouchableOpacity
@@ -234,9 +272,15 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     backgroundColor: "#E5E7EB",
   },
+  imageSold: {
+    opacity: 0.72,
+  },
   copy: {
     flex: 1,
     gap: 4,
+  },
+  titleRow: {
+    gap: spacing.xs,
   },
   titleItem: {
     ...typography.bodyStrong,
@@ -254,6 +298,55 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontWeight: "900",
     fontSize: 20,
+  },
+  soldPill: {
+    alignSelf: "flex-start",
+    borderRadius: radii.full,
+    backgroundColor: colors.accentSoft,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+  },
+  soldPillText: {
+    ...typography.caption,
+    color: colors.accent,
+    fontWeight: "900",
+  },
+  buyersBox: {
+    borderRadius: radii.lg,
+    backgroundColor: "#F0F9FF",
+    borderWidth: 1,
+    borderColor: "#DBEAFE",
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  buyersHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  buyersTitle: {
+    ...typography.bodyStrong,
+    color: colors.text,
+    fontWeight: "900",
+  },
+  buyerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  buyerName: {
+    ...typography.caption,
+    color: colors.text,
+    flex: 1,
+    fontWeight: "800",
+  },
+  buyerMeta: {
+    ...typography.caption,
+    color: colors.subtext,
+    textAlign: "right",
   },
   actionsRow: {
     flexDirection: "row",

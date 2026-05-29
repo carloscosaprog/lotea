@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 
@@ -20,9 +21,6 @@ import { componentStyles } from "../../styles/theme";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
 import { getCategoryIcon } from "../../utils/categoryIcons";
-import { Image } from "react-native";
-import { useRef } from "react";
-
 interface Categoria {
   id_categoria: number;
   nombre: string;

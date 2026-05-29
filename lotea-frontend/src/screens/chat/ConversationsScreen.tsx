@@ -12,10 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
-import {
-  Conversation,
-  getConversations,
-} from "../../services/chatService";
+import { Conversation, getConversations } from "../../services/chatService";
 import { colors } from "../../styles/colors";
 import { radii, spacing } from "../../styles/spacing";
 import { typography } from "../../styles/typography";
@@ -59,7 +56,14 @@ export default function ConversationsScreen() {
   return (
     <View style={layoutStyles.screen}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} activeOpacity={0.8}>
+        <TouchableOpacity
+          onPress={() =>
+            navigation.navigate("Perfil", {
+              screen: "ProfileMain",
+            })
+          }
+          activeOpacity={0.8}
+        >
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Mis conversaciones</Text>

@@ -117,6 +117,54 @@ export class LotesService {
     };
   }
 
+  private addSalesData(lote: any) {
+    const detallesPedido = Array.isArray(lote.detalles_pedido)
+      ? lote.detalles_pedido
+      : [];
+    const compradoresMap = new Map<
+      number,
+      {
+        id_usuario: number;
+        nombre: string;
+        email?: string;
+        cantidad: number;
+        total: number;
+      }
+    >();
+
+    detallesPedido.forEach((detalle: any) => {
+      const comprador = detalle.pedido?.usuario;
+
+      if (!comprador?.id_usuario) return;
+
+      const current = compradoresMap.get(comprador.id_usuario) ?? {
+        id_usuario: comprador.id_usuario,
+        nombre: comprador.nombre ?? "Comprador",
+        email: comprador.email,
+        cantidad: 0,
+        total: 0,
+      };
+
+      const cantidad = Number(detalle.cantidad ?? 0);
+
+      current.cantidad += cantidad;
+      current.total += Number(detalle.precio_unitario ?? 0) * cantidad;
+      compradoresMap.set(comprador.id_usuario, current);
+    });
+
+    const { detalles_pedido: _detallesPedido, ...cleanLote } = lote;
+
+    return {
+      ...cleanLote,
+      vendido: Number(lote.cantidad ?? 0) <= 0,
+      total_vendido: Array.from(compradoresMap.values()).reduce(
+        (sum, comprador) => sum + comprador.cantidad,
+        0,
+      ),
+      compradores: Array.from(compradoresMap.values()),
+    };
+  }
+
   async create(
     dto: CreateLoteDto,
     id_vendedor: number,
@@ -164,7 +212,11 @@ export class LotesService {
       typeof query.maxDistance === "number" && query.maxDistance > 0
         ? query.maxDistance
         : undefined;
-    const where: any = {};
+    const where: any = {
+      cantidad: {
+        gt: 0,
+      },
+    };
 
     if (origin && maxDistance) {
       const boundingBox = getBoundingBox(origin, maxDistance);
@@ -230,14 +282,38 @@ export class LotesService {
     const origin = await this.getUserCoordinates(id_usuario);
     const lote = await this.prisma.lote.findUnique({
       where: { id_lote: id },
-      include: this.loteInclude,
+      include: {
+        ...this.loteInclude,
+        detalles_pedido: {
+          include: {
+            pedido: {
+              include: {
+                usuario: {
+                  select: {
+                    id_usuario: true,
+                    nombre: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!lote) {
       throw new NotFoundException(`Lote ${id} no encontrado`);
     }
 
-    return this.addLocationData(lote, origin);
+    if (lote.cantidad <= 0 && lote.id_vendedor !== id_usuario) {
+      throw new NotFoundException(`Lote ${id} no encontrado`);
+    }
+
+    const withSales =
+      lote.id_vendedor === id_usuario ? this.addSalesData(lote) : lote;
+
+    return this.addLocationData(withSales, origin);
   }
 
   async update(id: number, dto: UpdateLoteDto, id_usuario: number) {
@@ -287,13 +363,40 @@ export class LotesService {
 
   async findByVendedor(id_vendedor: number, id_usuario: number) {
     const origin = await this.getUserCoordinates(id_usuario);
+    const isOwner = id_vendedor === id_usuario;
     const lotes = await this.prisma.lote.findMany({
       where: {
         id_vendedor,
+        ...(isOwner
+          ? {}
+          : {
+              cantidad: {
+                gt: 0,
+              },
+            }),
       },
 
       include: {
         ...this.loteInclude,
+        ...(isOwner
+          ? {
+              detalles_pedido: {
+                include: {
+                  pedido: {
+                    include: {
+                      usuario: {
+                        select: {
+                          id_usuario: true,
+                          nombre: true,
+                          email: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            }
+          : {}),
 
         favoritos: {
           where: {
@@ -311,10 +414,14 @@ export class LotesService {
       },
     });
 
-    return lotes.map((lote) => ({
-      ...this.addLocationData(lote, origin),
+    return lotes.map((lote) => {
+      const loteWithSales = isOwner ? this.addSalesData(lote) : lote;
 
-      isFavorito: lote.favoritos.length > 0,
-    }));
+      return {
+        ...this.addLocationData(loteWithSales, origin),
+
+        isFavorito: lote.favoritos.length > 0,
+      };
+    });
   }
 }
