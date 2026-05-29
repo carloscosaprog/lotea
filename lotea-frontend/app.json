@@ -9,7 +9,7 @@
     "orientation": "portrait",
     "scheme": "lotea",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": true
