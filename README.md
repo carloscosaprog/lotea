@@ -1,149 +1,362 @@
 # LOTEA
 
-Plataforma multiplataforma de compra y venta de productos por lotes.
+Plataforma multiplataforma de compra y venta de productos por lotes desarrollada con:
+
+- Frontend: React Native + Expo
+- Backend: NestJS
+- Base de datos: PostgreSQL + Prisma
+- Infraestructura: AWS EC2
 
 ---
 
-## 🎥 Demo del proyecto
+# Arquitectura del proyecto
 
-[![Ver demo de LOTEA](https://img.youtube.com/vi/3LwFtk3jYSE/hqdefault.jpg)](https://www.youtube.com/watch?v=3LwFtk3jYSE)
+El repositorio contiene dos proyectos:
 
----
-
-## Descripción
-
-LOTEA es una aplicación orientada a la compra y venta de productos agrupados en lotes. Permite a los usuarios publicar lotes con imágenes, precio, cantidad y categoría, así como explorar y visualizar los productos disponibles.
-
-El sistema está diseñado siguiendo una arquitectura cliente-servidor, con un backend en Node.js y una aplicación móvil desarrollada en React Native.
-
-Inicialmente el frontend fue desarrollado en React (web), pero el proyecto ha sido migrado completamente a React Native para ofrecer una experiencia móvil nativa.
-
----
-
-## Estructura del proyecto
-
+```txt
 lotea/
-
-* lotea-backend/ → API REST (Node.js + Express)
-* lotea-frontend/ → Aplicación móvil (React Native + Expo)
-* lotea_base_datos.sql → Script de base de datos PostgreSQL
-* lotea_estado-actual.txt → Documento con estado del proyecto
+├── lotea-backend/
+└── lotea-frontend/
+```
 
 ---
 
-## Tecnologías utilizadas
+# Requisitos previos
 
-### Backend
+## Software necesario
 
-* Node.js
-* Express
-* PostgreSQL
-* JWT (autenticación)
-* bcrypt (cifrado de contraseñas)
-* multer (subida de imágenes)
+Instalar previamente:
 
-### App móvil
-
-* React Native
-* Expo
-* TypeScript
-* React Navigation
-* AsyncStorage
-* Expo Image Picker
+- Node.js 20+
+- pnpm
+- PostgreSQL 16+
+- Expo CLI
+- Java 17 (para generar APK Android)
 
 ---
 
-## Funcionalidades actuales
+# Instalación del proyecto
 
-* Registro e inicio de sesión de usuarios
-* Autenticación mediante JWT
-* Gestión completa de lotes:
-
-  * Crear lote con imágenes
-  * Editar lote
-  * Eliminar lote
-  * Obtener lotes
-* Visualización de lotes
-* Página de detalle de lote con:
-
-  * Galería de imágenes
-  * Información del producto
-  * Información del vendedor
-  * Lotes relacionados del mismo usuario
-* Perfil de usuario:
-
-  * Visualización de datos
-  * Edición de nombre
-  * Subida de avatar
-  * Acceso a "Mis lotes"
-* Página de "Mis lotes"
-* Navegación mediante Tab Navigator
-* Visualización de perfiles de otros usuarios
-
----
-
-## Estado del proyecto
-
-Aplicación funcional en entorno local con backend y app móvil conectados.
-
-Migración completada de React (web) a React Native.
-
-Para más detalles sobre el estado actual, trabajo realizado y planificación:
-ver archivo `lotea_estado-actual.txt`.
-
----
-
-## Instalación
-
-### 1. Clonar repositorio
+## 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/TU_USUARIO/lotea.git
+git clone https://github.com/carloscosaprog/lotea.git
+```
+
+Entrar en el proyecto:
+
+```bash
 cd lotea
 ```
 
 ---
 
-### 2. Backend
+# Backend
+
+## Instalación dependencias
 
 ```bash
 cd lotea-backend
-npm install
-npm run dev
+pnpm install
+```
+
+Si PNPM bloquea scripts:
+
+```bash
+pnpm approve-builds
+```
+
+Aceptar los paquetes propuestos.
+
+---
+
+# Variables de entorno backend
+
+Crear un archivo `.env` en:
+
+```txt
+lotea-backend/.env
+```
+
+Contenido:
+
+```env
+DATABASE_URL="postgresql://usuario:password@localhost:5432/lotea"
+
+JWT_SECRET="tu_jwt_secret"
+
+PORT=3000
 ```
 
 ---
 
-### 3. App móvil (React Native)
+# Base de datos
+
+## Crear base de datos PostgreSQL
+
+Ejemplo:
+
+```sql
+CREATE USER carlosprog WITH PASSWORD '1234';
+
+CREATE DATABASE lotea OWNER carlosprog;
+
+GRANT ALL PRIVILEGES ON DATABASE lotea TO carlosprog;
+```
+
+---
+
+# Migraciones Prisma
+
+Ejecutar:
 
 ```bash
-cd lotea
-npm install
+pnpm prisma generate --schema=src/prisma/schema.prisma
+
+pnpm prisma migrate deploy --schema=src/prisma/schema.prisma
+```
+
+---
+
+# Seed de la base de datos
+
+Importante para cargar:
+
+- categorías
+- datos iniciales
+
+Ejecutar:
+
+```bash
+pnpm prisma db seed --schema=src/prisma/schema.prisma
+```
+
+---
+
+# Lanzar backend
+
+Modo desarrollo:
+
+```bash
+pnpm start:dev
+```
+
+La API quedará disponible en:
+
+```txt
+http://localhost:3000
+```
+
+---
+
+# Producción backend (AWS EC2)
+
+El backend está desplegado en una instancia EC2 de AWS.
+
+## PM2
+
+Para mantener el backend activo:
+
+```bash
+pm2 start "pnpm start:dev" --name lotea-backend
+```
+
+Guardar configuración:
+
+```bash
+pm2 save
+```
+
+Autoarranque tras reinicio:
+
+```bash
+pm2 startup
+```
+
+---
+
+# Frontend
+
+## Instalación dependencias
+
+```bash
+cd lotea-frontend
+pnpm install
+```
+
+---
+
+# Variables de entorno frontend
+
+Crear:
+
+```txt
+lotea-frontend/.env
+```
+
+---
+
+## Desarrollo local
+
+Si el backend se ejecuta en local:
+
+```env
+EXPO_PUBLIC_API_URL=http://TU_IP_LOCAL:3000
+```
+
+Ejemplo:
+
+```env
+EXPO_PUBLIC_API_URL=http://192.168.1.34:3000
+```
+
+La IP debe ser la IP local del ordenador que ejecuta el backend.
+
+---
+
+## Producción EC2
+
+Si el backend se ejecuta en AWS EC2:
+
+```env
+EXPO_PUBLIC_API_URL=http://IP_EC2:3000
+```
+
+Ejemplo:
+
+```env
+EXPO_PUBLIC_API_URL=http://52.5.91.195:3000
+```
+
+---
+
+# Lanzar frontend
+
+```bash
+pnpm start
+```
+
+o:
+
+```bash
 npx expo start
 ```
 
 ---
 
-### 4. Base de datos
+# Generar APK Android
 
-Ejecutar el script:
+## Requisitos
 
-```sql
-lotea_base_datos.sql
+- Java 17 instalado
+- Carpeta android generada
+
+---
+
+# Generar carpeta Android nativa
+
+Desde `lotea-frontend`:
+
+```bash
+npx expo prebuild --platform android --clean
 ```
 
-en PostgreSQL.
+---
+
+# Configuración necesaria AndroidManifest
+
+En:
+
+```txt
+android/app/src/main/AndroidManifest.xml
+```
+
+Añadir dentro de `<application>`:
+
+```xml
+android:usesCleartextTraffic="true"
+```
+
+Ejemplo:
+
+```xml
+<application
+    android:name=".MainApplication"
+    android:usesCleartextTraffic="true">
+```
+
+Esto es necesario para permitir conexiones HTTP hacia la API.
 
 ---
 
-## Notas
+# Generar APK release
 
-* El proyecto está preparado para ejecutarse en red local (IP del servidor en el código).
-* Las imágenes se almacenan en el servidor mediante multer.
-* El sistema de autenticación utiliza JWT almacenado en AsyncStorage.
+Desde:
+
+```txt
+lotea-frontend/android
+```
+
+Ejecutar:
+
+```bash
+.\gradlew assembleRelease
+```
 
 ---
 
-## Autor
+# Ubicación APK generada
 
-Carlos Cosa
+```txt
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+---
+
+# AWS EC2
+
+## Configuración necesaria
+
+Puertos abiertos en Security Group:
+
+| Puerto | Uso            |
+| ------ | -------------- |
+| 22     | SSH            |
+| 3000   | Backend NestJS |
+
+---
+
+# IP elástica AWS
+
+Se recomienda asociar una Elastic IP a la instancia EC2 para evitar que la IP pública cambie al reiniciar la máquina.
+
+---
+
+# Tecnologías utilizadas
+
+## Frontend
+
+- React Native
+- Expo
+- TypeScript
+- React Navigation
+- AsyncStorage
+- Expo Location
+- React Native Maps
+
+---
+
+## Backend
+
+- NestJS
+- Prisma ORM
+- PostgreSQL
+- JWT
+- bcrypt
+- PM2
+
+---
+
+# Autor
+
+Carlos Cosa Sanchez
